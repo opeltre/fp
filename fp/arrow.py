@@ -31,3 +31,4 @@ class Arrow:
 
     def __repr__(self):
         return f"{self.name} : {self.src.__name__} -> {self.tgt.__name__}"
+
