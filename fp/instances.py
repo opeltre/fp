@@ -6,7 +6,11 @@ class Id (Functor):
     def __new__(cls, A):
         if isinstance(A, Type):
             return A
-        return Type(A.__name__, (A,), {})
+        
+        class IdA (A, Type):
+            pass
+
+        return IdA
     
     def __init__(TA, A):
         TA.functor.types[A]  = TA
