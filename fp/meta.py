@@ -1,3 +1,5 @@
+import abc 
+
 class Kind(type):
     """ Type kinds. """
 
@@ -16,7 +18,7 @@ class Kind(type):
         return self.__name__.replace("Kind", "")
 
 
-class TypeKind(type, metaclass=Kind):
+class TypeMeta(type, metaclass=Kind):
     """ Type class. """
     
     kind = "*" 
@@ -36,16 +38,16 @@ class TypeKind(type, metaclass=Kind):
         return f"{self.__name__}"
 
 
-class Type(metaclass=TypeKind):
+class Type(metaclass=TypeMeta):
     pass
 
 
-class FunctorKind(type, metaclass=Kind):
+class FunctorMeta(abc.ABCMeta, metaclass=Kind):
     """ Functor type class. """
     
     kind    = "* -> *" 
     arity   = 1
-
+    
     def __new__(cls, name, bases, dct):
         """ Create a functorial type constructor T: a -> T a. """
         T = super().__new__(cls, name, bases, dct)
@@ -53,11 +55,15 @@ class FunctorKind(type, metaclass=Kind):
         T.__new__ = cls.new_method(T.__new__)
         return T
 
+
     @staticmethod
     def new_method(new):
         """ Type constructor T: A -> T A with lookup for A. """
         def _new_ (cls, *As):
             """ Look for T A in or return a new type T A. """
+            #--- Check abstract methods 
+            if len(cls.__abstractmethods__):
+                raise TypeError("Abstract")
             #--- Check arity 
             if cls.arity - len(As) != 0:
                 raise TypeError("Wrong kind")
@@ -74,26 +80,31 @@ class FunctorKind(type, metaclass=Kind):
         return _new_
 
 
-class Functor(metaclass=FunctorKind):
+class Functor(metaclass=FunctorMeta):
+
+    def __new__(cls, A):
+        return TypeKind(A.__name__, (A,), {})
 
     def __init__(TA, A):
         pass
-
-    @classmethod
-    def fmap(cls, f):
-        raise NotImplementedError()
     
+    @classmethod
+    @abc.abstractmethod
+    def fmap(cls, f):
+        ...
+
     @classmethod
     def name(cls, A):
         return f"{cls.__name__} {A.__name__}"
 
 
-class BifunctorKind(FunctorKind):
+class BifunctorMeta(FunctorMeta):
     
     kind  = "(*, *) -> *"
     arity = 2 
     
-class Bifunctor(metaclass=BifunctorKind):
+
+class Bifunctor(metaclass=BifunctorMeta):
 
     def __init__(TAB, A, B):
         pass
