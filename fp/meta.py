@@ -15,7 +15,7 @@ class Kind(type):
         return f"{self} : {self.kind}"
 
     def __str__(self):
-        return self.__name__.replace("Kind", "")
+        return self.__name__.replace("Meta", "")
 
 
 class TypeMeta(type, metaclass=Kind):

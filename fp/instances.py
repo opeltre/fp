@@ -50,9 +50,8 @@ class List(Functor):
     @classmethod
     def fmap(cls, f):
         """ List map: (A -> B) -> List A -> List B """
-        src, tgt = cls(f.src), cls(f.tgt)
-        def mapf(xs):
-            if not isinstance(xs, src):
-                raise TypeError(f"Input not of type {src}")
-            return tgt([f(x) for x in xs])
-        return Arrow([src, tgt], mapf)
+
+        @Arrow(cls(f.src), cls(f.tgt))
+        def mapf(xs): return [f(x) for x in xs]
+
+        return mapf
