@@ -1,4 +1,22 @@
-# Emulating Types in Python
+# Types in Python
+
+The python language allows some kind of functorial and polymorphic constructs via [metaclasses](https://www.python.org/dev/peps/pep-3115/): they are synonyms of type constructors, allowing to dynamically create types and customize type construction. They provide a functionality somehow close to what [C++ templates](https://www.cplusplus.com/doc/oldtutorial/templates/) would do, although in a more convoluted way. 
+
+The more traditional, pythonic way to approach polymorphism is by providing classes as keyword arguments in the `__init__` function, as in: 
+```py
+x = torch.tensor([0., 1., 2., 3.], dtype=torch.float)
+y = torch.tensor([0., 1., 2., 3.], dtype=torch.double)
+```
+However python's typesystem is completely unable to reason about the polymorphic argument with this kind of approach:
+```py
+type(x) == type(y)
+```
+Types lead to much more than code decoration, as the [typing](https://docs.python.org/3/library/typing.html) module lets you do.
+Type polymorphism is a powerful way to generate sister classes automatically without repeating yourself or creating tangled inheritance diagrams (again, think of how great C++ templates are), or append functionality to your code in a flexible and robust manner. 
+
+Types are just a prerequisite for [functorial](https://en.wikipedia.org/wiki/Functor_(functional_programming)) constructs, which have already had a vast diversity of applications in functional languages from container data types to stateful programs design, I/O operations and error handling. 
+ 
+## Example
 
 ```py
 >>> List
