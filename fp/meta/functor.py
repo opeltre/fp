@@ -1,46 +1,7 @@
 import abc 
 
-class Kind(type):
-    """ Type kinds. """
-
-    def __new__(cls, name, bases, dct):
-        """ Create a kind. """
-        T = super().__new__(cls, name, bases, dct)
-        T.__str__   = lambda t: t.__name__
-        T.__repr__  = lambda t: f"{type(t)} : {t.__name__}"
-        return T
-
-    def __repr__(self): 
-        """ Show type name. """
-        return f"{self} : {self.kind}"
-
-    def __str__(self):
-        return self.__name__.replace("Meta", "")
-
-
-class TypeMeta(type, metaclass=Kind):
-    """ Type class. """
-    
-    kind = "*" 
-
-    def __new__(cls, name, bases, dct):
-        """ Create a new type. """
-        T = super().__new__(cls, name, bases, dct)
-        T.__repr__ = cls.repr_method(T.__repr__)
-        return T
-    
-    @staticmethod
-    def repr_method(rep):
-        return lambda x: f"{type(x)} : {rep(x)}"
-
-    def __repr__(self):
-        """ Show type name. """
-        return f"{self.__name__}"
-
-
-class Type(metaclass=TypeMeta):
-    pass
-
+from .kind import Kind
+from .type import Type
 
 class FunctorMeta(abc.ABCMeta, metaclass=Kind):
     """ Functor type class. """
