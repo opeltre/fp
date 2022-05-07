@@ -13,7 +13,7 @@ class TypeMeta(type, metaclass=Kind):
     
     @staticmethod
     def repr_method(rep):
-        return lambda x: f"{type(x)} : {rep(x)}"
+        return lambda x: f" {type(x)} \t:: " + rep(x)
 
     def __repr__(self):
         """ Show type name. """

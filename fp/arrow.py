@@ -4,7 +4,7 @@ class Arrow(Bifunctor):
     
     def __new__(cls, A, B):
 
-        class TAB (Type):
+        class TAB (ArrowType):
             
             src = A
             tgt = B 

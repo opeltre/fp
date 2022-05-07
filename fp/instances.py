@@ -44,6 +44,9 @@ class List(Functor):
                 raise TypeError(
                     f"Could not cast {type(xs).__name__} " +\
                     f"to {self.__class__.__name__}")
+
+            def __repr__(self):
+                return ("[" + ", ".join([str(x) for x in self]) + "]")
             
         return List_A
 
@@ -54,4 +57,5 @@ class List(Functor):
         @Arrow(cls(f.src), cls(f.tgt))
         def mapf(xs): return [f(x) for x in xs]
 
+        mapf.__name__ = f'map {f.__name__}'
         return mapf
