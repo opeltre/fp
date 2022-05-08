@@ -8,6 +8,7 @@ class TypeMeta(type, metaclass=Kind):
     def __new__(cls, name, bases, dct):
         """ Create a new type. """
         T = super().__new__(cls, name, bases, dct)
+        T.__str__  = cls.str_method(T.__repr__)
         T.__repr__ = cls.repr_method(T.__repr__)
         return T
     
@@ -15,10 +16,23 @@ class TypeMeta(type, metaclass=Kind):
     def repr_method(rep):
         return lambda x: f" {type(x)} \t:: " + rep(x)
 
+    @staticmethod
+    def str_method(rep):
+        return lambda x: rep(x)
+
     def __repr__(self):
         """ Show type name. """
         return f"{self.__name__}"
 
 
 class Type(metaclass=TypeMeta):
-    pass
+    
+    @classmethod
+    def cast(cls, x):
+        if isinstance(x, cls): 
+            return x
+        try:
+            Tx = cls(x)
+            return cls.cast(Tx)
+        except:
+            raise TypeError(f"Could not cast {type(x)} to type {cls}.") 

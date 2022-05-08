@@ -19,15 +19,18 @@ class FunctorMeta(abc.ABCMeta, metaclass=Kind):
 
     @staticmethod
     def new_method(new):
-        """ Type constructor T: A -> T A with lookup for A. """
+        """ Type constructor T: A -> T A with lookup for known input A. """
         def _new_ (cls, *As):
-            """ Look for T A in or return a new type T A. """
+            """ Look for T A in T.types or return a new type T A. """
             #--- Check abstract methods 
             if len(cls.__abstractmethods__):
-                raise TypeError("Abstract")
+                raise TypeError(
+                    f"Abstract methods missing in type {cls}")
             #--- Check arity 
-            if cls.arity - len(As) != 0:
-                raise TypeError("Wrong kind")
+            if cls.arity != 'n' and cls.arity - len(As) != 0:
+                raise TypeError(
+                    f"Wrong kind : could not apply {cls.arity}-ary " +\
+                    f"functor {cls} to input {As}")
             #--- Return type if exists 
             if As in cls.types:
                 return cls.types[As]
@@ -36,19 +39,14 @@ class FunctorMeta(abc.ABCMeta, metaclass=Kind):
             TA.functor  = cls 
             TA.__name__ = cls.name(*As)
             cls.types[As] = TA
-            cls.__init__(TA, *As)
+            # cls.__init__(TA, *As)
             return TA
         return _new_
 
 
 class Functor(metaclass=FunctorMeta):
+    """ Functor type class. """
 
-    def __new__(cls, A):
-        return TypeKind(A.__name__, (A,), {})
-
-    def __init__(TA, A):
-        pass
-    
     @classmethod
     @abc.abstractmethod
     def fmap(cls, f):
