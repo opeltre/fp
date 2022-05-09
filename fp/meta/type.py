@@ -34,7 +34,6 @@ class TypeMeta(type, metaclass=Kind):
             except:
                 raise TypeError(f"Could not cast {type(x)} to type {T}.")
 
-        
         return _cast_
 
     def __repr__(self):

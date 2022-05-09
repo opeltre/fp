@@ -6,7 +6,7 @@ class ArrowMeta(BifunctorMeta):
 
     def __new__(cls, name, bases, dct):
         Arr = super().__new__(cls, name, bases, dct)
-        Arr.__call__   = cls.call_method(Arr)
+        Arr.curry = cls.curry_method(Arr)
         if not '__matmul__' in dir(Arr):
             Arr.__matmul__ = cls.matmul_method(Arr)
         return Arr
@@ -36,57 +36,61 @@ class ArrowMeta(BifunctorMeta):
         return src, Tx
 
     @staticmethod
-    def target(Arr, y):
+    def target(arr, y):
         """ Cast of output y. """
+        if isinstance(y, arr.tgt):
+            return y
         try: 
-            Ty = Arr.tgt.cast(y)
+            Ty = arr.tgt.cast(y)
             return Ty
         except: 
             raise TypeError(
                 f"Output of type {type(y)} " + \
-                f"not castable to {Arr.tgt}")
+                f"not castable to {arr.tgt}")
 
     @staticmethod
-    def curry(Arr, f, xs):
-        """ 
-        Curried function applied to n-ary input xs for n < arity. 
-        """
-        if len(xs) < Arr.arity:
-            ts  = Arr.src.types[-(Arr.arity-len(xs)):] 
-            src = tuple(ts) if len(ts) > 1 else ts[0] 
+    def curry_method(Arr):
 
-            @Arr.__class__(src, Arr.tgt)
-            def curried(*ys): 
-                print(f"curry {ys}")
-                return f(*xs, *ys)
-            
-            curried.__name__ = (f'{Arr.__name__} '
-                                + ' '.join((str(x) for x in Tx)))
-            return curried
+        def curry(f, xs):
+            """ 
+            Curried function applied to n-ary input xs for n < arity. 
+            """
+            if len(xs) < f.arity:
+                ts  = f.src.types[-(f.arity-len(xs)):] 
+                src = tuple(ts) if len(ts) > 1 else ts[0] 
+                
+                @Arr(src, f.tgt)
+                def curried(*ys): 
+                    return f(*xs, *ys)
+                
+                curried.__name__ = (f'{f.__name__} '
+                                    + ' '.join((str(x) for x in xs)))
+                return curried
 
-        raise TypeError(
-                f"Cannot curry {Arr.arity} function on " +\
-                f"{len(xs)}-ary input")
+            raise TypeError(
+                    f"Cannot curry {Arr.arity} function on " +\
+                    f"{len(xs)}-ary input")
+
+        return curry
 
     @classmethod
     def call_method(cls, Arr):
-        print("call_method")
         
         def _call_(arrow, *xs):
             """ 
             Function application with type checks and curryfication. 
             """
-            print("_call_")
             f = arrow.call
             #--- Input type check
-            src, Tx = cls.source(Arr, xs)           
+            src, Tx = cls.source(arrow, xs)           
             #--- Unary and N-ary call
-            if len(xs) == Arr.arity:
+            if len(xs) == arrow.arity:
                 y = f(Tx) if len(xs) == 1 else f(*Tx)
-                return cls.target(Arr, y)
+                return cls.target(arrow, y)
             #--- Curried section 
-            if len(xs) < Arr.arity:
-                return cls.curry(Arr, f, xs)
+            if len(xs) < arrow.arity:
+                return Arr.curry(arrow, xs)
+
         return _call_
 
     @classmethod
@@ -100,7 +104,7 @@ class ArrowMeta(BifunctorMeta):
             src, tgt = other.src, self.tgt
             comp = lambda *xs: self(other(*xs))
             comp.__name__ = f"{self.__name__} . {other.__name__}"
-            return Arr.__class__(src, tgt)(comp)
+            return Arr(src, tgt)(comp)
         return _matmul_
 
 
@@ -153,6 +157,9 @@ class Arrow(metaclass=ArrowMeta):
     def __new__(cls, A, B):
 
         class TAB (Type):
+
+            functor = Arrow
+            input   = (A, B)
             
             if isinstance(A, type):
                 src, tgt, arity = (A, B, 1)
@@ -167,17 +174,15 @@ class Arrow(metaclass=ArrowMeta):
                 if not callable(f):
                     raise TypeError(f"Input is not callable.")
                 self.call = f
-                print(f"-> arrow f")
                 self.__name__ = f.__name__ if f.__name__ else "\u03bb"
 
             def __repr__(self):
                 return self.__name__
 
-            def __call__(self, *xs):
-               return self.call(*xs)
-            
-        return TAB
+        TAB.__call__   = cls.call_method(Arrow)
+        TAB.__matmul__ = cls.matmul_method(Arrow)
 
+        return TAB
 
     @classmethod
     def name(cls, A, B):

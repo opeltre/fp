@@ -1,5 +1,5 @@
-from fp.instances import List, Str, Int
-from fp.meta import Arrow, Prod
+from fp.meta      import Arrow, Prod
+from fp.instances import List, Str, Int, Float
 
 x = List(Str)(["abc", "d", "ef"])
 y = List(Int)([0, 1, 2])
