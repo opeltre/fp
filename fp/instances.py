@@ -1,5 +1,4 @@
-from .meta  import Type, Functor
-from .arrow import Arrow
+from .meta  import Type, Functor, Arrow
 
 class Id (Functor):
     

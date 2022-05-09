@@ -1,3 +1,2 @@
-from .meta      import Kind, Type, Functor, Bifunctor, Prod
-from .arrow     import Arrow
+from .meta      import Kind, Type, Alg, AlgMeta, Functor, Bifunctor, Prod, Arrow
 from .instances import Id, List

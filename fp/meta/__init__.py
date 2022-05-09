@@ -1,4 +1,6 @@
 from .kind      import Kind
-from .type      import Type
 from .functor   import Functor, Bifunctor
 from .cartesian import Prod
+from .type      import Type, TypeMeta
+from .algebra   import Alg, AlgMeta
+from .arrow     import Arrow

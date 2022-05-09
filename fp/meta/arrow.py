@@ -1,4 +1,6 @@
-from .meta      import Bifunctor, Type, Prod
+from .functor import Bifunctor
+from .type    import Type, TypeMeta
+from .cartesian import Prod
 
 class Arrow(Bifunctor):
     
@@ -10,7 +12,7 @@ class Arrow(Bifunctor):
                 src, tgt, arity = (A, B, 1)
             elif '__iter__' in dir(A):
                 As = Prod(*A)
-                src, tgt, arity = (As, B, len(As))
+                src, tgt, arity = (As, B, len(As.types))
             else:
                 raise TypeError(
                     f"Source {A} is not a type nor an iterable of types")
@@ -24,17 +26,18 @@ class Arrow(Bifunctor):
 
             def __call__(self, *xs):
                 """ Function application with type checks and curryfication. """
-                #--- Arity check 
-                print(self.arity - len(xs))
-
+                
+                #--- Arity check
                 if len(xs) == self.arity:
                     src = self.src
                 elif len(xs) < self.arity:
-                    src = self.src[:len(xs)]
+                    t1s  = self.src.types[:len(xs)]
+                    src = Prod(*t1s)
                 else: 
                     raise TypeError(
-                        f"{self.arity}-ary function called" + \
+                        f"{self.arity}-ary function called with " + \
                         f"{len(xs)} arguments")
+               
                 #--- Input type check
                 try:
                     Tx = src.cast(*xs)
@@ -42,21 +45,29 @@ class Arrow(Bifunctor):
                     input = " * ".join([str(type(x)) for x in xs])
                     raise TypeError(
                         f"Input of type {input} " + \
-                        f"not castable to {src}")
+                        f"not castable to {self.src}")
                 
                 #--- Curried section 
                 if len(xs) < self.arity:
-                    src2 = src[-(self.arity-len(xs)):]
-                    @Arrow(src2, tgt)
-                    def curried(*ys): return self.call(*xs, *ys)
+                    t2s  = self.src.types[-(self.arity-len(xs)):] 
+                    src2 = tuple(t2s) if len(t2s) > 1 else t2s[0] 
+
+                    @Arrow(src2, self.tgt)
+                    def curried(*ys): 
+                        return self(*xs, *ys)
+                    
+                    curried.__name__ = (f'{self.__name__} '
+                                     + ' '.join((str(x) for x in Tx)))
                     return curried
 
                 #--- Unary call 
-                if self.arity == 1 and len(xs) == 1:
+                if len(xs) == 1 and self.arity == 1:
                     y = self.call(Tx)
                 #--- N-ary call (Tx :: Prod)
-                elif self.arity == len(xs):
+                elif len(xs) == self.arity:
                     y = self.call(*Tx)
+                
+                #--- Cast output 
                 try: 
                     Ty = self.tgt.cast(y)
                     return Ty
@@ -74,10 +85,13 @@ class Arrow(Bifunctor):
                 src, tgt = other.src, self.tgt
                 comp = lambda *xs: self(other(*xs))
                 comp.__name__ = f"{self.__name__} . {other.__name__}"
-                return Arr(src, tgt)(comp)
+                return Arrow(src, tgt)(comp)
 
         return TAB
 
     @classmethod
     def name(cls, A, B):
-        return f"{A.__name__} -> {B.__name__}"
+        if isinstance(A, type):
+            return f"{A.__name__} -> {B.__name__}" 
+        input = " -> ".join([Ak.__name__ for Ak in A])
+        return f"{input} -> {B.__name__}"
