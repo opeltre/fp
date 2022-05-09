@@ -1,8 +1,154 @@
-from .functor import Bifunctor
-from .type    import Type, TypeMeta
-from .cartesian import Prod
+from .type      import Type, TypeMeta
+from .functor   import BifunctorMeta, NFunctorMeta
 
-class Arrow(Bifunctor):
+
+class ArrowMeta(BifunctorMeta):
+
+    def __new__(cls, name, bases, dct):
+        Arr = super().__new__(cls, name, bases, dct)
+        Arr.__call__   = cls.call_method(Arr)
+        if not '__matmul__' in dir(Arr):
+            Arr.__matmul__ = cls.matmul_method(Arr)
+        return Arr
+    
+    @staticmethod
+    def source(Arr, xs):
+        """ 
+        Source type and cast result of n-ary input xs for n <= arity. 
+        """
+        #--- Arity check
+        if len(xs) == Arr.arity:
+            src = Arr.src
+        elif len(xs) < Arr.arity:
+            ts  = Arr.src.types[:len(xs)]
+            src = Prod(*ts)
+        else: 
+            raise TypeError(
+                f"{Arr.arity}-ary function called with " + \
+                f"{len(xs)} arguments")
+        try:
+            Tx = src.cast(*xs)
+        except: 
+            input = "(" + ", ".join([str(type(x)) for x in xs]) + ")"
+            raise TypeError(
+                f"Input of type {input} " + \
+                f"not castable to {Arr.src}")
+        return src, Tx
+
+    @staticmethod
+    def target(Arr, y):
+        """ Cast of output y. """
+        try: 
+            Ty = Arr.tgt.cast(y)
+            return Ty
+        except: 
+            raise TypeError(
+                f"Output of type {type(y)} " + \
+                f"not castable to {Arr.tgt}")
+
+    @staticmethod
+    def curry(Arr, f, xs):
+        """ 
+        Curried function applied to n-ary input xs for n < arity. 
+        """
+        if len(xs) < Arr.arity:
+            ts  = Arr.src.types[-(Arr.arity-len(xs)):] 
+            src = tuple(ts) if len(ts) > 1 else ts[0] 
+
+            @Arr.__class__(src, Arr.tgt)
+            def curried(*ys): 
+                print(f"curry {ys}")
+                return f(*xs, *ys)
+            
+            curried.__name__ = (f'{Arr.__name__} '
+                                + ' '.join((str(x) for x in Tx)))
+            return curried
+
+        raise TypeError(
+                f"Cannot curry {Arr.arity} function on " +\
+                f"{len(xs)}-ary input")
+
+    @classmethod
+    def call_method(cls, Arr):
+        print("call_method")
+        
+        def _call_(arrow, *xs):
+            """ 
+            Function application with type checks and curryfication. 
+            """
+            print("_call_")
+            f = arrow.call
+            #--- Input type check
+            src, Tx = cls.source(Arr, xs)           
+            #--- Unary and N-ary call
+            if len(xs) == Arr.arity:
+                y = f(Tx) if len(xs) == 1 else f(*Tx)
+                return cls.target(Arr, y)
+            #--- Curried section 
+            if len(xs) < Arr.arity:
+                return cls.curry(Arr, f, xs)
+        return _call_
+
+    @classmethod
+    def matmul_method(cls, Arr):
+        """ Composition of functions. """
+        def _matmul_(self, other):
+            if not self.src == other.tgt:
+                raise TypeError(f"Uncomposable pair"\
+                        + f"{(self.src, self.tgt)} @"\
+                        + f"{(other.src, other.tgt)}")
+            src, tgt = other.src, self.tgt
+            comp = lambda *xs: self(other(*xs))
+            comp.__name__ = f"{self.__name__} . {other.__name__}"
+            return Arr.__class__(src, tgt)(comp)
+        return _matmul_
+
+
+class Prod(metaclass=NFunctorMeta):
+
+    def __new__(cls, *As):
+
+        class Prod_As(tuple, metaclass=TypeMeta):
+
+            types = As
+
+            def __new__(cls, *xs):
+                if len(xs) != len(cls.types):
+                    raise TypeError( 
+                        f"Invalid number of terms {len(xs)} " +\
+                        f"for {len(cls.types)}-ary product.")
+                elems = [A.cast(v) for A, v in zip(cls.types, xs)]
+                return super().__new__(cls, elems)
+           
+            def __repr__(self):
+                return "(" + ", ".join([str(x) for x in self]) + ")"
+
+            @classmethod
+            def cast(cls, *xs):
+                return cls(*xs)
+                
+        return Prod_As 
+    
+    @classmethod
+    def fmap(cls, *fs):
+        
+        src = cls((f.src for f in fs))
+        tgt = cls((f.tgt for f in fs))
+
+        @Arrow(src, tgt)
+        def map_f(*xs):
+            return tgt(*(f(x) for x, f in zip(xs, fs)))
+
+        map_f.__name__ = "(" + ", ".join((f.__name__ for f in fs)) + ")"
+        return map_f
+
+    @classmethod
+    def name(cls, *As):
+        names = [A.__name__ for A in As]
+        return f"({', '.join(names)})"  
+
+
+class Arrow(metaclass=ArrowMeta):
     
     def __new__(cls, A, B):
 
@@ -18,76 +164,20 @@ class Arrow(Bifunctor):
                     f"Source {A} is not a type nor an iterable of types")
     
             def __init__(self, f):
-                self.__name__ = f.__name__ if f.__name__ else "\u03bb"
+                if not callable(f):
+                    raise TypeError(f"Input is not callable.")
                 self.call = f
+                print(f"-> arrow f")
+                self.__name__ = f.__name__ if f.__name__ else "\u03bb"
 
             def __repr__(self):
                 return self.__name__
 
             def __call__(self, *xs):
-                """ Function application with type checks and curryfication. """
-                
-                #--- Arity check
-                if len(xs) == self.arity:
-                    src = self.src
-                elif len(xs) < self.arity:
-                    t1s  = self.src.types[:len(xs)]
-                    src = Prod(*t1s)
-                else: 
-                    raise TypeError(
-                        f"{self.arity}-ary function called with " + \
-                        f"{len(xs)} arguments")
-               
-                #--- Input type check
-                try:
-                    Tx = src.cast(*xs)
-                except: 
-                    input = " * ".join([str(type(x)) for x in xs])
-                    raise TypeError(
-                        f"Input of type {input} " + \
-                        f"not castable to {self.src}")
-                
-                #--- Curried section 
-                if len(xs) < self.arity:
-                    t2s  = self.src.types[-(self.arity-len(xs)):] 
-                    src2 = tuple(t2s) if len(t2s) > 1 else t2s[0] 
-
-                    @Arrow(src2, self.tgt)
-                    def curried(*ys): 
-                        return self(*xs, *ys)
-                    
-                    curried.__name__ = (f'{self.__name__} '
-                                     + ' '.join((str(x) for x in Tx)))
-                    return curried
-
-                #--- Unary call 
-                if len(xs) == 1 and self.arity == 1:
-                    y = self.call(Tx)
-                #--- N-ary call (Tx :: Prod)
-                elif len(xs) == self.arity:
-                    y = self.call(*Tx)
-                
-                #--- Cast output 
-                try: 
-                    Ty = self.tgt.cast(y)
-                    return Ty
-                except: 
-                    raise TypeError(
-                        f"Output of type {type(y)} " + \
-                        f"not castable to {self.tgt}")
-
-            def __matmul__(self, other):
-                """ Composition of functions. """
-                if not self.src == other.tgt:
-                    raise TypeError(f"Uncomposable pair"\
-                            + f"{(self.src, self.tgt)} @"\
-                            + f"{(other.src, other.tgt)}")
-                src, tgt = other.src, self.tgt
-                comp = lambda *xs: self(other(*xs))
-                comp.__name__ = f"{self.__name__} . {other.__name__}"
-                return Arrow(src, tgt)(comp)
-
+               return self.call(*xs)
+            
         return TAB
+
 
     @classmethod
     def name(cls, A, B):

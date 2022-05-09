@@ -1,9 +1,10 @@
-import abc
+from .type  import TypeMeta
 from .arrow import Arrow
-from .type  import Type, TypeMeta
 
-class AlgMeta(TypeMeta):
-    """ Algebra type class. """
+#--- Numerical types ---
+
+class RingMeta(TypeMeta):
+    """ Ring type class. """
 
     def __new__(cls, name, bases, dct):
         T = super().__new__(cls, name, bases, dct)
@@ -27,29 +28,13 @@ class AlgMeta(TypeMeta):
         _op_.__name__ = op.__name__
         Tn = tuple([T] * arity)
         return Arrow(Tn, T)(_op_)
-        def _op_(x, y):
-            z = op(x, y)
-            return cls.cast(T, z)       
-        return _op_
 
-class Alg(metaclass=AlgMeta):
+class AlgMeta(RingMeta):
 
-    @abc.abstractmethod
-    def __add__(self, other):
-        ...
-
-    @abc.abstractmethod
-    def __sub__(self, other):
-        ...
-    
-    @abc.abstractmethod
-    def __mul__(self, other):
-        ...
-
-    @abc.abstractmethod
-    def __div__(self, other):
-        ...
-
-    @abc.abstractmethod
-    def __neg__(self, other):
-        ...
+    """ Algebra type class. """
+    def __new__(cls, name, bases, dct):
+        T = super().__new__(cls, name, bases, dct)
+        T.__truediv__ = cls.op_method(T, T.__truediv__)
+        div = T.__truediv__
+        div.__name__ = 'div'
+        T.div = div

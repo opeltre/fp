@@ -1,4 +1,4 @@
-from .meta  import Type, Functor, Arrow
+from fp.meta  import Type, Functor, Arrow
 
 class Id (Functor):
     
@@ -18,7 +18,7 @@ class Id (Functor):
     @classmethod
     def fmap(cls, f):
         src, tgt = cls(f.src), cls(f.tgt)
-        return Arrow([src, tgt], f)
+        return Arrow(src, tgt)(f)
 
     @classmethod
     def name(cls, A):

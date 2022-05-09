@@ -1,7 +1,6 @@
 import abc 
 
 from .kind import Kind
-from .type import Type
 
 class FunctorMeta(abc.ABCMeta, metaclass=Kind):
     """ Functor type class. """
@@ -15,7 +14,6 @@ class FunctorMeta(abc.ABCMeta, metaclass=Kind):
         T.types = {}
         T.__new__ = cls.new_method(T.__new__)
         return T
-
 
     @staticmethod
     def new_method(new):
@@ -39,10 +37,24 @@ class FunctorMeta(abc.ABCMeta, metaclass=Kind):
             TA.functor  = cls 
             TA.__name__ = cls.name(*As)
             cls.types[As] = TA
-            # cls.__init__(TA, *As)
+            #cls.__init__(TA, *As)
             return TA
         return _new_
 
+
+class BifunctorMeta(FunctorMeta):
+    
+    kind  = "(*, *) -> *"
+    arity = 2 
+
+    
+class NFunctorMeta(FunctorMeta):
+    
+    kind  = "(*, ...) -> *"
+    arity = 'n'
+
+
+#--- Instances ---
 
 class Functor(metaclass=FunctorMeta):
     """ Functor type class. """
@@ -55,24 +67,9 @@ class Functor(metaclass=FunctorMeta):
     @classmethod
     def name(cls, A):
         return f"{cls.__name__} {A.__name__}"
-
-
-class BifunctorMeta(FunctorMeta):
-    
-    kind  = "(*, *) -> *"
-    arity = 2 
-    
+        
 
 class Bifunctor(metaclass=BifunctorMeta):
-
-    def __init__(TAB, A, B):
-        pass
-
-    def __new__(cls, A, B):
-        class TAB (Type):
-            pass
-        TAB.__name__ = f"{A} -> {B}"
-        return TAB
 
     @classmethod
     def name(cls, A, B):

@@ -1,14 +1,5 @@
-from fp import Type, List, Arrow, Prod, Alg, AlgMeta
-
-
-class Str(str, Type): 
-
-    def __str__(self):
-        return f"'{super().__str__()}'"
-
-
-class Int(int, metaclass=AlgMeta):
-    pass 
+from fp.instances import List, Str, Int
+from fp.meta import Arrow, Prod
 
 x = List(Str)(["abc", "d", "ef"])
 y = List(Int)([0, 1, 2])

@@ -1,7 +1,7 @@
 from .kind import Kind
 
 class TypeMeta(type, metaclass=Kind):
-    """ Type class. """
+    """ Base type class. """
     
     kind = "*" 
 
@@ -32,7 +32,7 @@ class TypeMeta(type, metaclass=Kind):
                 Tx = T(x) 
                 return _cast_(Tx)
             except:
-                raise TypeError(f"*Could not cast {type(x)} to type {T}.")
+                raise TypeError(f"Could not cast {type(x)} to type {T}.")
 
         
         return _cast_
@@ -42,14 +42,7 @@ class TypeMeta(type, metaclass=Kind):
         return f"{self.__name__}"
 
 
+#--- Instances ---
+
 class Type(metaclass=TypeMeta):
-    
-    @classmethod
-    def cast(cls, x):
-        if isinstance(x, cls): 
-            return x
-        try:
-            Tx = cls(x)
-            return cls.cast(Tx)
-        except:
-            raise TypeError(f"Could not cast {type(x)} to type {cls}.") 
+    pass
