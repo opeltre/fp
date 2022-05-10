@@ -1,3 +1,2 @@
-from .meta      import Kind, Type, Functor, Bifunctor
-from .arrow     import Arrow 
-from .instances import Id, List
+from fp.instances import *
+import fp.meta  as meta
