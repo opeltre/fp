@@ -8,4 +8,4 @@ from .functor   import  Functor, FunctorMeta,\
 from .arrow     import ArrowMeta, Arrow, Prod
 
 from .type      import Type, TypeMeta
-from .alg       import RingMeta, AlgMeta
+from .alg       import RingMeta, AlgMeta, Bool
