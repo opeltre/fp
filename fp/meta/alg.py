@@ -25,12 +25,11 @@ class RingMeta(TypeMeta):
             
         if name == "Bool":
             cls.Bool = T
-        print(cls, name)
         if "Bool" in dir(cls):
             eq = T.op_method(T, T.__eq__, tgt=cls.Bool)
             eq.__name__ = 'eq'
             T.eq = Arrow((T, T), cls.Bool)(eq)
-        return T if name != "Bool" else cls.Bool
+        return T
     
     @staticmethod
     def op_method(T, op, tgt=None):
