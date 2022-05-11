@@ -12,7 +12,7 @@ class RingMeta(TypeMeta):
         T.__add__ = cls.op_method(T, T.__add__)
         T.__sub__ = cls.op_method(T, T.__sub__)
         T.__mul__ = cls.op_method(T, T.__mul__)
-        T.__neg__ = cls.op_method(T, T.__neg__)
+        T.__neg__ = cls.op_method(T, T.__neg__, arity=1)
         # operator aliases
         names   = ['add', 'sub', 'mul', 'neg']
         arities = [2] * 3 + [1]
@@ -22,7 +22,7 @@ class RingMeta(TypeMeta):
                     else Arrow(tuple([T] * r), T)(op))
             op.__name__ = n
             setattr(T, n, op)
-            
+        # eq : T -> T -> Bool   
         if name == "Bool":
             cls.Bool = T
         if "Bool" in dir(cls):
@@ -31,11 +31,25 @@ class RingMeta(TypeMeta):
             T.eq = Arrow((T, T), cls.Bool)(eq)
         return T
     
+    def __init__(T, name, bases, dct):
+        pass
+        
     @staticmethod
-    def op_method(T, op, tgt=None):
+    def op_method(T, op, tgt=None, arity=2):
         """ N-ary operator with output cast to target. """
         tgt = tgt if tgt else T
-        _op_ = lambda *xs : tgt.cast(op(*xs))
+        if arity == 1:
+            def _op_(x):
+                y = op(x)
+                return y if isinstance(y, tgt) else tgt.cast(y)
+        elif arity == 2:
+            def _op_(x1, x2):
+                y = op(x1, x2)
+                return y if isinstance(y, tgt) else tgt.cast(y)
+        else: 
+            def _op_(*xs):
+                y = op(*xs)
+                return y if isinstance(y, tgt) else tgt.cast(y)
         _op_.__name__ = op.__name__
         return _op_
 

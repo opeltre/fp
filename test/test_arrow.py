@@ -41,3 +41,7 @@ class TestArrow(unittest.TestCase):
         expect = Arrow(A, A)
         self.assertTrue(expect, result)
         self.assertEqual(pow2(3), A(8))
+
+    def test_untyped(self):
+        add = Arrow((int, int), int)(int.__add__)
+        self.assertEqual(add(2, 3), 5)

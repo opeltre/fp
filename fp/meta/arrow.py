@@ -121,9 +121,14 @@ class Prod(metaclass=NFunctorMeta):
                     raise TypeError( 
                         f"Invalid number of terms {len(xs)} " +\
                         f"for {len(cls.types)}-ary product.")
-                elems = [A.cast(v) for A, v in zip(cls.types, xs)]
+                def cast(A, x): 
+                    return x if isinstance(x, A) else A.cast(x)
+                elems = [cast(A, x) for A, x in zip(cls.types, xs)]
                 return super().__new__(cls, elems)
-           
+            
+            def __init__(self, *xs):
+                pass 
+
             def __repr__(self):
                 return "(" + ", ".join([str(x) for x in self]) + ")"
 
@@ -131,8 +136,11 @@ class Prod(metaclass=NFunctorMeta):
             def cast(cls, *xs):
                 return cls(*xs)
                 
-        return Prod_As 
+        return Prod_As
     
+    def __init__(self, *As):
+        pass
+        
     @classmethod
     def fmap(cls, *fs):
         
@@ -183,6 +191,9 @@ class Arrow(metaclass=ArrowMeta):
         TAB.__matmul__ = cls.matmul_method(Arrow)
 
         return TAB
+
+    def __init__(self, A, B):
+        pass
 
     @classmethod
     def name(cls, A, B):

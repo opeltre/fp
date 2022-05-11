@@ -29,3 +29,6 @@ class TestFunctor(unittest.TestCase):
         y = TA()
         result = T.fmap(f)(y)
         self.assertTrue(result == y)
+
+        # type output equality
+        self.assertTrue(TA == T(A))
