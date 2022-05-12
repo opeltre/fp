@@ -23,4 +23,11 @@ class TestTensor(unittest.TestCase):
             assertClose(self, expect, result)
             self.assertTrue(isinstance(result, Tensor))
 
+    def test_add_curry(self):
+        add_x = Tensor.add(x)
+        result = type(add_x)
+        expect = Arrow(Tensor, Tensor)
+        self.assertEqual(expect, result)
+        assertClose(self, add_x(x), y)
+
     

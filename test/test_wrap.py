@@ -20,4 +20,3 @@ class TestWrap (unittest.TestCase):
         result = Wf(x)
         expect = Wrap(Int)(2)
         self.assertEqual(expect, result)
-        
