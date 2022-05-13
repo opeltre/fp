@@ -8,39 +8,56 @@ x = torch.tensor([0., 1., 2., 3.], dtype=torch.float)
 y = torch.tensor([0., 1., 2., 3.], dtype=torch.double)
 ```
 Types are just a prerequisite for [functorial](https://en.wikipedia.org/wiki/Functor_(functional_programming)) constructs, which have already had a vast diversity of applications in functional languages from container data types to stateful programs design, I/O operations and error handling. 
- 
-## Example
+
+## Installation
+
+```sh
+git clone https://github.com/opeltre/fp && cd fp && pip install .
+```
+
+## Examples
+
+Arrow types:
+```
+>>> foo = Arrow(Str, Int)(len)
+>>> f
+Str -> Int : len
+>>> f("abcde")
+Int : 5
+
+>>> @Arrow(Int, Str)
+... def bar(x): return '|' * x
+
+>>> foo @ bar
+Int -> Int : foo . bar
+
+>>> (bar @ foo)(12)
+Str : '||||||||||||'
+```
+
+List functor: 
 
 ```py
 >>> List
 Functor : List
 >>> type(List)
 Functor : * -> *
->>> type(List(str))
+>>> type(List(Str))
 Type : *
-
->>> Int = Id(int)
->>> x = Int("abc", base=16)
->>> x
-Int : 2748
->>> xs = List(Int)([0.3, 4.3, "8"])
->>> xs
-List Int : [Int : 0, Int : 4, Int : 8]
->>> List(str)("hijkl")
-List str : ['h', 'i', 'j', 'k', 'l']
-
->>> f = Arr(str, int)(len)
->>> f
-str -> int : len
->>> f("abcde")
-5
-
->>> @Arr(str, int)
-... def length(s): return len(s)
-...
-
+```py 
 >>> List.fmap(f)
-List str -> List int : fmap len
+List Str -> List Int : fmap len
 >>> List.fmap(["abc", "de", "f"])
-List int : [3, 2, 1]
+List Int : [3, 2, 1]
+``` 
+
+Wrapped tensors 
+```py
+>>> from fp Tensor
+>>> import torch
+>>> x = Tensor(torch.randn([3]))
+>>> x
+Tensor 	:: [-0.1220, -0.5919, -0.9754]
+>>> Int.add(x)
+Tensor -> Tensor :: add [-0.1220, -0.5919, -0.9754]
 ```
