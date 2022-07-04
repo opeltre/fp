@@ -7,6 +7,8 @@ class FunctorMeta(abc.ABCMeta, metaclass=Kind):
     
     kind    = "* -> *" 
     arity   = 1
+
+    lifts = {}
     
     def __new__(cls, name, bases, dct):
         """ Create a functorial type constructor T: a -> T a. """
@@ -29,15 +31,17 @@ class FunctorMeta(abc.ABCMeta, metaclass=Kind):
                 raise TypeError(
                     f"Wrong kind : could not apply {cls.arity}-ary " +\
                     f"functor {cls} to input {As}")
-            #--- Return type if exists 
+            #--- Return type if it exists 
             if As in cls.types:
                 return cls.types[As]
-            #--- Create new type otherwise 
+            #--- Create and index new type otherwise 
             TA = new(cls, *As)
-            TA.functor  = cls 
-            TA.__name__ = cls.name(*As)
             cls.types[As] = TA
-            #cls.__init__(TA, *As)
+            TA.functor  = cls
+            TA.types    = As 
+            TA.__name__ = cls.name(*As)
+            cls.__init__(TA, *As)
+            #--- 
             return TA
         return _new_
 
@@ -59,11 +63,14 @@ class NFunctorMeta(FunctorMeta):
 class Functor(metaclass=FunctorMeta):
     """ Functor type class. """
 
+    def __init__(self, *xs):
+        pass
+        
     @classmethod
     @abc.abstractmethod
     def fmap(cls, f):
         ...
-
+     
     @classmethod
     def name(cls, A):
         return f"{cls.__name__} {A.__name__}"
