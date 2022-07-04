@@ -49,7 +49,7 @@ class List(Functor):
                 return ("[" + ", ".join([str(x) for x in self]) + "]")
             
         return List_A
-     
+
     @classmethod
     def fmap(cls, f):
         """ List map: (A -> B) -> List A -> List B """

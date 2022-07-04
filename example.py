@@ -15,4 +15,4 @@ barfoo = bar @ foo
 from fp import Tensor
 import torch
 
-x = Tensor(torch.ones([3]))
+x = Tensor.ones([3], dtype=torch.long)
