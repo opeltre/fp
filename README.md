@@ -1,6 +1,6 @@
 # Types in Python
 
-The python language allows some kind of functorial and polymorphic constructs via [metaclasses](https://www.python.org/dev/peps/pep-3115/): they are synonyms of type constructors, allowing to dynamically create types and customize type construction (they provide a functionality somehow close to what [C++ templates](https://www.cplusplus.com/doc/oldtutorial/templates/) would do).
+The python language allows some kind of functorial and polymorphic constructs via [metaclasses](https://www.python.org/dev/peps/pep-3115/): they are synonyms of type constructors, allowing to dynamically create types and customize type construction (providing a functionality somehow close to what [C++ templates](https://www.cplusplus.com/doc/oldtutorial/templates/) would do).
 
 This library constructs a functional type theory inside python's runtime type system, by defining e.g. functor, monad, ... metaclasses and common class instances e.g. Float, Str, List, State, ... including a convenient 
 Tensor API obtained by applying a wrapper monad to the `torch.Tensor` type.
@@ -47,8 +47,8 @@ from fp import Tensor
 import torch
 
 >>> t = Tensor.randn([3])
->>> t.data.dtype
-torch.float32
+>>> t.data.dtype, t.data.device
+(torch.float32, device(type='cpu'))
 >>> Tensor.mul(t)
 Tensor -> Tensor : mul [1.8948, -0.6545, -0.2041]
 ```
