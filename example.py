@@ -12,7 +12,12 @@ bar = Arrow(Int, Str)(lambda n: "|" * n)
 foobar = foo @ bar
 barfoo = bar @ foo
 
-from fp import Tensor
+from fp import Tensor, Tens
 import torch
 
+# permissive tensors
 x = Tensor.ones([3], dtype=torch.long)
+
+# typed tensors
+T = Tens((5,))
+y = T.ones()

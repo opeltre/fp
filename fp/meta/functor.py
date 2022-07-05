@@ -39,7 +39,10 @@ class FunctorMeta(abc.ABCMeta, metaclass=Kind):
             cls.types[As] = TA
             TA.functor  = cls
             TA.types    = As 
-            TA.__name__ = cls.name(*As)
+            if 'name' in dir(cls):
+                TA.__name__ = cls.name(*As)
+            else:
+                TA.__name__ = cls.__name__ + ' ' + ' '.join([str(A) for A in As])
             cls.__init__(TA, *As)
             #--- 
             return TA
@@ -73,7 +76,9 @@ class Functor(metaclass=FunctorMeta):
      
     @classmethod
     def name(cls, A):
-        return f"{cls.__name__} {A.__name__}"
+        return (f"{cls.__name__} {A.__name__}" 
+                if '__name__' in dir(A) else
+                f"{cls.__name__} {A}")
         
 
 class Bifunctor(metaclass=BifunctorMeta):

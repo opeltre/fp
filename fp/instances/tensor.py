@@ -1,8 +1,7 @@
 import torch
-from fp.meta import Arrow, RingMeta, TypeMeta
+from fp.meta import Arrow, RingMeta, TypeMeta, Functor
 from .wrap import Wrap
 
-Tens    = torch.Tensor
 binops  = ['__add__', '__sub__', '__mul__', '__truediv__']
 
 class WrapRing(Wrap):
@@ -11,7 +10,7 @@ class WrapRing(Wrap):
           | {'__neg__': lambda a: Arrow(a, a)}
 
 
-class Tensor(WrapRing(Tens), metaclass=RingMeta):
+class Tensor(WrapRing(torch.Tensor), metaclass=RingMeta):
     
     
     def __repr__(self):
@@ -33,3 +32,40 @@ class Tensor(WrapRing(Tens), metaclass=RingMeta):
     @classmethod
     def rand(cls, ns, **ks):
         return cls(torch.rand(ns, **ks))
+
+
+class Tens(Functor):
+    
+    def __new__(cls, A):
+
+        class TA (WrapRing(torch.Tensor), metaclass=RingMeta):
+            
+            shape = A
+
+            def __repr__(self):
+                return (str(self.data)
+                            .replace("tensor(", "")
+                            .replace("\n       ", "\n")
+                            .replace(")", ""))
+
+            @classmethod
+            def zeros(cls, **ks):
+                return cls(torch.zeros(cls.shape, **ks))
+
+            @classmethod
+            def ones(cls, **ks):
+                return cls(torch.ones(cls.shape, **ks))
+
+            @classmethod
+            def randn(cls, **ks):
+                return cls(torch.randn(cls.shape, **ks))
+
+            @classmethod
+            def rand(cls, **ks):
+                return cls(torch.rand(cls.shape, **ks))
+        
+        return TA
+
+    @classmethod
+    def fmap(cls, f):
+        pass
