@@ -30,16 +30,18 @@ Types are a prerequisite for [functorial](https://en.wikipedia.org/wiki/Functor_
 Type polymorphism (emulated by python metaclasses) is a powerful way to generate sister classes automatically . Just like C++ templates would allow, one can append functionality to 
 existing code in a flexible and robust manner, without repeating code or creating tangled inheritance diagrams. 
 
-## Example
+## Examples
 
 Curried arrows
 ```py
 >>> Int.add
 Int -> Int  -> Int : add
+>>> Int.add(2, 3)
+Int : 5
 >>> Int.add(2)
 Int -> Int  : add 2
->>> Int.add(2, 3) == Int.add(2)(3)
-True
+>>> List.fmap(Int.add(2))([3, 6, 9])
+List Int    : [5, 7, 11]
 ```
 Torch tensors
 ```py
