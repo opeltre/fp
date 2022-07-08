@@ -30,9 +30,12 @@ class Wrap(Functor):
                 elif "cast" in dir(A):
                     self.data = A.cast(data)
                 else:
-                    raise TypeError(
-                        f"Received invalid input {data} : {type(data)} "+\
-                        f"for Wrap {A} instance")
+                    try: 
+                        self.data = A(data)
+                    except:
+                        raise TypeError(
+                            f"Received invalid input {data} : {type(data)} "+\
+                            f"for Wrap {A} instance")
             
             def __repr__(self):
                 return A.__str__(self.data)

@@ -26,5 +26,12 @@ from fp import Linear
 f = Linear(5, 3)(torch.randn([3, 5]))
 g = Linear(3, 5)(f.data.T)
 
-print(f)
-print(f(T.ones()))
+# matrix composition
+fg = f @ g
+# matrix application
+x = Tensor([1, 1, 0])
+fg(x)
+
+from fp import Torus
+
+E = Torus([5, 3])

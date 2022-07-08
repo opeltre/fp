@@ -1,4 +1,7 @@
 from .kind import Kind
+from colorama import init, Style
+
+init()
 
 class TypeMeta(type, metaclass=Kind):
     """ Base type class. """
@@ -17,11 +20,16 @@ class TypeMeta(type, metaclass=Kind):
     @staticmethod
     def repr_method(rep):
         def _rep_(x):
+            tx = f"{type(x)} : "
+            indent = len(tx)
             rx = rep(x)
-            tx = f" {type(x)} \t:: "
-            return (tx + rx if not rx[:len(tx)] == tx else rx)
+            tx = Style.DIM + tx + Style.NORMAL
+            if rx[:len(tx)] == tx:
+                return rx
+            else:
+                return tx + rx.replace("\n", "\n" + " " * indent)
         return _rep_
-        
+
     @staticmethod
     def str_method(rep):
         return lambda x: rep(x)
