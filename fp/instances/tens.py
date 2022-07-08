@@ -1,6 +1,7 @@
 import torch
 
 from .tensor import Tensor
+from .shape  import Torus
 from fp.meta import ArrowMeta, Arrow, Functor
 from fp.meta import RingMeta
 
@@ -8,7 +9,7 @@ class Tens(Functor):
     
     class Scalar (Tensor):
 
-        shape = ()
+        shape = Torus([])
 
         def __repr__(self):
             return (str(self.data)
@@ -31,6 +32,16 @@ class Tens(Functor):
         @classmethod
         def rand(cls, **ks):
             return cls(torch.rand(cls.shape, **ks))
+        
+        @classmethod
+        def range(cls):
+            return(cls(torch.arange(cls.shape.size).view(shape.n)))
+        
+        @classmethod
+        def embed(cls, *ds):
+            res = Torus(cls.shape).res(*ds)
+            src, tgt = res.src, res.tgt
+            return Tens.cofmap(tgt.index @ res @ src.coords)
 
     def __new__(cls, shape):
         name = cls.name(shape)
@@ -47,11 +58,17 @@ class Tens(Functor):
     def fmap(cls, f):
         pass
 
+    
+        
     @classmethod
-    def cofmap(cls, f):
-        pass
-
-
+    def cofmap(cls, f, batch=True):
+        ns, ms = f.src.n, f.tgt.n
+        i = torch.arange(f.src.size)
+        j = (f(i) if batch
+                  else [f(ik) for ik in i])
+        ij  = torch.stack([i.data, j.data])
+        mat = Tensor.sparse([f.src.size, f.tgt.size], ij)
+        return Linear(f.tgt.size, f.src.size)(mat)
 
 class Linear(metaclass=ArrowMeta):
 
@@ -62,7 +79,7 @@ class Linear(metaclass=ArrowMeta):
             functor = Linear
             input = (A, B)
 
-            def __init__(self, matrix, name=f'mat {B} x {A}'):
+            def __init__(self, matrix, name=f'mat {B}x{A}'):
                 cls = self.__class__
                 # Arrow(Tens([A]), Tens([B])) attributes
                 self.call = lambda x : cls.matvec(matrix, x)

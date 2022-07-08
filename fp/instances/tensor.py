@@ -12,9 +12,18 @@ class WrapRing(Wrap):
 
 class Tensor(WrapRing(torch.Tensor), metaclass=RingMeta):
     
+    @classmethod
+    def sparse(cls, shape, indices, values=None):
+        ij  = (indices if isinstance(indices, torch.Tensor)
+                    else torch.tensor(indices, dtype=long))
+        val = (torch.ones([ij.shape[-1]]) if isinstance(values, type(None))
+                    else values)
+        t = torch.sparse_coo_tensor(ij, val, size=shape)
+        return cls(t)
+
     def dim (self):
         return self.data.dim()
-
+   
     def __getitem__(self, idx):
         return Tensor(self.data[idx])
 
@@ -41,3 +50,7 @@ class Tensor(WrapRing(torch.Tensor), metaclass=RingMeta):
     @classmethod
     def rand(cls, ns, **ks):
         return cls(torch.rand(ns, **ks))
+    
+    @classmethod
+    def range(cls, n):
+        return cls(torch.arange(n))

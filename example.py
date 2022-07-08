@@ -35,3 +35,5 @@ fg(x)
 from fp import Torus
 
 E = Torus([5, 3])
+
+pull = Tens.cofmap(E.p(0) @ E.coords)

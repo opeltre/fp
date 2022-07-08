@@ -17,6 +17,8 @@ class BaseShape (Tensor):
     
     @classmethod
     def cast(cls, js):
+        if isinstance(js, Tensor): 
+            return cls.cast(js.data)
         t = (js.long() if isinstance(js, torch.Tensor)
                        else torch.tensor(js, dtype=torch.long))
         return cls(t % cls.ns) 
@@ -73,7 +75,7 @@ class BaseShape (Tensor):
             Tens d Long -> Tens 1 Long
         """
         tgt = Torus([cls.n[d]])
-        proj_d = Arrow(cls, tgt)(lambda x: x[d])
+        proj_d = Arrow(cls, tgt)(lambda x: x.data.select(-1, d))
         proj_d.__name__ = f'p{d}'
         return proj_d
 
