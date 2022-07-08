@@ -19,5 +19,12 @@ import torch
 x = Tensor.ones([3], dtype=torch.long)
 
 # typed tensors
-T = Tens((5,))
+T = Tens([5])
 y = T.ones()
+
+from fp import Linear
+f = Linear(5, 3)(torch.randn([3, 5]))
+g = Linear(3, 5)(f.data.T)
+
+print(f)
+print(f(T.ones()))

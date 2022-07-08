@@ -8,6 +8,10 @@ class RingMeta(TypeMeta):
 
     def __new__(cls, name, bases, dct):
         T = super().__new__(cls, name, bases, dct)
+        return T
+    
+    def __init__(T, name, bases, dct):
+        cls = T.__class__
         # operators
         T.__add__ = cls.op_method(T, T.__add__)
         T.__sub__ = cls.op_method(T, T.__sub__)
@@ -29,11 +33,8 @@ class RingMeta(TypeMeta):
             eq = T.op_method(T, T.__eq__, tgt=cls.Bool)
             eq.__name__ = 'eq'
             T.eq = Arrow((T, T), cls.Bool)(eq)
-        return T
-    
-    def __init__(T, name, bases, dct):
-        pass
-        
+            
+                  
     @staticmethod
     def op_method(T, op, tgt=None, arity=2):
         """ N-ary operator with output cast to target. """

@@ -7,6 +7,7 @@ class ArrowMeta(BifunctorMeta):
     def __new__(cls, name, bases, dct):
         Arr = super().__new__(cls, name, bases, dct)
         Arr.curry = cls.curry_method(Arr)
+        Arr.__new__ = cls.new_method(Arr.__new__)
         if not '__matmul__' in dir(Arr):
             Arr.__matmul__ = cls.matmul_method(Arr)
         return Arr
@@ -74,6 +75,16 @@ class ArrowMeta(BifunctorMeta):
         return curry
 
     @classmethod
+    def new_method(cls, new):
+        def _new_(Arr, *As):
+            TAB = new(Arr, *As)
+            TAB.__call__ = cls.call_method(Arr)
+            TAB.__matmul__ = cls.matmul_method(Arr)
+            TAB.__name__ = Arr.name(*As)
+            return TAB
+        return _new_
+
+    @classmethod
     def call_method(cls, Arr):
         
         def _call_(arrow, *xs):
@@ -101,10 +112,9 @@ class ArrowMeta(BifunctorMeta):
                 raise TypeError(f"Uncomposable pair"\
                         + f"{(self.src, self.tgt)} @"\
                         + f"{(other.src, other.tgt)}")
-            src, tgt = other.src, self.tgt
-            comp = lambda *xs: self(other(*xs))
+            comp = Arr.compose(self, other)
             comp.__name__ = f"{self.__name__} . {other.__name__}"
-            return Arr(src, tgt)(comp)
+            return comp
         return _matmul_
 
 
@@ -187,13 +197,15 @@ class Arrow(metaclass=ArrowMeta):
             def __repr__(self):
                 return self.__name__
 
-        TAB.__call__   = cls.call_method(Arrow)
-        TAB.__matmul__ = cls.matmul_method(Arrow)
-
         return TAB
 
     def __init__(self, A, B):
         pass
+
+    @classmethod
+    def compose(cls, f, g):
+        """ Composition of functions """
+        return cls(g.src, f.tgt)(lambda *xs: f(g(*xs)))
 
     @classmethod
     def name(cls, A, B):

@@ -16,8 +16,12 @@ class TypeMeta(type, metaclass=Kind):
     
     @staticmethod
     def repr_method(rep):
-        return lambda x: f" {type(x)} \t:: " + rep(x)
-
+        def _rep_(x):
+            rx = rep(x)
+            tx = f" {type(x)} \t:: "
+            return (tx + rx if not rx[:len(tx)] == tx else rx)
+        return _rep_
+        
     @staticmethod
     def str_method(rep):
         return lambda x: rep(x)

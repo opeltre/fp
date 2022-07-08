@@ -31,12 +31,14 @@ class FunctorMeta(abc.ABCMeta, metaclass=Kind):
                 raise TypeError(
                     f"Wrong kind : could not apply {cls.arity}-ary " +\
                     f"functor {cls} to input {As}")
+            #--- Convert lists to tuples
+            As = tuple((tuple(A) if isinstance(A, list) else A for A in As))
             #--- Return type if it exists 
             if As in cls.types:
                 return cls.types[As]
             #--- Create and index new type otherwise 
             TA = new(cls, *As)
-            cls.types[As] = TA
+            cls.types[As] = TA 
             TA.functor  = cls
             TA.types    = As 
             if 'name' in dir(cls):
@@ -47,6 +49,12 @@ class FunctorMeta(abc.ABCMeta, metaclass=Kind):
             #--- 
             return TA
         return _new_
+
+    def eq_method(TA, TB):
+        """ Compare functorial types """
+        if not ("functor" in dir(TB) and "types" in dir(TB)):
+            return False
+        return TA.functor == TB.functor and TA.types == TB.types
 
 
 class BifunctorMeta(FunctorMeta):

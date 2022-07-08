@@ -17,33 +17,52 @@ Type : List Str
 >>> x = List(Str)(["hello", "world", "!"])
 
 #-- List functor
->>> f = fp.Arrow(Str, Int)(len)
->>> f
-Str -> Int  : len
+>>> f = Str.len
 >>> List.fmap(f)
 List Str -> List Int : fmap len
 >>> List.fmap(f)(x)
-List Int    : [5, 5, 1]
+List Int : [5, 5, 1]
 ```
 Types are a prerequisite for [functorial](https://en.wikipedia.org/wiki/Functor_(functional_programming)) constructs, which have a vast diversity of applications in functional languages e.g. container data types, stateful programs, (a)synchronous I/O operations, log and error handling..
 
 Type polymorphism (emulated by python metaclasses) is a powerful way to generate sister classes automatically . Just like C++ templates would allow, one can append functionality to 
 existing code in a flexible and robust manner, without repeating code or creating tangled inheritance diagrams. 
 
-## Examples
+## Typed functions
 
-Curried arrows
+Arrow types
+```py
+from fp import Arrow
+
+@Arrow(Int, Str)
+def bar(n):
+    return '|' * n
+
+foo = Arrow(Str, Int)(len)
+```
+Composition
+```py
+>>> foo @ bar
+Int -> Int : foo . bar
+>>> (bar @ foo)(12)
+Str : '||||||||||||'
+```
+
+Automatic curryfication
 ```py
 >>> Int.add
 Int -> Int  -> Int : add
 >>> Int.add(2, 3)
 Int : 5
 >>> Int.add(2)
-Int -> Int  : add 2
+Int -> Int : add 2
 >>> List.fmap(Int.add(2))([3, 6, 9])
-List Int    : [5, 7, 11]
+List Int : [5, 7, 11]
 ```
-Torch tensors
+
+## Typed torch tensors
+
+The (type unsafe) `torch.Tensor` class is wrapped inside the `fp.Tensor` class. This is taken care of by a custom `Wrap` monad lifting algebraic methods e.g. `+, -, *, /` to the wrapper object.
 ```py
 from fp import Tensor
 import torch
@@ -51,6 +70,17 @@ import torch
 >>> t = Tensor.randn([3])
 >>> t.data.dtype, t.data.device
 (torch.float32, device(type='cpu'))
->>> Tensor.mul(t)
-Tensor -> Tensor : mul [1.8948, -0.6545, -0.2041]
+
+# No error raised
+>>> x = Tensor.ones([4])
+>>> Tensor.mul(t) @ Tensor.add(x)
+Tensor -> Tensor : mul [1.8948, -0.6545, -0.2041] . add [1., 1., 1., 1.]
+```
+Specific tensor types are obtained by the `Tens` functor, which is contravariant on domain shapes:
+```py
+from fp import Tens
+
+>>> T = Tens([3])
+>>> T.ones()
+Tens (3,) : [1., 1., 1.]
 ```
