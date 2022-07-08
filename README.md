@@ -60,9 +60,9 @@ Int -> Int : add 2
 List Int : [5, 7, 11]
 ```
 
-## Typed torch tensors
+## Typed tensors
 
-The (type unsafe) `torch.Tensor` class is wrapped inside the `fp.Tensor` class. This is taken care of by a custom `Wrap` monad lifting algebraic methods e.g. `+, -, *, /` to the wrapper object.
+The (type unsafe) `torch.Tensor` class is wrapped inside the `fp.Tensor` class. This is taken care of by a custom `Wrap` monad lifting algebraic methods e.g. `+, -, *` to the wrapping class.
 ```py
 from fp import Tensor
 import torch
@@ -82,5 +82,14 @@ from fp import Tens
 
 >>> T = Tens([3])
 >>> T.ones()
-Tens (3,) : [1., 1., 1.]
+Tens 3 : [1., 1., 1.]
 ```
+Linear maps acting by `n x m` matrices subclass both `Tens([B, A])` and `Arrow(Tens([A]), Tens([B]))`:
+```py
+>>> from fp import Linear
+>>> f = Linear(3, 4).randn()
+>>> f(x)
+Tens 4 : [-5.5333,  2.7625,  3.0484, -1.0863]
+```
+
+
