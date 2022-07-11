@@ -9,6 +9,13 @@ class WrapRing(Wrap):
     lifts = {name     : lambda a: Arrow((a, a), a) for name in binops} \
           | {'__neg__': lambda a: Arrow(a, a)}
 
+    def __new__(cls, A):
+        Wrap_A = super().__new__(cls, A)
+        # torch.tensor is the correct torch.Tensor constructor
+        if A == torch.Tensor:
+            Wrap_A.cast_data = torch.tensor
+        return Wrap_A
+
 
 class Tensor(WrapRing(torch.Tensor), metaclass=RingMeta):
     
@@ -53,4 +60,4 @@ class Tensor(WrapRing(torch.Tensor), metaclass=RingMeta):
     
     @classmethod
     def range(cls, n):
-        return cls(torch.arange(n))
+        return cls(torch.arange(n1))

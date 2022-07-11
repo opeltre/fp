@@ -27,8 +27,9 @@ class Wrap(Functor):
             def __init__(self, data):
                 if isinstance(data, A):
                     self.data = data
-                elif "cast" in dir(A):
-                    self.data = A.cast(data)
+                elif "cast_data" in dir(self.__class__):
+                    print(f'{self.__class__}.cast_data')
+                    self.data = self.__class__.cast_data(data)
                 else:
                     try: 
                         self.data = A(data)

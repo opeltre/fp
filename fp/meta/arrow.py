@@ -144,7 +144,12 @@ class Prod(metaclass=NFunctorMeta):
 
             @classmethod
             def cast(cls, *xs):
-                return cls(*xs)
+                def cast_one(A, x):
+                    if isinstance(x, A): return x
+                    if 'cast' in dir(A): return A.cast(x)
+                    return A(x)
+                ys = [cast_one(A, x) for A, x in zip(cls.types, xs)]
+                return cls(*ys)
                 
         return Prod_As
     

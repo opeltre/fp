@@ -33,7 +33,7 @@ g = Linear([3], [5])(f.data.T)
 # matrix composition
 fg = f @ g
 # matrix application
-x = Tensor([1, 1, 0])
+x = Tensor([1., 1., 0.])
 fg(x)
 
 # functoriality : cosheaf structure

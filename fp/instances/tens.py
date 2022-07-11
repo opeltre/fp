@@ -1,24 +1,32 @@
 import torch
 
-from .tensor import Tensor
+from .tensor import Tensor, WrapRing
 from .shape  import Torus
 from fp.meta import ArrowMeta, Arrow, Functor
 from fp.meta import RingMeta
 
 class Tens(Functor):
     
-    class Scalar (Tensor):
+    class Scalar:
 
         shape  = []
         domain = Torus(shape)
 
+       
         def __init__(self, data):
+            S = self.__class__.shape
+            if isinstance(data, Tensor):
+                data = data.data
             if not isinstance(data, torch.Tensor):
                 data = torch.tensor(data)
-            if list(data.shape) == self.__class__.shape:
+            if S == list(data.shape):
+                self.data = data
+            elif len(data.shape) == 0:
+                self.data = data
+            elif S[-len(data.shape):] == list(data.shape):
                 self.data = data
             else:
-                self.data = data.reshape(self.__class__.shape)
+                self.data = data.reshape(S)
 
         def __repr__(self):
             return (str(self.data)
@@ -77,8 +85,9 @@ class Tens(Functor):
             return cls.embed(*ds).t()
 
     def __new__(cls, shape):
-        name = cls.name(shape)
-        bases, dct = cls.Scalar.__bases__, dict(cls.Scalar.__dict__)
+        name  = cls.name(shape)
+        bases = (Tensor,)
+        dct   = dict(cls.Scalar.__dict__)
         dct['shape']  = list(shape)
         dct['domain'] = Torus(shape)
         TA = RingMeta(name, bases, dct)
