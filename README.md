@@ -68,22 +68,22 @@ The (type unsafe) `torch.Tensor` class is wrapped inside the `fp.Tensor` class. 
 from fp import Tensor
 import torch
 
->>> t = Tensor.randn([3])
->>> t.data.dtype, t.data.device
+>>> x = Tensor.randn([3])
+>>> x.data.dtype, x.data.device
 (torch.float32, device(type='cpu'))
 
 # No error raised
->>> x = Tensor.ones([4])
->>> Tensor.mul(t) @ Tensor.add(x)
+>>> y = Tensor.ones([4])
+>>> Tensor.mul(x) @ Tensor.add(y)
 Tensor -> Tensor : mul [1.8948, -0.6545, -0.2041] . add [1., 1., 1., 1.]
 ```
-Specific tensor types are obtained by the `Tens` functor, which is contravariant on domain shapes:
+Specific tensor types are obtained by the `Tens` type constructor:
 
 ```py
 from fp import Tens
 
->>> T = Tens([3])
->>> T.ones()
+>>> Tx = Tens([3])
+>>> Tx.ones()
 Tens 3 : [1., 1., 1.]
 ```
 Linear maps acting by `n x m` matrices subclass both `Tens([n, m])` and `Arrow(Tens([m]), Tens([n]))`:
@@ -93,9 +93,16 @@ Linear maps acting by `n x m` matrices subclass both `Tens([n, m])` and `Arrow(T
 
 >>> f = Linear([3], [4]).randn()
 >>> f
-Linear 3 -> 4 : mat 4x3
+Linear 3 -> 4 : dense 4x3
+>>> x = Tx.ones()
 >>> f(x)
 Tens 4 : [-5.5333,  2.7625,  3.0484, -1.0863]
 ```
 
+If `f : Torus(A) -> Torus(B)` is an index map, one can define a linear map `Tens.cofmap(f) : Tens(B) -> Tens(A)` by letting `xf[i] = x[f(i)]`.
+The `Tens` type constructor thus defines a contravariant functor on domain shapes.
 
+```
+>>> Txy = Tens([3, 6])
+>>> 
+```
