@@ -99,10 +99,19 @@ Linear 3 -> 4 : dense 4x3
 Tens 4 : [-5.5333,  2.7625,  3.0484, -1.0863]
 ```
 
-If `f : Torus(A) -> Torus(B)` is an index map, one can define a linear map `Tens.cofmap(f) : Tens(B) -> Tens(A)` by letting `xf[i] = x[f(i)]`.
+If `f : Shape(A) -> Shape(B)` is an index map, one can define a linear map `Tens(B) -> Tens(A)` by letting `xf[i] = x[f(i)]`.
 The `Tens` type constructor thus defines a contravariant functor on domain shapes.
 
-```
+```py
 >>> Txy = Tens([3, 6])
->>> 
+#-- Partial integration maps
+>>> p0 = Txy.proj(0)
+>>> p0 = Txy.cofmap(Txy.domain.res(0))
+>>> p0
+Linear 3x6 -> 3 : sparse 3x18 (nnz=18)
+#-- Algebra embeddings 
+>>> j0 = Txy.embed(0)
+>>> j0 = Txy.cofmap(Txy.domain.res(0)).t()
+>>> j0 
+Linear 3 -> 3x6 : sparse 18x3 (nnz=18)
 ```

@@ -126,8 +126,8 @@ class Linear(metaclass=ArrowMeta):
                 # Arrow(Tens([A]), Tens([B])) attributes
                 self.call = lambda x : cls.matvec(matrix, x)
                 if mat.is_sparse:
-                    s = 100 * len(mat.indices()) / mat.numel()
-                    self.__name__ = f'sparse {NB}x{NA} ({s:.2f}%)'
+                    nnz = mat.indices().shape[-1]
+                    self.__name__ = f'sparse {NB}x{NA} (nnz={nnz})'
                 else:
                     self.__name__ = f'dense {NB}x{NA}' 
                
