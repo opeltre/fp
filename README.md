@@ -1,3 +1,10 @@
+# Install
+
+```bash
+git clone 'https://github.com/opeltre/fp'
+cd fp && pip install -r requirements.txt && pip install -e ./
+```
+
 # Types in Python
 
 The python language allows some kind of functorial and polymorphic constructs via [metaclasses](https://www.python.org/dev/peps/pep-3115/): they are synonyms of type constructors, allowing to dynamically create types and customize type construction (providing a functionality somehow close to what [C++ templates](https://www.cplusplus.com/doc/oldtutorial/templates/) would do).
