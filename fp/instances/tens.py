@@ -9,7 +9,16 @@ class Tens(Functor):
     
     class Scalar (Tensor):
 
-        shape = Torus([])
+        shape  = []
+        domain = Torus(shape)
+
+        def __init__(self, data):
+            if not isinstance(data, torch.Tensor):
+                data = torch.tensor(data)
+            if list(data.shape) == self.__class__.shape:
+                self.data = data
+            else:
+                self.data = data.reshape(self.__class__.shape)
 
         def __repr__(self):
             return (str(self.data)
@@ -35,18 +44,43 @@ class Tens(Functor):
         
         @classmethod
         def range(cls):
-            return(cls(torch.arange(cls.shape.size).view(shape.n)))
+            return(cls(torch.arange(cls.domain.size).view(cls.shape)))
         
         @classmethod
         def embed(cls, *ds):
-            res = Torus(cls.shape).res(*ds)
-            src, tgt = res.src, res.tgt
-            return Tens.cofmap(tgt.index @ res @ src.coords)
+            """ Linear embedding Tens B -> Tens A for B subface of A. 
+            
+                This algebra morphishm extends a tensor on the restriction
+                `B = [A[di] for di in ds]` by:
+                    
+                    f_a[di] = f_b[i] for i, di in enumerate(d)
+                    f_a[dj] = 0      for dj not in d
+
+                This is the pullback of the coordinate map `cls.domain.res(*ds)`, 
+                and the linear adjoint of `cls.proj(*ds)`. 
+            """
+            res = cls.domain.res(*ds)
+            return Tens.cofmap(res)
+        
+        @classmethod
+        def proj(cls, *ds):
+            """ Partial integration Tens A -> Tens B for B subface of A. 
+
+                This linear map projects onto tensors of shape
+                `B = [A[di] for di in ds]` by:
+
+                    g_b[xb] = sum_{xa[ds] = xb} g_a[xa]
+                
+                This is the pushforward of the coordinate map `cls.domain.res(*ds)` 
+                (acting on measures), and the adjoint of the algebra morphism `cls.embed(*ds)`.
+            """
+            return cls.embed(*ds).t()
 
     def __new__(cls, shape):
         name = cls.name(shape)
         bases, dct = cls.Scalar.__bases__, dict(cls.Scalar.__dict__)
-        dct['shape'] = shape
+        dct['shape']  = list(shape)
+        dct['domain'] = Torus(shape)
         TA = RingMeta(name, bases, dct)
         return TA
 
@@ -57,45 +91,65 @@ class Tens(Functor):
     @classmethod
     def fmap(cls, f):
         pass
-
-    
         
     @classmethod
     def cofmap(cls, f, batch=True):
         ns, ms = f.src.n, f.tgt.n
+        g = f.tgt.index @ f @ f.src.coords
         i = torch.arange(f.src.size)
-        j = (f(i) if batch
-                  else [f(ik) for ik in i])
+        j = (g(i) if batch
+                  else [g(ik) for ik in i])
         ij  = torch.stack([i.data, j.data])
-        mat = Tensor.sparse([f.src.size, f.tgt.size], ij)
-        return Linear(f.tgt.size, f.src.size)(mat)
+        mat = Tensor.sparse([g.src.size, g.tgt.size], ij)
+        return Linear(ms, ns)(mat)
+
 
 class Linear(metaclass=ArrowMeta):
 
     def __new__(cls, A, B):
-        
-        class LinAB (Tens([B, A]), Arrow(Tens([A]), Tens([B]))):
+
+        NA = int(torch.tensor(A).prod())
+        NB = int(torch.tensor(B).prod())
+
+        class LinAB (Tens([NB, NA]), Arrow(Tens(A), Tens(B))):
             
             functor = Linear
             input = (A, B)
 
-            def __init__(self, matrix, name=f'mat {B}x{A}'):
+            def __init__(self, matrix, name=None):
                 cls = self.__class__
+                 # Tens([B, A]) attributes
+                mat = matrix.data if isinstance(matrix, Tensor) else matrix
+                if mat.is_sparse: mat = mat.coalesce()
+                self.data = mat
+                
                 # Arrow(Tens([A]), Tens([B])) attributes
                 self.call = lambda x : cls.matvec(matrix, x)
-                self.__name__ = name
-                # Tens([B, A]) attributes
-                mat = matrix.data if isinstance(matrix, Tensor) else matrix
-                super().__init__(mat)
-
-            
+                if mat.is_sparse:
+                    s = 100 * len(mat.indices()) / mat.numel()
+                    self.__name__ = f'sparse {NB}x{NA} ({s:.2f}%)'
+                else:
+                    self.__name__ = f'dense {NB}x{NA}' 
+               
+               
             @classmethod
             def matvec (cls, mat, x):
-                if isinstance(x, Tensor):
-                    return mat.data @ x.data
-                elif isinstance(x, torch.Tensor):
-                    return mat.data @ x.data
-            
+                """ Matrix vector product. """
+                if isinstance(x, (Tensor, torch.Tensor)):
+                    sx = list(x.data.shape)
+                    src = list(cls.src.shape)
+                    if sx == [cls.src.domain.size]:
+                        return mat.data @ x.data
+                    elif sx == src:
+                        return mat.data @ x.data.view([-1])
+                    elif sx[-cls.src.domain.dim:] == src:
+                        xT = x.data.view([-1, cls.src.size]).T
+                        return (mat.data @ xT).T
+
+            def t(self):
+                """ Adjoint operator in Linear(B, A). """
+                return Linear(B, A)(self.data.t())
+
             def __repr__(self):
                 return self.__name__
         
@@ -106,10 +160,15 @@ class Linear(metaclass=ArrowMeta):
 
     @classmethod
     def compose (cls, f, g):
-        """ Composition of matrices """
-        return cls(f.tgt.shape[0], g.src.shape[0])(f.data @ g.data)
+        """ Composition of matrices. """
+        if f.data.is_sparse and g.data.is_sparse:
+            data = torch.sparse.mm(f.data, g.data)
+        else:
+            data = f.data @ g.data
+        fg = cls(f.tgt.shape, g.src.shape)(data)
+        return fg
 
     @classmethod
     def name(cls, A, B):
         shape = lambda S : 'x'.join(str(n) for n in S)
-        return f'Linear {A} -> {B}'
+        return f'Linear {shape(A)} -> {shape(B)}'

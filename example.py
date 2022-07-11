@@ -23,8 +23,8 @@ T = Tens([5])
 y = T.ones()
 
 from fp import Linear
-f = Linear(5, 3)(torch.randn([3, 5]))
-g = Linear(3, 5)(f.data.T)
+f = Linear([5], [3])(torch.randn([3, 5]))
+g = Linear([3], [5])(f.data.T)
 
 # matrix composition
 fg = f @ g
@@ -32,8 +32,15 @@ fg = f @ g
 x = Tensor([1, 1, 0])
 fg(x)
 
-from fp import Torus
+# cosheaf structure
+Ta = Tens([2, 3, 6])
+Tba = Ta.proj(0, 2)
+Tab = Ta.embed(0, 2)
+Tb = Tba.tgt
 
-E = Torus([5, 3])
-
-pull = Tens.cofmap(E.p(0) @ E.coords)
+x, y = Ta.randn(), Tb.randn()
+print(repr(Tba))
+print('\n')
+print(Tba(x))
+print('\n')
+print(Tab(y))

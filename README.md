@@ -63,6 +63,7 @@ List Int : [5, 7, 11]
 ## Typed tensors
 
 The (type unsafe) `torch.Tensor` class is wrapped inside the `fp.Tensor` class. This is taken care of by a custom `Wrap` monad lifting algebraic methods e.g. `+, -, *` to the wrapping class.
+
 ```py
 from fp import Tensor
 import torch
@@ -77,6 +78,7 @@ import torch
 Tensor -> Tensor : mul [1.8948, -0.6545, -0.2041] . add [1., 1., 1., 1.]
 ```
 Specific tensor types are obtained by the `Tens` functor, which is contravariant on domain shapes:
+
 ```py
 from fp import Tens
 
@@ -84,10 +86,14 @@ from fp import Tens
 >>> T.ones()
 Tens 3 : [1., 1., 1.]
 ```
-Linear maps acting by `n x m` matrices subclass both `Tens([B, A])` and `Arrow(Tens([A]), Tens([B]))`:
+Linear maps acting by `n x m` matrices subclass both `Tens([n, m])` and `Arrow(Tens([m]), Tens([n]))`:
+
 ```py
 >>> from fp import Linear
->>> f = Linear(3, 4).randn()
+
+>>> f = Linear([3], [4]).randn()
+>>> f
+Linear 3 -> 4 : mat 4x3
 >>> f(x)
 Tens 4 : [-5.5333,  2.7625,  3.0484, -1.0863]
 ```

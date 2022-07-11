@@ -15,6 +15,9 @@ class BaseShape (Tensor):
     rmod = torch.tensor([1])
     size = 1
     
+    def __iter__(self):
+        return self.data.__iter__()
+        
     @classmethod
     def cast(cls, js):
         if isinstance(js, Tensor): 
