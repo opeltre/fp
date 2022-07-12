@@ -7,89 +7,90 @@ from fp.meta import RingMeta
 
 class Tens(Functor):
     
-    class Scalar:
+    def __new__(cls, A):
 
-        shape  = []
-        domain = Torus(shape)
+        class Field_A(Tensor):
 
-       
-        def __init__(self, data):
-            S = self.__class__.shape
-            if isinstance(data, Tensor):
-                data = data.data
-            if not isinstance(data, torch.Tensor):
-                data = torch.tensor(data)
-            if S == list(data.shape):
-                self.data = data
-            elif len(data.shape) == 0:
-                self.data = data
-            elif S[-len(data.shape):] == list(data.shape):
-                self.data = data
-            else:
-                self.data = data.reshape(S)
+            shape  = A
+            domain = Torus(A)
 
-        def __repr__(self):
-            return (str(self.data)
-                        .replace("tensor(", "")
-                        .replace("\n       ", "\n")
-                        .replace(")", ""))
+           
+            def __init__(self, data):
+                S = self.__class__.shape
+                if isinstance(data, Tensor):
+                    data = data.data
+                if not isinstance(data, torch.Tensor):
+                    data = torch.tensor(data)
+                if S == list(data.shape):
+                    self.data = data
+                elif len(data.shape) == 0:
+                    self.data = data
+                elif S[-len(data.shape):] == list(data.shape):
+                    self.data = data
+                else:
+                    self.data = data.reshape(S)
 
-        @classmethod
-        def zeros(cls, **ks):
-            return cls(torch.zeros(cls.shape, **ks))
+            def __repr__(self):
+                return (str(self.data)
+                            .replace("tensor(", "")
+                            .replace("\n       ", "\n")
+                            .replace(")", ""))
 
-        @classmethod
-        def ones(cls, **ks):
-            return cls(torch.ones(cls.shape, **ks))
+            @classmethod
+            def zeros(cls, **ks):
+                return cls(torch.zeros(cls.shape, **ks))
 
-        @classmethod
-        def randn(cls, **ks):
-            return cls(torch.randn(cls.shape, **ks))
+            @classmethod
+            def ones(cls, **ks):
+                return cls(torch.ones(cls.shape, **ks))
 
-        @classmethod
-        def rand(cls, **ks):
-            return cls(torch.rand(cls.shape, **ks))
-        
-        @classmethod
-        def range(cls):
-            return(cls(torch.arange(cls.domain.size).view(cls.shape)))
-        
-        @classmethod
-        def embed(cls, *ds):
-            """ Linear embedding Tens B -> Tens A for B subface of A. 
+            @classmethod
+            def randn(cls, **ks):
+                return cls(torch.randn(cls.shape, **ks))
+
+            @classmethod
+            def rand(cls, **ks):
+                return cls(torch.rand(cls.shape, **ks))
             
-                This algebra morphishm extends a tensor on the restriction
-                `B = [A[di] for di in ds]` by:
-                    
-                    f_a[di] = f_b[i] for i, di in enumerate(d)
-                    f_a[dj] = 0      for dj not in d
-
-                This is the pullback of the coordinate map `cls.domain.res(*ds)`, 
-                and the linear adjoint of `cls.proj(*ds)`. 
-            """
-            res = cls.domain.res(*ds)
-            return Tens.cofmap(res)
-        
-        @classmethod
-        def proj(cls, *ds):
-            """ Partial integration Tens A -> Tens B for B subface of A. 
-
-                This linear map projects onto tensors of shape
-                `B = [A[di] for di in ds]` by:
-
-                    g_b[xb] = sum_{xa[ds] = xb} g_a[xa]
+            @classmethod
+            def range(cls):
+                return(cls(torch.arange(cls.domain.size).view(cls.shape)))
+            
+            @classmethod
+            def embed(cls, *ds):
+                """ Linear embedding Tens B -> Tens A for B subface of A. 
                 
-                This is the pushforward of the coordinate map `cls.domain.res(*ds)` 
-                (acting on measures), and the adjoint of the algebra morphism `cls.embed(*ds)`.
-            """
-            return cls.embed(*ds).t()
+                    This algebra morphishm extends a tensor on the restriction
+                    `B = [A[di] for di in ds]` by:
+                        
+                        f_a[di] = f_b[i] for i, di in enumerate(d)
+                        f_a[dj] = 0      for dj not in d
 
-    def __new__(cls, shape):
-        name  = cls.name(shape)
+                    This is the pullback of the coordinate map `cls.domain.res(*ds)`, 
+                    and the linear adjoint of `cls.proj(*ds)`. 
+                """
+                res = cls.domain.res(*ds)
+                return Tens.cofmap(res)
+            
+            @classmethod
+            def proj(cls, *ds):
+                """ Partial integration Tens A -> Tens B for B subface of A. 
+
+                    This linear map projects onto tensors of shape
+                    `B = [A[di] for di in ds]` by:
+
+                        g_b[xb] = sum_{xa[ds] = xb} g_a[xa]
+                    
+                    This is the pushforward of the coordinate map `cls.domain.res(*ds)` 
+                    (acting on measures), and the adjoint of the algebra morphism `cls.embed(*ds)`.
+                """
+                return cls.embed(*ds).t()
+
+        name  = cls.name(A)
         bases = (Tensor,)
-        dct   = dict(cls.Scalar.__dict__)
-        dct['shape']  = list(shape)
-        dct['domain'] = Torus(shape)
+        dct = dict(Field_A.__dict__)
+        dct['shape']  = list(A)
+        dct['domain'] = Torus(A)
         TA = RingMeta(name, bases, dct)
         return TA
 

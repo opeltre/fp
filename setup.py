@@ -14,5 +14,7 @@ setup(
     url     ='https://github.com/opeltre/fp',
     license ='MIT',
     install_requires=requirements,
-    packages = ['fp']
+    packages = ['fp',
+                'fp.meta', 
+                'fp.instances']
 )
