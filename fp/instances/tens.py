@@ -149,10 +149,12 @@ class Linear(metaclass=ArrowMeta):
                     sx = list(x.data.shape)
                     src = list(cls.src.shape)
                     if sx == [cls.src.domain.size]:
+                        if torch.is_complex(mat.data) and not torch.is_complex(x.data):
+                            return tgt.field(mat.data @ x.data.cfloat())
                         return mat.data @ x.data
                     elif sx == src:
                         return mat.data @ x.data.view([-1])
-                    elif sx[-cls.src.domain.dim:] == src:
+                    elif sx[-len(src):] == src:
                         xT = x.data.view([-1, cls.src.size]).T
                         return (mat.data @ xT).T
 
