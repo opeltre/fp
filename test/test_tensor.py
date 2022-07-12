@@ -23,6 +23,11 @@ class TestTensor(unittest.TestCase):
             assertClose(self, expect, result)
             self.assertTrue(isinstance(result, Tensor))
 
+    def test_cast(self):
+        result = Tensor(1).data
+        expect = torch.ones([])
+        self.assertTrue((expect - result) == 0)
+
     def test_add_curry(self):
         add_x = Tensor.add(x)
         result = type(add_x)

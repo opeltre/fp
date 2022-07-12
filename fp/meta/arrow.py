@@ -82,7 +82,7 @@ class ArrowMeta(BifunctorMeta):
             TAB.__matmul__ = cls.matmul_method(Arr)
             TAB.__name__ = Arr.name(*As)
             return TAB
-        return _new_
+        return super().new_method(_new_)
 
     @classmethod
     def call_method(cls, Arr):
@@ -182,7 +182,7 @@ class Arrow(metaclass=ArrowMeta):
         class TAB (Type):
 
             functor = Arrow
-            input   = (A, B)
+            types   = (A, B)
             
             if isinstance(A, type):
                 src, tgt, arity = (A, B, 1)
