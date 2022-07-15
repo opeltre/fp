@@ -77,8 +77,17 @@ class TypeVar(TypeMeta):
                         return None
                 return out
             return None
+
+        def substitute(matches):
+            if 'functor' not in dir(A): 
+                return matches[A.__name__]
+            types = []
+            for Ai in A.types: 
+                types.append(Ai.substitute(matches) if isinstance(Ai, TypeVar) else Ai)
+            return A.functor(*types)
         
         A.match = match
+        A.substitute = substitute
         return A
     
     def __init__(self, name, bases=()):
