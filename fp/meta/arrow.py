@@ -3,11 +3,25 @@ from .functor   import BifunctorMeta, NFunctorMeta
 
 
 class ArrowMeta(BifunctorMeta):
+    """
+    Type constructor for arrow bifunctors. 
 
+    An `Arrow(A, B)` object f implements:
+
+        f.src        = A 
+        f.tgt        = B 
+
+        f.__matmul__ : Arrow(B, C) -> Arrow(A, C)
+    
+        f.arity      : Int (default 1)
+
+    Arrows of a concrete category moreover 
+    implement a `.__call__` method. 
+    """
     def __new__(cls, name, bases, dct):
         Arr = super().__new__(cls, name, bases, dct)
-        Arr.curry = cls.curry_method(Arr)
         Arr.__new__ = cls.new_method(Arr.__new__)
+        Arr.curry = cls.curry_method(Arr)
         if not '__matmul__' in dir(Arr):
             Arr.__matmul__ = cls.matmul_method(Arr)
         return Arr
@@ -93,7 +107,7 @@ class ArrowMeta(BifunctorMeta):
             """
             f = arrow.call
             #--- Input type check
-            src, Tx = cls.source(arrow, xs)           
+            src, Tx = cls.source(arrow, xs) 
             #--- Unary and N-ary call
             if len(xs) == arrow.arity:
                 y = f(Tx) if len(xs) == 1 else f(*Tx)
@@ -102,7 +116,7 @@ class ArrowMeta(BifunctorMeta):
             if len(xs) < arrow.arity:
                 return Arr.curry(arrow, xs)
 
-        return _call_
+        return _call_ if cls.arity > 0 else (lambda arrow : None)
 
     @classmethod
     def matmul_method(cls, Arr):

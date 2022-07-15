@@ -1,6 +1,7 @@
 import abc 
 
 from .kind import Kind
+from .type import TypeVar
 
 class FunctorMeta(abc.ABCMeta, metaclass=Kind):
     """ Functor type class. """
@@ -32,12 +33,17 @@ class FunctorMeta(abc.ABCMeta, metaclass=Kind):
                     f"Wrong kind : could not apply {cls.arity}-ary " +\
                     f"functor {cls} to input {As}")
             #--- Convert lists to tuples
-            As = tuple((tuple(A) if isinstance(A, list) else A for A in As))
+            As = tuple(cls.parse_type(A) for A in As)
             #--- Return type if it exists 
             if As in cls.types:
                 return cls.types[As]
+            #--- Return type variable if one type is a parameter
+            variable = any(isinstance(A, TypeVar) for A in As)
+            if variable:
+                TA = TypeVar(cls.name(*As))
             #--- Create and index new type otherwise 
-            TA = new(cls, *As)
+            else: 
+                TA = new(cls, *As)
             cls.types[As] = TA 
             TA.functor  = cls
             TA.types    = As 
@@ -49,6 +55,15 @@ class FunctorMeta(abc.ABCMeta, metaclass=Kind):
             #--- 
             return TA
         return _new_
+
+    @classmethod
+    def parse_type(cls, A):
+        if isinstance(A, list): 
+            return tuple(A)
+        if isinstance(A, str):
+            return TypeVar(A)
+        else:
+            return A
 
     def eq_method(TA, TB):
         """ Compare functorial types """

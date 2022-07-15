@@ -7,5 +7,5 @@ from .functor   import  Functor, FunctorMeta,\
 
 from .arrow     import ArrowMeta, Arrow, Prod
 
-from .type      import Type, TypeMeta
+from .type      import Type, TypeMeta, TypeVar
 from .alg       import RingMeta, AlgMeta, Bool

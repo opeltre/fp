@@ -53,7 +53,38 @@ class TypeMeta(type, metaclass=Kind):
         return f"{self.__name__}"
 
 
+#--- Type variables ---
+
+class TypeVar(TypeMeta):
+
+    def __new__(cls, name):
+        A = super().__new__(cls, name, (), {})
+        A.functor   = None
+        A.types     = (name,)
+        A.variables = [name]
+
+        def match(B): 
+            if A.functor == None:
+                return {name: B}
+            if A.functor == B.functor and len(A.types) == len(B.types):
+                out = {}
+                for Ai, Bi in zip(A.types, B.types):
+                    if isinstance(Ai, TypeVar):
+                        mi = Ai.match(Bi)
+                        if mi == None: return None
+                        out |= mi
+                return out
+            return None
+        
+        A.match = match
+        return A
+    
+    def __init__(self, name):
+        pass
+
+
 #--- Instances ---
 
 class Type(metaclass=TypeMeta):
     pass
+

@@ -45,3 +45,29 @@ class TestArrow(unittest.TestCase):
     def test_untyped(self):
         add = Arrow((int, int), int)(int.__add__)
         self.assertEqual(add(2, 3), 5)
+
+
+class TestAbstractArrow(unittest.TestCase):
+
+    class Order(Arrow): 
+
+        def __new__(cls, A, B, data=None): 
+            
+            class TAB(Arrow(A, B)):
+
+                arity = 0
+
+                def __init__(self, data=None):
+                    super().__init__(lambda : None)
+                    self.data = data
+
+        @classmethod
+        def name(cls, A, B):
+            return f'{A} > {B}'
+
+    def test_abstract_arrow(self):
+        Order = self.__class__.Order
+        ab = Order('a', 'b')
+
+
+    
