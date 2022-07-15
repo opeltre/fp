@@ -32,18 +32,12 @@ class FunctorMeta(abc.ABCMeta, metaclass=Kind):
                 raise TypeError(
                     f"Wrong kind : could not apply {cls.arity}-ary " +\
                     f"functor {cls} to input {As}")
-            #--- Convert lists to tuples
             As = tuple(cls.parse_type(A) for A in As)
             #--- Return type if it exists 
             if As in cls.types:
                 return cls.types[As]
-            #--- Return type variable if one type is a parameter
-            variable = any(isinstance(A, TypeVar) for A in As)
-            if variable:
-                TA = TypeVar(cls.name(*As))
             #--- Create and index new type otherwise 
-            else: 
-                TA = new(cls, *As)
+            TA = new(cls, *As)
             cls.types[As] = TA 
             TA.functor  = cls
             TA.types    = As 
@@ -52,8 +46,9 @@ class FunctorMeta(abc.ABCMeta, metaclass=Kind):
             else:
                 TA.__name__ = cls.__name__ + ' ' + ' '.join([str(A) for A in As])
             cls.__init__(TA, *As)
-            #--- 
-            return TA
+            #--- Return type variable if one type is a parameter
+            var = any(isinstance(A, TypeVar) for A in As)
+            return TA if not var else TypeVar(TA.__name__, (TA,))
         return _new_
 
     @classmethod

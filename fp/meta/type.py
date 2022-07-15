@@ -57,15 +57,15 @@ class TypeMeta(type, metaclass=Kind):
 
 class TypeVar(TypeMeta):
 
-    def __new__(cls, name):
-        A = super().__new__(cls, name, (), {})
-        A.functor   = None
-        A.types     = (name,)
+    def __new__(cls, name, bases=()):
+        A = super().__new__(cls, name, bases, {})
         A.variables = [name]
 
         def match(B): 
-            if A.functor == None:
+            if 'functor' not in dir(A):
                 return {name: B}
+            if 'functor' not in dir(B): 
+                return None
             if A.functor == B.functor and len(A.types) == len(B.types):
                 out = {}
                 for Ai, Bi in zip(A.types, B.types):
@@ -73,13 +73,15 @@ class TypeVar(TypeMeta):
                         mi = Ai.match(Bi)
                         if mi == None: return None
                         out |= mi
+                    elif Ai != Bi:
+                        return None
                 return out
             return None
         
         A.match = match
         return A
     
-    def __init__(self, name):
+    def __init__(self, name, bases=()):
         pass
 
 

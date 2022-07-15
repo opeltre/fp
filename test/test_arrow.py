@@ -46,28 +46,36 @@ class TestArrow(unittest.TestCase):
         add = Arrow((int, int), int)(int.__add__)
         self.assertEqual(add(2, 3), 5)
 
+#--- Abstract arrows 
+
+class Order(Arrow): 
+
+    def __new__(cls, A, B):
+       
+        TAB = super().__new__(cls, A, B)
+        TAB.arity = 0
+        
+        def _init_(self, data=None):
+            self.call = lambda : None
+            self.data = data
+
+        def _new_(Tab, data=None):
+            return super().__new__(Tab, lambda:None)
+
+        TAB.__init__ = _init_
+        TAB.__new__ = _new_
+
+        return TAB
+
+    def __init__(self, A, B):
+        pass
+
+    @classmethod
+    def name(cls, *As):
+        return " > ".join(str(A) for A in As)
+
 
 class TestAbstractArrow(unittest.TestCase):
 
-    class Order(Arrow): 
-
-        def __new__(cls, A, B, data=None): 
-            
-            class TAB(Arrow(A, B)):
-
-                arity = 0
-
-                def __init__(self, data=None):
-                    super().__init__(lambda : None)
-                    self.data = data
-
-        @classmethod
-        def name(cls, A, B):
-            return f'{A} > {B}'
-
     def test_abstract_arrow(self):
-        Order = self.__class__.Order
         ab = Order('a', 'b')
-
-
-    
