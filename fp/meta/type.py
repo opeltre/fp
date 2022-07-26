@@ -11,7 +11,7 @@ class TypeMeta(type, metaclass=Kind):
     def __new__(cls, name, bases, dct):
         """ Create a new type. """
         T = super().__new__(cls, name, bases, dct)
-        T.__str__  = cls.str_method(T.__repr__)
+        T.__str__  = cls.str_method(T.__str__)
         T.__repr__ = cls.repr_method(T.__repr__)
         if not "cast" in dir(T):
             T.cast = cls.cast_method(T)
@@ -31,8 +31,8 @@ class TypeMeta(type, metaclass=Kind):
         return _rep_
 
     @staticmethod
-    def str_method(rep):
-        return lambda x: rep(x)
+    def str_method(show):
+        return lambda x: show(x)
     
     @staticmethod
     def cast_method(T):
