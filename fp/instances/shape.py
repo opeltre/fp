@@ -133,6 +133,7 @@ class Torus (Functor):
         SA.dim = len(A)
         SA.n   = list(A)
         SA.ns  = torch.tensor(A)
+        SA.shape = SA.n
         SA.mod = torch.tensor([
             torch.prod(TA[i+1:]) for i in range(d)
         ])
