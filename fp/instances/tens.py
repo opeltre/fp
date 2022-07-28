@@ -21,7 +21,7 @@ class Tens(Functor):
                     data = data.data
                 if not isinstance(data, torch.Tensor):
                     data = torch.tensor(data)
-                if S == list(data.shape):
+                if S == tuple(data.shape) or S == list(data.shape):
                     self.data = data
                 elif len(data.shape) == 0:
                     self.data = data
@@ -157,6 +157,21 @@ class Linear(metaclass=ArrowMeta):
                     elif sx[-len(src):] == src:
                         xT = x.data.view([-1, cls.src.size]).T
                         return (mat.data @ xT).T
+            
+            def __mul__(self, other):
+                if isinstance(other, (int, float)):
+                    return self.__class__(self.data * other, name=f'{other} * {self.__name__}')
+                if isinstance(other, torch.Tensor) and other.numel() == 1:
+                    return self.__class__(self.data * other, name=f'{other} * {self.__name__}')
+                return super().__mul__(other)
+
+            def __rmul__(self, other):
+                if isinstance(other, (int, float)):
+                    return self.__mul__(other)
+                if isinstance(other, torch.Tensor) and other.numel() == 1:
+                    return self.__mul__(other)
+                return super().__rmul__(other)
+
 
             def t(self):
                 """ Adjoint operator in Linear(B, A). """

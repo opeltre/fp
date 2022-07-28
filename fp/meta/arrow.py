@@ -122,6 +122,8 @@ class ArrowMeta(BifunctorMeta):
     def matmul_method(cls, Arr):
         """ Composition of functions. """
         def _matmul_(self, other):
+            """ Composition """
+            # arrow 
             if 'tgt' in dir(other):
                 if self.src == other.tgt:
                     comp = Arr.compose(self, other)
@@ -130,6 +132,7 @@ class ArrowMeta(BifunctorMeta):
                 raise TypeError(f"Uncomposable pair"\
                         + f"{(self.src, self.tgt)} @"\
                         + f"{(other.src, other.tgt)}")
+            # apply to input
             out = self(other)
             return out
         return _matmul_

@@ -120,6 +120,9 @@ class BaseShape (Tensor):
 class Torus (Functor):
 
     def __new__(cls, A):
+        
+        if isinstance(A, type(None)):
+            A = [] 
 
         d = len(A)
         TA = torch.tensor(A)
@@ -160,6 +163,8 @@ class Torus (Functor):
 
     @classmethod
     def name(cls, ns):
+        if isinstance(ns, type(None)):
+            return f'Torus .'
         return f'Torus {"x".join(str(n) for n in ns)}'
 
     def __iter__(self):
