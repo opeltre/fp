@@ -148,15 +148,18 @@ class Linear(metaclass=ArrowMeta):
                 if isinstance(x, (Tensor, torch.Tensor)):
                     sx = list(x.data.shape)
                     src = list(cls.src.shape)
+                    M, X = mat.data, x.data
                     if sx == [cls.src.domain.size]:
-                        if torch.is_complex(mat.data) and not torch.is_complex(x.data):
-                            return tgt.field(mat.data @ x.data.cfloat())
-                        return mat.data @ x.data
+                        if torch.is_complex(M) and not torch.is_complex(X):
+                            return M @ X.cfloat()
+                        if M.is_floating_point() and not X.is_floating_point():
+                            return M @ X.float()
+                        return M @ X
                     elif sx == src:
-                        return mat.data @ x.data.view([-1])
+                        return M @ X.view([-1])
                     elif sx[-len(src):] == src:
-                        xT = x.data.view([-1, cls.src.size]).T
-                        return (mat.data @ xT).T
+                        xT = X.view([-1, cls.src.size]).T
+                        return (M @ xT).T
             
             def __mul__(self, other):
                 if isinstance(other, (int, float)):
