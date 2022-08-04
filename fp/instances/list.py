@@ -36,15 +36,19 @@ class List(Functor):
                     allA = (0 == sum((not isinstance(x, A) for x in xs)))
                     if allA:
                         return super().__init__(xs)
-                    try: 
-                        return super().__init__([A(x) for x in xs])
-                    except:
-                        pass
+                    if 'cast' in dir(A):
+                        try:
+                            return super().__init__([A.cast(x) for x in xs])
+                        except:
+                            pass
                 raise TypeError(
                     f"Could not cast {type(xs).__name__} " +\
                     f"to {self.__class__.__name__}")
             
-            
+            @classmethod
+            def cast(cls, xs):
+                return cls(xs)
+
             def __repr__(self):
                 return ("[" + ", ".join([str(x) for x in self]) + "]")
             
