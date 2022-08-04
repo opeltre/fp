@@ -42,6 +42,16 @@ class Tensor(WrapRing(torch.Tensor), metaclass=RingMeta):
     def __len__(self):
         return int(torch.tensor(self.data.shape).prod())
 
+    #--- right actions ---
+
+    def __rmul__(self, other):
+        return self.__mul__(other)
+
+    def __radd__(self, other):
+        return self.__add__(other)
+
+    #--- constructors --- 
+
     @classmethod
     def zeros(cls, ns, **ks):
         return cls(torch.zeros(ns, **ks))
