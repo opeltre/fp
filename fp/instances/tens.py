@@ -149,14 +149,18 @@ class Linear(metaclass=ArrowMeta):
                     sx = list(x.data.shape)
                     src = list(cls.src.shape)
                     M, X = mat.data, x.data
+                    # cast dtype
+                    if torch.is_complex(M) and not torch.is_complex(X):
+                        X = X.complex()
+                    if M.is_floating_point() and not X.is_floating_point():
+                        X = X.float()
+                    # apply to 1d vector
                     if sx == [cls.src.domain.size]:
-                        if torch.is_complex(M) and not torch.is_complex(X):
-                            return M @ X.cfloat()
-                        if M.is_floating_point() and not X.is_floating_point():
-                            return M @ X.float()
                         return M @ X
+                    # apply to tensor
                     elif sx == src:
                         return M @ X.view([-1])
+                    # apply to last dims of tensor
                     elif sx[-len(src):] == src:
                         xT = X.view([-1, cls.src.size]).T
                         return (M @ xT).T
