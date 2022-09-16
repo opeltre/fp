@@ -8,7 +8,7 @@ x = Tensor(torch.ones([3]))
 y = Tensor(2 * torch.ones([3]))
 
 def assertClose(test, x, y):
-    return test.assertTrue((x.data - y.data).norm() < 1e-7)
+    return test.assertTrue((x.data.float() - y.data.float()).norm() < 1e-7)
 
 class TestTensor(unittest.TestCase):
     
@@ -22,6 +22,15 @@ class TestTensor(unittest.TestCase):
         for result in [Tensor.add(x, y), x + y]:
             assertClose(self, expect, result)
             self.assertTrue(isinstance(result, Tensor))
+
+    def test_otimes(self):
+        u = Tensor.range(3)
+        v = Tensor.range(4) + 1
+        expect = Tensor([[0, 0, 0, 0], 
+                         [1, 2, 3, 4], 
+                         [2, 4, 6, 8]])
+        result = u.otimes(v)
+        assertClose(self, expect, result)
 
     def test_cast(self):
         result = Tensor(1).data

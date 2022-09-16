@@ -36,6 +36,22 @@ class Tens(Functor):
                             .replace("\n       ", "\n")
                             .replace(")", ""))
 
+            def otimes(self, other):
+                """ 
+                Tensor product of two instances.
+
+                The tensor product xy of vectors x and y is defined by:
+
+                    xy[i, j] = x[i] * y[j]
+
+                In general, if x : Tens(A) and y : Tens(B) then xy 
+                is of type Tens([*A, *B])
+                """
+                TA, TB = self.__class__, other.__class__
+                TAB = cls([*TA.shape, *TB.shape])
+                xy = Tensor.otimes(self, other)
+                return TAB(xy)
+                
             @classmethod
             def zeros(cls, **ks):
                 return cls(torch.zeros(cls.shape, **ks))
