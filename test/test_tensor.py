@@ -29,7 +29,7 @@ class TestTensor(unittest.TestCase):
         expect = Tensor([[0, 0, 0, 0], 
                          [1, 2, 3, 4], 
                          [2, 4, 6, 8]])
-        result = u.otimes(v)
+        result = Tensor.otimes(u, v)
         assertClose(self, expect, result)
 
     def test_cast(self):
