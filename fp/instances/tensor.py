@@ -34,10 +34,13 @@ class Tensor(WrapRing(torch.Tensor), metaclass=RingMeta):
     def __getitem__(self, idx):
         return Tensor(self.data[idx])
 
-    def __repr__(self):
+    def __str__(self):
         return (str(self.data).replace("tensor(", "")
                               .replace("\n       ", "\n")
                               .replace(")", ""))
+
+    def __repr__(self):
+        return str(self)
     
     def __len__(self):
         return int(torch.tensor(self.data.shape).prod())

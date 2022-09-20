@@ -30,12 +30,6 @@ class Tens(Functor):
                 else:
                     self.data = data.reshape(S)
 
-            def __repr__(self):
-                return (str(self.data)
-                            .replace("tensor(", "")
-                            .replace("\n       ", "\n")
-                            .replace(")", ""))
-
             def otimes(self, other):
                 """ 
                 Tensor product of two instances.
