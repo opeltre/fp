@@ -236,5 +236,9 @@ class Arrow(metaclass=ArrowMeta):
     def name(cls, A, B):
         if isinstance(A, type):
             return f"{A.__name__} -> {B.__name__}" 
-        input = " -> ".join([Ak.__name__ for Ak in A])
-        return f"{input} -> {B.__name__}"
+        elif isinstance(A, (tuple, list)):
+            input = " -> ".join([Ak.__name__ for Ak in A])
+            return f"{input} -> {B.__name__}"
+        elif '__name__' in dir(A) and '__name__' in dir(B):
+            return f"{A.__name__} -> {B.__name__}"
+        return f"A -> B"
