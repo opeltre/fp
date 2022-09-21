@@ -189,7 +189,6 @@ class Linear(metaclass=ArrowMeta):
                     return self.__mul__(other)
                 return super().__rmul__(other)
 
-
             def t(self):
                 """ Adjoint operator in Linear(B, A). """
                 return Linear(B, A)(self.data.t())
@@ -201,6 +200,26 @@ class Linear(metaclass=ArrowMeta):
 
     def __init__(self, A, B):
         pass
+    
+    @classmethod
+    def otimes(cls, f, g):
+        """ Tensor product of matrices. """
+        if f.data.is_sparse and g.data.is_sparse:
+            # input sparse matrices
+            F, G = f.data.coalesce(), g.data.coalesce()
+            Ng, Mg = G.shape
+            Nf, Mf = F.shape
+            # tensor product on indices
+            ij, ab = F.indices(), G.indices()
+            Vf, Vg = F.values(), G.values()
+            IJ = ij.repeat_interleave(ab.shape[1], 1)
+            AB = ab.repeat(1, ij.shape[1])
+            XY = torch.tensor([Ng, Mg])[:,None] * IJ + AB
+            val = (Vf.repeat_interleave(Vg.shape[0], 0) * Vg.repeat(Vf.shape[0]))
+            # output sparse matrix
+            shape = [Nf * Ng, Mf * Mg]
+            data = torch.sparse_coo_tensor(XY, val, shape, device=F.device)
+            return data
 
     @classmethod
     def compose (cls, f, g):
