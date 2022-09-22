@@ -125,9 +125,27 @@ class Tens(Functor):
 
 
 class Linear(metaclass=ArrowMeta):
+    """ 
+    Linear maps types, containing dense or sparse matrices.
+
+    The homtype `Linear(A, B)` represents the category structure 
+    on linear spaces obtained by the `Tens` constructor.
+
+    The arguments `A` and `B` can either be given as tensor shapes 
+    or as associated tensor types e.g. 
+
+        A, B = Tens([2, 3]), Tens([4])
+        assert Linear(A, B) == Linear([2, 3], [4])
+
+    Linear map instances inherit from the Arrow class, overriding 
+    composition and application by matrix-matrix and matrix-vector 
+    products respectively.   
+    """
 
     def __new__(cls, A, B):
 
+        if isinstance(A, RingMeta): A = A.shape
+        if isinstance(B, RingMeta): B = B.shape
         NA = int(torch.tensor(A).prod())
         NB = int(torch.tensor(B).prod())
 
@@ -245,6 +263,8 @@ class Linear(metaclass=ArrowMeta):
 
     @classmethod
     def name(cls, A, B):
+        if isinstance(A, RingMeta): A = A.shape
+        if isinstance(B, RingMeta): B = B.shape
         shape = lambda S : 'x'.join(str(n) for n in S)
         return f'Linear {shape(A)} -> {shape(B)}'
 
@@ -259,6 +279,9 @@ class Otimes (Bifunctor):
         """ Linear space of linear spaces. """
         A, B = Tens_A.shape, Tens_B.shape
         return Tens([*A, *B])
+
+    def __init__(self, Tens_A, Tens_B):
+        pass
 
     @classmethod
     def fmap(cls, f, g):
@@ -276,7 +299,7 @@ class Otimes (Bifunctor):
 
         #--- domain and codomain ---
         src = cls(f.src, g.src)
-        tgt = cls(f.src, g.src)
+        tgt = cls(f.tgt, g.tgt)
         Nf, Mf = F.shape
         Ng, Mg = G.shape
 
@@ -297,9 +320,10 @@ class Otimes (Bifunctor):
         #--- dense tensor product ---
         else:
             FG = (torch.outer(F.flatten(), G.flatten())
-                    .view([Nf, Mf, Ng, Mg])
+                    .reshape([Nf, Mf, Ng, Mg])
                     .transpose(1, 2)
-                    .view([Nf * Ng, Mf * Mg]))
+                    .reshape([Nf * Ng, Mf * Mg]))
+            data = FG
 
         return Linear(src, tgt)(data)
         
