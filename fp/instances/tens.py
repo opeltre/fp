@@ -2,7 +2,7 @@ import torch
 
 from .tensor import Tensor, WrapRing
 from .shape  import Torus
-from fp.meta import ArrowMeta, Arrow, Functor
+from fp.meta import ArrowMeta, Arrow, Functor, Bifunctor
 from fp.meta import RingMeta
 
 class Tens(Functor):
@@ -204,7 +204,17 @@ class Linear(metaclass=ArrowMeta):
     @classmethod
     def otimes(cls, f, g):
         """ Tensor product of matrices. """
+        # input matrices
         if f.data.is_sparse and g.data.is_sparse:
+            F, G = f.data, g.data
+        if f.data.is_sparse and not g.data.is_sparse:
+            F, G = f.data, g.data.to_sparse()
+        elif not f.data.is_sparse and g.data.is_sparse:
+            F, G = f.data.to_sparse(), g.data
+        else: 
+            F, G = f.data, g.data
+        # sparse tensor product
+        if F.is_sparse and G.is_sparse:
             # input sparse matrices
             F, G = f.data.coalesce(), g.data.coalesce()
             Ng, Mg = G.shape
@@ -220,6 +230,8 @@ class Linear(metaclass=ArrowMeta):
             shape = [Nf * Ng, Mf * Mg]
             data = torch.sparse_coo_tensor(XY, val, shape, device=F.device)
             return data
+        # dense tensor product
+        raise Exception("Dense tensor product of operators not implemented")
 
     @classmethod
     def compose (cls, f, g):
@@ -235,3 +247,63 @@ class Linear(metaclass=ArrowMeta):
     def name(cls, A, B):
         shape = lambda S : 'x'.join(str(n) for n in S)
         return f'Linear {shape(A)} -> {shape(B)}'
+
+
+class Otimes (Bifunctor):
+    """ 
+    Tensor product of linear spaces. 
+    """
+    start_dim = 0
+
+    def __new__(cls, Tens_A, Tens_B):
+        """ Linear space of linear spaces. """
+        A, B = Tens_A.shape, Tens_B.shape
+        return Tens([*A, *B])
+
+    @classmethod
+    def fmap(cls, f, g):
+        """ Tensor product of matrices. """
+        
+        #--- read input matrices ---
+        if f.data.is_sparse and g.data.is_sparse:
+            F, G = f.data, g.data
+        if f.data.is_sparse and not g.data.is_sparse:
+            F, G = f.data, g.data.to_sparse()
+        elif not f.data.is_sparse and g.data.is_sparse:
+            F, G = f.data.to_sparse(), g.data
+        else: 
+            F, G = f.data, g.data
+
+        #--- domain and codomain ---
+        src = cls(f.src, g.src)
+        tgt = cls(f.src, g.src)
+        Nf, Mf = F.shape
+        Ng, Mg = G.shape
+
+        #--- sparse tensor product ---
+        if F.is_sparse and G.is_sparse:
+            F, G = f.data.coalesce(), g.data.coalesce()           
+            # tensor product on indices
+            ij, ab = F.indices(), G.indices()
+            Vf, Vg = F.values(), G.values()
+            IJ = ij.repeat_interleave(ab.shape[1], 1)
+            AB = ab.repeat(1, ij.shape[1])
+            XY = torch.tensor([Ng, Mg])[:,None] * IJ + AB
+            val = (Vf.repeat_interleave(Vg.shape[0], 0) * Vg.repeat(Vf.shape[0]))
+            # output sparse matrix
+            shape = [Nf * Ng, Mf * Mg]
+            data = torch.sparse_coo_tensor(XY, val, shape, device=F.device)
+        
+        #--- dense tensor product ---
+        else:
+            FG = (torch.outer(F.flatten(), G.flatten())
+                    .view([Nf, Mf, Ng, Mg])
+                    .transpose(1, 2)
+                    .view([Nf * Ng, Mf * Mg]))
+
+        return Linear(src, tgt)(data)
+        
+    
+
+        
+        
