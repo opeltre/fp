@@ -48,3 +48,9 @@ print('\n')
 print(Tba(x))
 print('\n')
 print(Tab(y))
+
+# Tensor products
+from fp import Otimes
+E = Tens([3, 2])
+F = Tens([6, 4])
+EF = Otimes(E, F)

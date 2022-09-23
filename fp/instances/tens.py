@@ -169,7 +169,6 @@ class Linear(metaclass=ArrowMeta):
                 else:
                     self.__name__ = f'dense {NB}x{NA}' 
                
-               
             @classmethod
             def matvec (cls, mat, x):
                 """ Matrix vector product. """
@@ -276,13 +275,23 @@ class Otimes (Bifunctor):
     start_dim = 0
 
     def __new__(cls, Tens_A, Tens_B):
-        """ Linear space of linear spaces. """
+        """ Tensor product of linear spaces. """
         A, B = Tens_A.shape, Tens_B.shape
-        return Tens([*A, *B])
+        
+        class Tens_AB (Tens([*A, *B])):
+
+            @classmethod
+            def pure(cls, x, y):
+                """ Pure tensor. """
+                return cls(x | y)
+
+        Tens_AB.__name__ = cls.name(Tens_A, Tens_B)
+        Tens_AB.pure = Arrow((Tens_A, Tens_B), Tens_AB)(Tens_AB.pure)
+        return Tens_AB
 
     def __init__(self, Tens_A, Tens_B):
         pass
-
+   
     @classmethod
     def fmap(cls, f, g):
         """ Tensor product of matrices. """
