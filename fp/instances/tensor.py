@@ -1,5 +1,5 @@
 import torch
-from fp.meta import Arrow, ArrowMeta, RingMeta, TypeMeta, Functor
+from fp.meta import Arrow, ArrowMeta, AlgMeta, TypeMeta, Functor
 from .wrap import Wrap
 
 binops  = ['__add__', '__sub__', '__mul__', '__truediv__']
@@ -17,7 +17,7 @@ class WrapRing(Wrap):
         return Wrap_A
 
 
-class Tensor(WrapRing(torch.Tensor), metaclass=RingMeta):
+class Tensor(WrapRing(torch.Tensor), metaclass=AlgMeta):
     
     @classmethod
     def sparse(cls, shape, indices, values=None):

@@ -22,6 +22,13 @@ class TestTensor(unittest.TestCase):
         for result in [Tensor.add(x, y), x + y]:
             assertClose(self, expect, result)
             self.assertTrue(isinstance(result, Tensor))
+    
+    def test_truediv(self):
+        x = 1 + Tensor.range(3)
+        expect = Tensor(torch.tensor([1., 1., 1.]))
+        for result in [Tensor.div(x, x), x / x]:
+            assertClose(self, expect, result)
+            self.assertTrue(isinstance(result, Tensor))
 
     def test_otimes(self):
         u = Tensor.range(3)
