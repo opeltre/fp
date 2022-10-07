@@ -63,7 +63,12 @@ class Wrap(Functor):
         for name, homtype in cls.lifts.items():
             if not name in Wrap_A.lifts: 
                 f  = homtype(A)(getattr(A, name))
-                Wf = cls.fmap(f) if f.arity == 1 else cls.fmapN(f)
+                if f.arity == 1:
+                    Wf = cls.fmap(f)
+                elif f.arity == 2:
+                    Wf = cls.fmap2(f)
+                else:
+                    Wf = cls.fmapN(f)
                 setattr(Wrap_A, name, Wf)
                 Wrap_A.lifts[name] = Wf
 
@@ -74,7 +79,17 @@ class Wrap(Functor):
             lambda x: f(x.data)
         )
 
-    @classmethod    
+    @classmethod
+    def fmap2(cls, f):
+        src = tuple([cls(si) for si in f.src.types])
+        tgt = cls(f.tgt)
+        map_f =  Arrow(src, tgt)(
+            lambda x, y: f(x.data, y.data)
+        )
+        map_f.__name__ = f'map2 {f.__name__}'
+        return map_f
+
+    @classmethod
     def fmapN(cls, f):
         src = tuple([cls(si) for si in f.src.types])
         tgt = cls(f.tgt)
@@ -82,4 +97,4 @@ class Wrap(Functor):
             lambda *xs: f(*(x.data for x in xs))
         )
         map_f.__name__ = f'mapN {f.__name__}'
-        return map_f    
+        return map_f
