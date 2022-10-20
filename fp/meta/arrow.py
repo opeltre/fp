@@ -32,22 +32,33 @@ class ArrowMeta(BifunctorMeta):
         Source type and cast result of n-ary input xs for n <= arity. 
         """
         #--- Arity check
-        if len(xs) == Arr.arity:
+        r = Arr.arity
+        if len(xs) == r:
             src = Arr.src
-        elif len(xs) < Arr.arity:
+        elif len(xs) < r:
             ts  = Arr.src.types[:len(xs)]
             src = Prod(*ts)
         else: 
             raise TypeError(
-                f"{Arr.arity}-ary function called with " + \
+                f"{r}-ary function called with " + \
                 f"{len(xs)} arguments")
-        try:
-            Tx = src.cast(*xs)
-        except: 
-            input = "(" + ", ".join([str(type(x)) for x in xs]) + ")"
-            raise TypeError(
-                f"Input of type {input} " + \
-                f"not castable to {Arr.src}")
+        if 'cast' in dir(src):
+            try:
+                Tx = src.cast(*xs)
+            except: 
+                input = ("(" + ", ".join([str(type(x)) for x in xs]) + ")" 
+                         if len(xs) > 1 else str(type(xs[0])))
+                raise TypeError(
+                    f"Input of type {input} " + \
+                    f"not castable to {Arr.src}")
+        
+        elif r == 1 and not isinstance(xs[0], Arr.src):
+            raise TypeError(f"Input of type {input} is not of type {Arr.src}")
+        elif r > 1 and not all(isinstance(x, T) for x, T in zip(xs, src)):
+            raise TypeError(f"Input of type {input} is not of type {Arr.src}")
+        else:
+            Tx = xs if r > 1 else xs[0]
+
         return src, Tx
 
     @staticmethod
