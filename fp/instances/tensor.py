@@ -69,7 +69,10 @@ class Tensor(WrapRing(torch.Tensor), metaclass=AlgMeta):
     def is_complex(self):
         return self.data.is_complex()
     
-    #---- 
+    #--- 
+
+    def norm(self, p='fro', dim=None):
+        return self.data.norm(p, dim)
 
     def __getitem__(self, idx):
         return Tensor(self.data[idx])

@@ -13,7 +13,6 @@ class Tens(Functor):
 
             shape  = A
             domain = Torus(A)
-
            
             def __init__(self, data):
                 S = self.__class__.shape
@@ -152,7 +151,8 @@ class Linear(metaclass=ArrowMeta):
         class LinAB (Tens([NB, NA]), Arrow(Tens(A), Tens(B))):
             
             functor = Linear
-            input = (A, B)
+            input   = (A, B)
+            batched = False
 
             def __init__(self, matrix, name=None):
                 cls = self.__class__
@@ -168,7 +168,7 @@ class Linear(metaclass=ArrowMeta):
                     self.__name__ = f'sparse {NB}x{NA} (nnz={nnz})'
                 else:
                     self.__name__ = f'dense {NB}x{NA}' 
-               
+
             @classmethod
             def matvec (cls, mat, x):
                 """ Matrix vector product. """
@@ -185,13 +185,22 @@ class Linear(metaclass=ArrowMeta):
                     if sx == [cls.src.domain.size]:
                         return M @ X
                     # apply to tensor
-                    elif sx == src:
+                    elif sx == src and not cls.batched:
                         return M @ X.view([-1])
+                    elif sx == src and cls.batched:
+                        return (M @ X.T).T
                     # apply to last dims of tensor
                     elif sx[-len(src):] == src:
-                        xT = X.view([-1, cls.src.size]).T
+                        n1 = cls.src.domain.size
+                        xT = X.view([-1, n1]).T
                         return (M @ xT).T
+                    raise TypeError(f"Did not find a caller for input {x.shape}")
             
+            def batch(self, N):
+                """ Batched instance """
+                Lin = self.functor
+                return Lin.batched(A, B, N)(self.data)
+
             def __mul__(self, other):
                 if isinstance(other, (int, float)):
                     return self.__class__(self.data * other, name=f'{other} * {self.__name__}')
@@ -267,6 +276,22 @@ class Linear(metaclass=ArrowMeta):
         shape = lambda S : 'x'.join(str(n) for n in S)
         return f'Linear {shape(A)} -> {shape(B)}'
 
+    @classmethod
+    def batched(cls, A, B, N):
+
+        LinAB = cls(A, B)
+        TA = Tens([N, *LinAB.src.shape])
+        TB = Tens([N, *LinAB.tgt.shape])
+
+        class BatchedLinear(LinAB, Arrow(TA, TB)):
+
+            src = TA
+            tgt = TB
+            batched = True
+
+        BatchedLinear.__name__ = LinAB.__name__ + f' ({N})'
+        return BatchedLinear
+
 
 class Otimes (Bifunctor):
     """ 
@@ -335,8 +360,3 @@ class Otimes (Bifunctor):
             data = FG
 
         return Linear(src, tgt)(data)
-        
-    
-
-        
-        
