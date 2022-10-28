@@ -152,7 +152,7 @@ class Linear(metaclass=ArrowMeta):
             
             functor = Linear
             input   = (A, B)
-            batched = False
+            is_batched = False
 
             def __init__(self, matrix, name=None):
                 cls = self.__class__
@@ -182,12 +182,16 @@ class Linear(metaclass=ArrowMeta):
                     if M.is_floating_point() and not X.is_floating_point():
                         X = X.float()
                     # apply to 1d vector
-                    if sx == [cls.src.domain.size]:
+                    if sx == [cls.src.domain.size] and not cls.is_batched:
                         return M @ X
                     # apply to tensor
-                    elif sx == src and not cls.batched:
+                    elif sx == src and not cls.is_batched:
                         return M @ X.view([-1])
-                    elif sx == src and cls.batched:
+                    # apply to is_batched tensor
+                    elif sx == src and cls.is_batched:
+                        return (M @ X.T).T
+                    elif sx == [src[0] * src[1]] and cls.is_batched:
+                        X = X.view([src[0], src[1]])
                         return (M @ X.T).T
                     # apply to last dims of tensor
                     elif sx[-len(src):] == src:
@@ -287,7 +291,7 @@ class Linear(metaclass=ArrowMeta):
 
             src = TA
             tgt = TB
-            batched = True
+            is_batched = True
 
         BatchedLinear.__name__ = LinAB.__name__ + f' ({N})'
         return BatchedLinear
