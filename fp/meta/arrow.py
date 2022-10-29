@@ -105,7 +105,7 @@ class ArrowMeta(BifunctorMeta):
     @staticmethod
     def target_type(arrow, xs):
         if 'target_type' in dir(arrow.functor):
-            return arrow.functor.target_type(arrow, y)
+            return arrow.functor.target_type(arrow, xs)
         if len(xs) == arrow.arity:
             return arrow.tgt
         else:

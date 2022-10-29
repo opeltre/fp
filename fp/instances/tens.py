@@ -152,7 +152,6 @@ class Linear(metaclass=ArrowMeta):
             
             functor = Linear
             input   = (A, B)
-            is_batched = False
 
             def __init__(self, matrix, name=None):
                 cls = self.__class__
@@ -173,7 +172,7 @@ class Linear(metaclass=ArrowMeta):
             def matvec (cls, mat, x):
                 """ Matrix vector product. """
                 if isinstance(x, (Tensor, torch.Tensor)):
-                    sx = list(x.data.shape)
+                    sx = list(x.shape)
                     src = list(cls.src.shape)
                     M, X = mat.data, x.data
                     # cast dtype
@@ -182,29 +181,19 @@ class Linear(metaclass=ArrowMeta):
                     if M.is_floating_point() and not X.is_floating_point():
                         X = X.float()
                     # apply to 1d vector
-                    if sx == [cls.src.domain.size] and not cls.is_batched:
+                    if sx == [cls.src.domain.size]:
                         return M @ X
                     # apply to tensor
-                    elif sx == src and not cls.is_batched:
+                    elif sx == src:
                         return M @ X.view([-1])
-                    # apply to is_batched tensor
-                    elif sx == src and cls.is_batched:
-                        return (M @ X.T).T
-                    elif sx == [src[0] * src[1]] and cls.is_batched:
-                        X = X.view([src[0], src[1]])
-                        return (M @ X.T).T
-                    # apply to last dims of tensor
+                    # apply to last dimensions of tensor
                     elif sx[-len(src):] == src:
                         n1 = cls.src.domain.size
                         xT = X.view([-1, n1]).T
                         return (M @ xT).T
+                    print(sx, src, x.shape)
                     raise TypeError(f"Did not find a caller for input {x.shape}")
             
-            def batch(self, N):
-                """ Batched instance """
-                Lin = self.functor
-                return Lin.batched(A, B, N)(self.data)
-
             def __mul__(self, other):
                 if isinstance(other, (int, float)):
                     return self.__class__(self.data * other, name=f'{other} * {self.__name__}')
@@ -279,22 +268,29 @@ class Linear(metaclass=ArrowMeta):
         if isinstance(B, RingMeta): B = B.shape
         shape = lambda S : 'x'.join(str(n) for n in S)
         return f'Linear {shape(A)} -> {shape(B)}'
-
+    
     @classmethod
-    def batched(cls, A, B, N):
-
-        LinAB = cls(A, B)
-        TA = Tens([N, *LinAB.src.shape])
-        TB = Tens([N, *LinAB.tgt.shape])
-
-        class BatchedLinear(LinAB, Arrow(TA, TB)):
-
-            src = TA
-            tgt = TB
-            is_batched = True
-
-        BatchedLinear.__name__ = LinAB.__name__ + f' ({N})'
-        return BatchedLinear
+    def source_type(cls, f, xs):
+        assert(len(xs)) == 1
+        x = xs[0]
+        s_x = tuple(x.shape)
+        s_in = tuple(f.src.domain.shape)
+        if s_x == s_in:
+            return f.src
+        elif s_x[-len(s_in):] == s_in:
+            return Tens(s_x)
+    
+    @classmethod
+    def target_type(cls, f, xs):
+        assert(len(xs)) == 1
+        x = xs[0]
+        s_x = tuple(x.shape)
+        s_in = tuple(f.src.domain.shape)
+        s_out = tuple(f.tgt.domain.shape)
+        if s_x == s_in:
+            return f.tgt
+        elif s_x[-len(s_in):] == s_in:
+            return Tens((*s_x[:-len(s_in)], *s_out))
 
 
 class Otimes (Bifunctor):
