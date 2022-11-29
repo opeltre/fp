@@ -1,7 +1,8 @@
 import abc 
 
 from .kind import Kind
-from .type import TypeVar
+from .type import Type, TypeMeta, TypeVar
+
 
 class FunctorMeta(abc.ABCMeta, metaclass=Kind):
     """ Functor type class. """

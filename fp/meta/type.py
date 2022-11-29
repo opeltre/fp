@@ -1,4 +1,5 @@
 from .kind import Kind
+import fp.io
 from colorama import init, Style
 
 init()
@@ -49,7 +50,7 @@ class TypeMeta(type, metaclass=Kind):
                 Tx = T(x) 
                 return _cast_(Tx)
             except:
-                raise TypeError(f"Could not cast {type(x)} to type {T}.")
+                raise fp.io.CastError(T, x)
 
         return _cast_
 
@@ -59,6 +60,63 @@ class TypeMeta(type, metaclass=Kind):
 
 
 #--- Type variables ---
+
+class Variable(TypeMeta):
+    
+    def __new__(cls, name, head=None, tail=None):
+        A = super().__new__(cls, name, (), {})
+        A._head = name if isinstance(head, type(None)) else head
+        A._tail = tail
+        return A
+
+    def __init__(A, name, head=None, tail=None):
+        ...
+
+    def match(A, B):
+        """ Matches `{"Ai": Type}` against a concrete type B. """
+        #--- leaf node ---
+        if A._tail == None:
+            return {A.__name__: B}
+        if not '_head' in dir(B):
+            return None
+
+        #--- head of expression ---
+        out = ({} if not isinstance(A._head, Variable) 
+                  else {A._head.__name__: B._head})
+
+        #--- tail of expression
+        if len(A._tail) == len(B._tail):
+            for Ai, Bi in zip(A._tail, B._tail):
+                if isinstance(Ai, Variable):
+                    mi = Ai.match(Bi)
+                    if mi == None: return None
+                    out |= mi
+                elif Ai != Bi:
+                    return None
+            return out
+        return None
+
+    def substitute(A, matches):
+        """ Return concrete type obtained by substitution of matches. """
+        if A._tail == None: 
+            return matches[A.__name__]
+        head = (A._head if not isinstance(A._head, Variable) 
+                        else matches[A._head.__name__])
+        tail = []
+        for Ai in A._tail: 
+            tail.append(Ai.substitute(matches) if isinstance(Ai, Variable) else Ai)
+        return head(*tail)
+
+
+class Constructor(Variable):
+
+    def __call__(F, *Bs):
+        """ Apply constructor to type variables or concrete types. """
+        Bs = [Variable(B) if isinstance(B, str) else B for B in Bs]
+        name = f'{F.__name__}({", ".join(B.__name__ for B in Bs)})'
+        FB = Variable(name, head=F, tail=Bs)
+        return FB
+
 
 class TypeVar(TypeMeta):
 
