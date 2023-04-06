@@ -189,8 +189,9 @@ class Linear(metaclass=ArrowMeta):
                     # apply to last dimensions of tensor
                     elif sx[-len(src):] == src:
                         n1 = cls.src.domain.size
+                        ns = sx[:-len(src)]
                         xT = X.view([-1, n1]).T
-                        return (M @ xT).T
+                        return (M @ xT).T.view([*ns, *cls.tgt.shape])
                     print(sx, src, x.shape)
                     raise TypeError(f"Did not find a caller for input {x.shape}")
             
