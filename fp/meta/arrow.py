@@ -163,7 +163,8 @@ class ArrowMeta(BifunctorMeta):
         functor_new = super().new_method(new)
         def _new_(Arr, *As):
             TAB = functor_new(Arr, *As)
-            TAB.__call__ = cls.call_method(Arr)
+            if not '__call__' in dir(TAB):
+                TAB.__call__ = cls.call_method(Arr)
             TAB.__matmul__ = cls.matmul_method(Arr)
             TAB.__name__ = Arr.name(*As)
             return TAB 

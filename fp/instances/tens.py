@@ -161,7 +161,10 @@ class Linear(metaclass=ArrowMeta):
                 self.data = mat
                 
                 # Arrow(Tens([A]), Tens([B])) attributes
-                self.call = lambda x : cls.matvec(matrix, x)
+                def call(x): 
+                    return cls.matvec(self.data, x)
+                self.call = call
+                           
                 if mat.is_sparse:
                     nnz = mat.indices().shape[-1]
                     self.__name__ = f'sparse {NB}x{NA} (nnz={nnz})'
@@ -174,7 +177,7 @@ class Linear(metaclass=ArrowMeta):
                 if isinstance(x, (Tensor, torch.Tensor)):
                     sx = list(x.shape)
                     src = list(cls.src.shape)
-                    M, X = mat.data, x.data
+                    M, X = mat, (x.data if isinstance(x, Tensor) else x)
                     # cast dtype
                     if torch.is_complex(M) and not torch.is_complex(X):
                         X = X.complex()
