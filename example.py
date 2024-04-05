@@ -1,3 +1,4 @@
+import fp
 from fp.meta      import Arrow, Prod, Type
 from fp.instances import List, Str, Int, Float, Bool, Wrap
 
