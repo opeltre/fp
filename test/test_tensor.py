@@ -30,6 +30,12 @@ class TestTensor(unittest.TestCase):
             assertClose(self, expect, result)
             self.assertTrue(isinstance(result, Tensor))
 
+    def test_neg(self):
+        x = Tensor.randn([3, 3, 3])
+        expect = Tensor(-x.data)
+        result = -x
+        assertClose(self, expect, result)
+
     def test_otimes(self):
         u = Tensor.range(3)
         v = Tensor.range(4) + 1

@@ -14,6 +14,10 @@ class WrapRing(Wrap):
         # torch.tensor is the correct torch.Tensor constructor
         if A == torch.Tensor:
             Wrap_A.cast_data = torch.tensor
+            # torch.tensor casts 
+            for T in ['float', 'cfloat', 'long', 'double']:
+                method = lambda x: x.__class__(getattr(A, T)(x.data))
+                setattr(Wrap_A, T, method)
         return Wrap_A
 
 
@@ -27,10 +31,49 @@ class Tensor(WrapRing(torch.Tensor), metaclass=AlgMeta):
                     else values)
         t = torch.sparse_coo_tensor(ij, val, size=shape)
         return cls(t)
+    
+    #--- Tensor attributes ---
 
     def dim (self):
         return self.data.dim()
-   
+
+    @property
+    def shape(self):
+        return self.data.shape
+
+    @property
+    def dtype(self):
+        return self.data.dtype
+
+    @property
+    def device(self):
+        return self.data.device
+    
+    #--- Tensor casts ---
+
+    def float(self):
+        return self.__class__(self.data.float())
+
+    def cfloat(self):
+        return self.__class__(self.data.cfloat())
+
+    def long(self):
+        return self.__class__(self.data.long())
+
+    def double(self):
+        return self.__class__(self.data.double())
+
+    def is_floating_point(self):
+        return self.data.is_floating_point()
+
+    def is_complex(self):
+        return self.data.is_complex()
+    
+    #--- 
+
+    def norm(self, p='fro', dim=None):
+        return self.data.norm(p, dim)
+
     def __getitem__(self, idx):
         return Tensor(self.data[idx])
 

@@ -42,9 +42,15 @@ Tba = Ta.proj(0, 2)
 Tab = Ta.embed(0, 2)
 Tb = Tba.tgt
 
-x, y = Ta.randn(), Tb.randn()
+xa, xb = Ta.randn(), Tb.randn()
 print(repr(Tba))
 print('\n')
-print(Tba(x))
+print(Tba(xa))
 print('\n')
-print(Tab(y))
+print(Tab(xb))
+
+# Tensor products
+from fp import Otimes
+E = Tens([3, 2])
+F = Tens([6, 4])
+EF = Otimes(E, F)

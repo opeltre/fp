@@ -15,6 +15,11 @@ class TypeMeta(type, metaclass=Kind):
         T.__repr__ = cls.repr_method(T.__repr__)
         if not "cast" in dir(T):
             T.cast = cls.cast_method(T)
+        if not "show" in dir(T):
+            def show(self):
+                print(self.__repr__())
+                return self
+            T.show = show
         return T
     
     @staticmethod

@@ -6,6 +6,7 @@ from .wrap   import Wrap
 from .tensor import Tensor
 from .shape  import Torus
 from .shape  import Torus as Shape
-from .tens   import Tens, Linear
+from .tens   import Tens, Linear, Otimes
+from .tensor_mod import TensorMod
 
 from fp.meta import Arrow, Prod, Bool

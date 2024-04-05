@@ -2,7 +2,7 @@ import torch
 
 from .tensor import Tensor, WrapRing
 from .shape  import Torus
-from fp.meta import ArrowMeta, Arrow, Functor
+from fp.meta import ArrowMeta, Arrow, Functor, Bifunctor
 from fp.meta import RingMeta
 
 class Tens(Functor):
@@ -13,7 +13,6 @@ class Tens(Functor):
 
             shape  = A
             domain = Torus(A)
-
            
             def __init__(self, data):
                 S = self.__class__.shape
@@ -125,16 +124,34 @@ class Tens(Functor):
 
 
 class Linear(metaclass=ArrowMeta):
+    """ 
+    Linear maps types, containing dense or sparse matrices.
+
+    The homtype `Linear(A, B)` represents the category structure 
+    on linear spaces obtained by the `Tens` constructor.
+
+    The arguments `A` and `B` can either be given as tensor shapes 
+    or as associated tensor types e.g. 
+
+        A, B = Tens([2, 3]), Tens([4])
+        assert Linear(A, B) == Linear([2, 3], [4])
+
+    Linear map instances inherit from the Arrow class, overriding 
+    composition and application by matrix-matrix and matrix-vector 
+    products respectively.   
+    """
 
     def __new__(cls, A, B):
 
+        if isinstance(A, RingMeta): A = A.shape
+        if isinstance(B, RingMeta): B = B.shape
         NA = int(torch.tensor(A).prod())
         NB = int(torch.tensor(B).prod())
 
         class LinAB (Tens([NB, NA]), Arrow(Tens(A), Tens(B))):
             
             functor = Linear
-            input = (A, B)
+            input   = (A, B)
 
             def __init__(self, matrix, name=None):
                 cls = self.__class__
@@ -144,21 +161,23 @@ class Linear(metaclass=ArrowMeta):
                 self.data = mat
                 
                 # Arrow(Tens([A]), Tens([B])) attributes
-                self.call = lambda x : cls.matvec(matrix, x)
+                def call(x): 
+                    return cls.matvec(self.data, x)
+                self.call = call
+                           
                 if mat.is_sparse:
                     nnz = mat.indices().shape[-1]
                     self.__name__ = f'sparse {NB}x{NA} (nnz={nnz})'
                 else:
                     self.__name__ = f'dense {NB}x{NA}' 
-               
-               
+
             @classmethod
             def matvec (cls, mat, x):
                 """ Matrix vector product. """
                 if isinstance(x, (Tensor, torch.Tensor)):
-                    sx = list(x.data.shape)
+                    sx = list(x.shape)
                     src = list(cls.src.shape)
-                    M, X = mat.data, x.data
+                    M, X = mat, (x.data if isinstance(x, Tensor) else x)
                     # cast dtype
                     if torch.is_complex(M) and not torch.is_complex(X):
                         X = X.complex()
@@ -170,10 +189,14 @@ class Linear(metaclass=ArrowMeta):
                     # apply to tensor
                     elif sx == src:
                         return M @ X.view([-1])
-                    # apply to last dims of tensor
+                    # apply to last dimensions of tensor
                     elif sx[-len(src):] == src:
-                        xT = X.view([-1, cls.src.size]).T
-                        return (M @ xT).T
+                        n1 = cls.src.domain.size
+                        ns = sx[:-len(src)]
+                        xT = X.view([-1, n1]).T
+                        return (M @ xT).T.view([*ns, *cls.tgt.shape])
+                    print(sx, src, x.shape)
+                    raise TypeError(f"Did not find a caller for input {x.shape}")
             
             def __mul__(self, other):
                 if isinstance(other, (int, float)):
@@ -204,7 +227,17 @@ class Linear(metaclass=ArrowMeta):
     @classmethod
     def otimes(cls, f, g):
         """ Tensor product of matrices. """
+        # input matrices
         if f.data.is_sparse and g.data.is_sparse:
+            F, G = f.data, g.data
+        if f.data.is_sparse and not g.data.is_sparse:
+            F, G = f.data, g.data.to_sparse()
+        elif not f.data.is_sparse and g.data.is_sparse:
+            F, G = f.data.to_sparse(), g.data
+        else: 
+            F, G = f.data, g.data
+        # sparse tensor product
+        if F.is_sparse and G.is_sparse:
             # input sparse matrices
             F, G = f.data.coalesce(), g.data.coalesce()
             Ng, Mg = G.shape
@@ -220,6 +253,8 @@ class Linear(metaclass=ArrowMeta):
             shape = [Nf * Ng, Mf * Mg]
             data = torch.sparse_coo_tensor(XY, val, shape, device=F.device)
             return data
+        # dense tensor product
+        raise Exception("Dense tensor product of operators not implemented")
 
     @classmethod
     def compose (cls, f, g):
@@ -233,5 +268,99 @@ class Linear(metaclass=ArrowMeta):
 
     @classmethod
     def name(cls, A, B):
+        if isinstance(A, RingMeta): A = A.shape
+        if isinstance(B, RingMeta): B = B.shape
         shape = lambda S : 'x'.join(str(n) for n in S)
         return f'Linear {shape(A)} -> {shape(B)}'
+    
+    @classmethod
+    def source_type(cls, f, xs):
+        assert(len(xs)) == 1
+        x = xs[0]
+        s_x = tuple(x.shape)
+        s_in = tuple(f.src.domain.shape)
+        if s_x == s_in:
+            return f.src
+        elif s_x[-len(s_in):] == s_in:
+            return Tens(s_x)
+    
+    @classmethod
+    def target_type(cls, f, xs):
+        assert(len(xs)) == 1
+        x = xs[0]
+        s_x = tuple(x.shape)
+        s_in = tuple(f.src.domain.shape)
+        s_out = tuple(f.tgt.domain.shape)
+        if s_x == s_in:
+            return f.tgt
+        elif s_x[-len(s_in):] == s_in:
+            return Tens((*s_x[:-len(s_in)], *s_out))
+
+
+class Otimes (Bifunctor):
+    """ 
+    Tensor product of linear spaces. 
+    """
+    start_dim = 0
+
+    def __new__(cls, Tens_A, Tens_B):
+        """ Tensor product of linear spaces. """
+        A, B = Tens_A.shape, Tens_B.shape
+        
+        class Tens_AB (Tens([*A, *B])):
+
+            @classmethod
+            def pure(cls, x, y):
+                """ Pure tensor. """
+                return cls(x | y)
+
+        Tens_AB.__name__ = cls.name(Tens_A, Tens_B)
+        Tens_AB.pure = Arrow((Tens_A, Tens_B), Tens_AB)(Tens_AB.pure)
+        return Tens_AB
+
+    def __init__(self, Tens_A, Tens_B):
+        pass
+   
+    @classmethod
+    def fmap(cls, f, g):
+        """ Tensor product of matrices. """
+        
+        #--- read input matrices ---
+        if f.data.is_sparse and g.data.is_sparse:
+            F, G = f.data, g.data
+        if f.data.is_sparse and not g.data.is_sparse:
+            F, G = f.data, g.data.to_sparse()
+        elif not f.data.is_sparse and g.data.is_sparse:
+            F, G = f.data.to_sparse(), g.data
+        else: 
+            F, G = f.data, g.data
+
+        #--- domain and codomain ---
+        src = cls(f.src, g.src)
+        tgt = cls(f.tgt, g.tgt)
+        Nf, Mf = F.shape
+        Ng, Mg = G.shape
+
+        #--- sparse tensor product ---
+        if F.is_sparse and G.is_sparse:
+            F, G = f.data.coalesce(), g.data.coalesce()           
+            # tensor product on indices
+            ij, ab = F.indices(), G.indices()
+            Vf, Vg = F.values(), G.values()
+            IJ = ij.repeat_interleave(ab.shape[1], 1)
+            AB = ab.repeat(1, ij.shape[1])
+            XY = torch.tensor([Ng, Mg])[:,None] * IJ + AB
+            val = (Vf.repeat_interleave(Vg.shape[0], 0) * Vg.repeat(Vf.shape[0]))
+            # output sparse matrix
+            shape = [Nf * Ng, Mf * Mg]
+            data = torch.sparse_coo_tensor(XY, val, shape, device=F.device)
+        
+        #--- dense tensor product ---
+        else:
+            FG = (torch.outer(F.flatten(), G.flatten())
+                    .reshape([Nf, Mf, Ng, Mg])
+                    .transpose(1, 2)
+                    .reshape([Nf * Ng, Mf * Mg]))
+            data = FG
+
+        return Linear(src, tgt)(data)
