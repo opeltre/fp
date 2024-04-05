@@ -200,13 +200,15 @@ class ArrowMeta(BifunctorMeta):
     @classmethod
     def matmul_method(cls, Arr):
         """ Composition of functions. """
+        def getname(arr):
+            return arr.__name__ if '__name__' in dir(arr) else '\u03bb'
         def _matmul_(self, other):
             """ Composition """
             # arrow 
             if 'tgt' in dir(other):
                 if self.src == other.tgt:
                     comp = Arr.compose(self, other)
-                    comp.__name__ = f"{self.__name__} . {other.__name__}"
+                    comp.__name__ = f"{getname(self)} . {getname(other)}"
                     return comp
                 raise TypeError(f"Uncomposable pair"\
                         + f"{(self.src, self.tgt)} @"\
@@ -262,7 +264,8 @@ class Arrow(metaclass=ArrowMeta):
         if isinstance(A, type) and isinstance(B, type):
             return f"{A.__name__} -> {B.__name__}" 
         elif isinstance(A, (tuple, list)):
-            input = " -> ".join([Ak.__name__ for Ak in A])
+            input = " -> ".join(
+                [Ak.__name__ if '__name__' in dir(A) else '*' for Ak in A])
             return f"{input} -> {B.__name__}"
         elif '__name__' in dir(A) and '__name__' in dir(B):
             return f"{A.__name__} -> {B.__name__}"
