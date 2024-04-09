@@ -2,39 +2,43 @@ import torch
 from fp.meta import Arrow, AlgClass, TypeClass, Functor
 from .wrap import Wrap
 
-binops  = ['__add__', '__sub__', '__mul__', '__truediv__']
+binops = ["__add__", "__sub__", "__mul__", "__truediv__"]
+
 
 class WrapRing(Wrap):
 
-    lifts = {name     : lambda a: Arrow((a, a), a) for name in binops} \
-          | {'__neg__': lambda a: Arrow(a, a)}
+    lifts = {name: lambda a: Arrow((a, a), a) for name in binops} | {
+        "__neg__": lambda a: Arrow(a, a)
+    }
 
     def __new__(cls, A):
         Wrap_A = super().__new__(cls, A)
         # torch.tensor is the correct torch.Tensor constructor
         if A == torch.Tensor:
             Wrap_A.cast_data = torch.tensor
-            # torch.tensor casts 
-            for T in ['float', 'cfloat', 'long', 'double']:
+            # torch.tensor casts
+            for T in ["float", "cfloat", "long", "double"]:
                 method = lambda x: x.__class__(getattr(A, T)(x.data))
                 setattr(Wrap_A, T, method)
         return Wrap_A
 
 
 class Tensor(WrapRing(torch.Tensor), metaclass=AlgClass):
-    
+
     @classmethod
     def sparse(cls, shape, indices, values=None):
-        ij  = (indices if isinstance(indices, torch.Tensor)
-                    else torch.tensor(indices, dtype=torch.long))
-        val = (torch.ones([ij.shape[-1]]) if isinstance(values, type(None))
-                    else values)
+        ij = (
+            indices
+            if isinstance(indices, torch.Tensor)
+            else torch.tensor(indices, dtype=torch.long)
+        )
+        val = torch.ones([ij.shape[-1]]) if isinstance(values, type(None)) else values
         t = torch.sparse_coo_tensor(ij, val, size=shape)
         return cls(t)
-    
-    #--- Tensor attributes ---
 
-    def dim (self):
+    # --- Tensor attributes ---
+
+    def dim(self):
         return self.data.dim()
 
     @property
@@ -48,8 +52,8 @@ class Tensor(WrapRing(torch.Tensor), metaclass=AlgClass):
     @property
     def device(self):
         return self.data.device
-    
-    #--- Tensor casts ---
+
+    # --- Tensor casts ---
 
     def float(self):
         return self.__class__(self.data.float())
@@ -68,37 +72,40 @@ class Tensor(WrapRing(torch.Tensor), metaclass=AlgClass):
 
     def is_complex(self):
         return self.data.is_complex()
-    
-    #--- 
 
-    def norm(self, p='fro', dim=None):
+    # ---
+
+    def norm(self, p="fro", dim=None):
         return self.data.norm(p, dim)
 
     def __getitem__(self, idx):
         return Tensor(self.data[idx])
 
     def __str__(self):
-        return (str(self.data).replace("tensor(", "")
-                              .replace("\n       ", "\n")
-                              .replace(")", ""))
+        return (
+            str(self.data)
+            .replace("tensor(", "")
+            .replace("\n       ", "\n")
+            .replace(")", "")
+        )
 
     def __repr__(self):
         return str(self)
-    
+
     def __len__(self):
         return int(torch.tensor(self.data.shape).prod())
 
-    #--- tensor product ---
+    # --- tensor product ---
 
     def otimes(self, other):
-        """ 
+        """
         Tensor product of two instances.
 
         The tensor product xy of two vectors x and y is defined by:
 
             xy[i, j] = x[i] * y[j]
 
-        In general, if x and y are of shape A and B respectively, 
+        In general, if x and y are of shape A and B respectively,
         the tensor product xy will be of shape [*A, *B].
         """
         x, y = self.data.flatten(), other.data.flatten()
@@ -110,7 +117,7 @@ class Tensor(WrapRing(torch.Tensor), metaclass=AlgClass):
     def __or__(self, other):
         return self.otimes(other)
 
-    #--- right actions ---
+    # --- right actions ---
 
     def __rmul__(self, other):
         return self.__mul__(other)
@@ -118,7 +125,7 @@ class Tensor(WrapRing(torch.Tensor), metaclass=AlgClass):
     def __radd__(self, other):
         return self.__add__(other)
 
-    #--- constructors --- 
+    # --- constructors ---
 
     @classmethod
     def zeros(cls, ns, **ks):
@@ -135,7 +142,7 @@ class Tensor(WrapRing(torch.Tensor), metaclass=AlgClass):
     @classmethod
     def rand(cls, ns, **ks):
         return cls(torch.rand(ns, **ks))
-    
+
     @classmethod
     def range(cls, n):
         return cls(torch.arange(n))

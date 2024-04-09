@@ -6,11 +6,13 @@ A = TypeClass("A", (int,), {})
 B = TypeClass("B", (str,), {})
 
 foo = Arrow(B, A)(lambda y: len(y))
-bar = Arrow(A, B)(lambda x: '|' * x)
+bar = Arrow(A, B)(lambda x: "|" * x)
+
 
 @Arrow((A, A), A)
 def power(x, y):
-    return x ** y
+    return x**y
+
 
 class TestArrow(unittest.TestCase):
 
@@ -25,7 +27,7 @@ class TestArrow(unittest.TestCase):
         result = (foobar.src, foobar.tgt, barfoo.src, barfoo.tgt)
         expect = (A, A, B, B)
         self.assertEqual(expect, result)
-    
+
     def test_call(self):
         x = A(18)
         y = B("Eilenberg Mac-Lane")
@@ -35,7 +37,7 @@ class TestArrow(unittest.TestCase):
         self.assertEqual(z, (bar @ foo)(y))
 
     def test_curry(self):
-        """ Test curryfication """
+        """Test curryfication"""
         pow2 = power(2)
         result = type(power)
         expect = Arrow(A, A)
@@ -46,21 +48,23 @@ class TestArrow(unittest.TestCase):
         add = Arrow((int, int), int)(int.__add__)
         self.assertEqual(add(2, 3), 5)
 
-#--- Abstract arrows 
 
-class Order(Arrow): 
+# --- Abstract arrows
+
+
+class Order(Arrow):
 
     def __new__(cls, A, B):
-       
+
         TAB = super().__new__(cls, A, B)
         TAB.arity = 0
-        
+
         def _init_(self, data=None):
-            self.call = lambda : None
+            self.call = lambda: None
             self.data = data
 
         def _new_(Tab, data=None):
-            return super().__new__(Tab, lambda:None)
+            return super().__new__(Tab, lambda: None)
 
         TAB.__init__ = _init_
         TAB.__new__ = _new_
@@ -78,4 +82,4 @@ class Order(Arrow):
 class TestAbstractArrow(unittest.TestCase):
 
     def test_abstract_arrow(self):
-        ab = Order('a', 'b')
+        ab = Order("a", "b")

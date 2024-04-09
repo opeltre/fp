@@ -4,22 +4,23 @@ import colorama
 
 colorama.init()
 
+
 class TypeClass(type, metaclass=Kind):
     """
     Base type class.
-    
-    This metaclass is used to define new type instances. 
-    Although all types do not inherit from `fp.Type`, they are all 
-    instances of `fp.meta.TypeClass` (same relationship as `abc.ABC` and 
+
+    This metaclass is used to define new type instances.
+    Although all types do not inherit from `fp.Type`, they are all
+    instances of `fp.meta.TypeClass` (same relationship as `abc.ABC` and
     `abc.ABCMeta`).
     """
-    
-    kind = "*" 
+
+    kind = "*"
 
     def __new__(cls, name, bases, dct):
-        """ Create a new type. """
+        """Create a new type."""
         T = super().__new__(cls, name, bases, dct)
-        T.__str__  = cls.str_method(T.__str__)
+        T.__str__ = cls.str_method(T.__str__)
         T.__repr__ = cls.repr_method(T.__repr__)
         if not "cast" in dir(T):
             T.cast = cls.cast_method(T)
@@ -29,7 +30,7 @@ class TypeClass(type, metaclass=Kind):
                 return self
             T.show = show
         return T
-    
+
     @staticmethod
     def repr_method(rep):
         def _rep_(x):
@@ -37,24 +38,25 @@ class TypeClass(type, metaclass=Kind):
             indent = len(tx)
             rx = rep(x)
             tx = colorama.Style.DIM + tx + colorama.Style.NORMAL
-            if rx[:len(tx)] == tx:
+            if rx[: len(tx)] == tx:
                 return rx
             else:
                 return tx + rx.replace("\n", "\n" + " " * indent)
+
         return _rep_
 
     @staticmethod
     def str_method(show):
         return lambda x: show(x)
-    
+
     @staticmethod
     def cast_method(T):
 
         def _cast_(x):
-            if isinstance(x, T): 
+            if isinstance(x, T):
                 return x
-            try: 
-                Tx = T(x) 
+            try:
+                Tx = T(x)
                 return _cast_(Tx)
             except:
                 raise fp.io.CastError(T, x)
@@ -62,41 +64,41 @@ class TypeClass(type, metaclass=Kind):
         return _cast_
 
     def __repr__(self):
-        """ Show type name. """
+        """Show type name."""
         return f"{self.__name__}"
 
 
-#--- Type variables ---
+# --- Type variables ---
+
 
 class Variable(TypeClass):
-    
+
     def __new__(cls, name, head=None, tail=None):
         A = super().__new__(cls, name, (), {})
         A._head = name if isinstance(head, type(None)) else head
         A._tail = tail
         return A
 
-    def __init__(A, name, head=None, tail=None):
-        ...
+    def __init__(A, name, head=None, tail=None): ...
 
     def match(A, B):
-        """ Matches `{"Ai": Type}` against a concrete type B. """
-        #--- leaf node ---
+        """Matches `{"Ai": Type}` against a concrete type B."""
+        # --- leaf node ---
         if A._tail == None:
             return {A.__name__: B}
-        if not '_head' in dir(B):
+        if not "_head" in dir(B):
             return None
 
-        #--- head of expression ---
-        out = ({} if not isinstance(A._head, Variable) 
-                  else {A._head.__name__: B._head})
+        # --- head of expression ---
+        out = {} if not isinstance(A._head, Variable) else {A._head.__name__: B._head}
 
-        #--- tail of expression
+        # --- tail of expression
         if len(A._tail) == len(B._tail):
             for Ai, Bi in zip(A._tail, B._tail):
                 if isinstance(Ai, Variable):
                     mi = Ai.match(Bi)
-                    if mi == None: return None
+                    if mi == None:
+                        return None
                     out |= mi
                 elif Ai != Bi:
                     return None
@@ -104,13 +106,14 @@ class Variable(TypeClass):
         return None
 
     def substitute(A, matches):
-        """ Return concrete type obtained by substitution of matches. """
-        if A._tail == None: 
+        """Return concrete type obtained by substitution of matches."""
+        if A._tail == None:
             return matches[A.__name__]
-        head = (A._head if not isinstance(A._head, Variable) 
-                        else matches[A._head.__name__])
+        head = (
+            A._head if not isinstance(A._head, Variable) else matches[A._head.__name__]
+        )
         tail = []
-        for Ai in A._tail: 
+        for Ai in A._tail:
             tail.append(Ai.substitute(matches) if isinstance(Ai, Variable) else Ai)
         return head(*tail)
 
@@ -118,14 +121,15 @@ class Variable(TypeClass):
 class Constructor(Variable):
 
     def __call__(F, *Bs):
-        """ Apply constructor to type variables or concrete types. """
+        """Apply constructor to type variables or concrete types."""
         Bs = [Variable(B) if isinstance(B, str) else B for B in Bs]
         name = f'{F.__name__}({", ".join(B.__name__ for B in Bs)})'
         FB = Variable(name, head=F, tail=Bs)
         return FB
 
 
-#--- Instances ---
+# --- Instances ---
+
 
 class Type(metaclass=TypeClass):
     pass

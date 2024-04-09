@@ -1,9 +1,10 @@
 import unittest
 
 from fp.instances import Str, Int, Wrap
-from fp.meta      import Arrow
+from fp.meta import Arrow
 
-class TestWrap (unittest.TestCase):
+
+class TestWrap(unittest.TestCase):
 
     def test_wrap(self):
         x = Wrap(Str)("salut")

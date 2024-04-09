@@ -1,8 +1,8 @@
-from .num    import Int, Float
+from .num import Int, Float
 from .string import Str
-from .list   import List
+from .list import List
 
-from .wrap   import Wrap
+from .wrap import Wrap
 from .tensor import Tensor
 from .shape  import Torus
 from .shape  import Torus as Shape
@@ -12,18 +12,18 @@ from .tensor_mod import TensorMod
 from fp.meta import Arrow, Prod, Bool
 
 __all__ = [
-    'Int', 
-    'Float',
-    'Str', 
-    'List', 
-    'Wrap',
-    'Tensor',
-    'Torus', 
-    'Shape',
-    'Tens',
-    'Linear',
-    'Otimes',
-    'Arrow',
-    'Prod',
-    'Bool',
+    "Int",
+    "Float",
+    "Str",
+    "List",
+    "Wrap",
+    "Tensor",
+    "Torus",
+    "Shape",
+    "Tens",
+    "Linear",
+    "Otimes",
+    "Arrow",
+    "Prod",
+    "Bool",
 ]

@@ -2,6 +2,7 @@ import unittest as test
 
 from fp import List, Arrow, Str, Int
 
+
 class TestList(test.TestCase):
 
     def test_type_constructor(self):
