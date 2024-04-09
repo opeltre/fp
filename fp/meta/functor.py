@@ -1,10 +1,10 @@
 import abc 
 
 from .kind import Kind
-from .type import Type, TypeMeta, TypeVar
+from .type import Type, TypeClass, Variable
 
 
-class FunctorMeta(abc.ABCMeta, metaclass=Kind):
+class FunctorClass(abc.ABCMeta, metaclass=Kind):
     """ Functor type class. """
     
     kind    = "* -> *" 
@@ -18,6 +18,10 @@ class FunctorMeta(abc.ABCMeta, metaclass=Kind):
         T.types = {}
         T.__new__ = cls.new_method(T.__new__)
         return T
+    
+    @classmethod
+    def instance(cls, ty: type):
+        return cls.__new__(cls, ty.__name__, ty.__bases__, dict(ty.__dict__))
 
     @staticmethod
     def new_method(new):
@@ -48,8 +52,8 @@ class FunctorMeta(abc.ABCMeta, metaclass=Kind):
                 TA.__name__ = cls.__name__ + ' ' + ' '.join([str(A) for A in As])
             cls.__init__(TA, *As)
             #--- Return type variable if one type is a parameter
-            var = any(isinstance(A, TypeVar) for A in As)
-            return TA if not var else TypeVar(TA.__name__, (TA,))
+            var = any(isinstance(A, Variable) for A in As)
+            return TA if not var else Variable(TA.__name__, (TA,))
         return _new_
 
     @classmethod
@@ -57,7 +61,7 @@ class FunctorMeta(abc.ABCMeta, metaclass=Kind):
         if isinstance(A, list): 
             return tuple(A)
         if isinstance(A, str):
-            return TypeVar(A)
+            return Variable(A)
         else:
             return A
 
@@ -68,13 +72,13 @@ class FunctorMeta(abc.ABCMeta, metaclass=Kind):
         return TA.functor == TB.functor and TA.types == TB.types
 
 
-class BifunctorMeta(FunctorMeta):
+class BifunctorClass(FunctorClass):
     
     kind  = "(*, *) -> *"
     arity = 2 
 
     
-class NFunctorMeta(FunctorMeta):
+class NFunctorClass(FunctorClass):
     
     kind  = "(*, ...) -> *"
     arity = 'n'
@@ -82,7 +86,7 @@ class NFunctorMeta(FunctorMeta):
 
 #--- Instances ---
 
-class Functor(metaclass=FunctorMeta):
+class Functor(metaclass=FunctorClass):
     """ Functor type class. """
 
     def __init__(self, *xs):
@@ -100,7 +104,7 @@ class Functor(metaclass=FunctorMeta):
                 f"{cls.__name__} {A}")
         
 
-class Bifunctor(metaclass=BifunctorMeta):
+class Bifunctor(metaclass=BifunctorClass):
 
     @classmethod
     def name(cls, A, B):

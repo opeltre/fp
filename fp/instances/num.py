@@ -1,13 +1,13 @@
-from fp.meta import TypeMeta, RingMeta, AlgMeta
+from fp.meta import TypeClass, RingClass, AlgClass
 
 #--- 
 
-class Int(int, metaclass=RingMeta):
+class Int(int, metaclass=RingClass):
 
     def __str__(self):
         return super().__repr__()
 
-class Float(float, metaclass=AlgMeta):
+class Float(float, metaclass=AlgClass):
     
     def __str__(self):
         return super().__repr__()

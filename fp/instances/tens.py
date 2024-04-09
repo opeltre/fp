@@ -2,8 +2,8 @@ import torch
 
 from .tensor import Tensor, WrapRing
 from .shape  import Torus
-from fp.meta import ArrowMeta, Arrow, Functor, Bifunctor
-from fp.meta import RingMeta
+from fp.meta import ArrowClass, Arrow, Functor, Bifunctor
+from fp.meta import RingClass
 
 class Tens(Functor):
     
@@ -100,7 +100,7 @@ class Tens(Functor):
         dct = dict(Field_A.__dict__)
         dct['shape']  = list(A)
         dct['domain'] = Torus(A)
-        TA = RingMeta(name, bases, dct)
+        TA = RingClass(name, bases, dct)
         return TA
 
     @classmethod
@@ -123,7 +123,7 @@ class Tens(Functor):
         return Linear(ms, ns)(mat)
 
 
-class Linear(metaclass=ArrowMeta):
+class Linear(metaclass=ArrowClass):
     """ 
     Linear maps types, containing dense or sparse matrices.
 
@@ -143,8 +143,8 @@ class Linear(metaclass=ArrowMeta):
 
     def __new__(cls, A, B):
 
-        if isinstance(A, RingMeta): A = A.shape
-        if isinstance(B, RingMeta): B = B.shape
+        if isinstance(A, RingClass): A = A.shape
+        if isinstance(B, RingClass): B = B.shape
         NA = int(torch.tensor(A).prod())
         NB = int(torch.tensor(B).prod())
 
@@ -268,8 +268,8 @@ class Linear(metaclass=ArrowMeta):
 
     @classmethod
     def name(cls, A, B):
-        if isinstance(A, RingMeta): A = A.shape
-        if isinstance(B, RingMeta): B = B.shape
+        if isinstance(A, RingClass): A = A.shape
+        if isinstance(B, RingClass): B = B.shape
         shape = lambda S : 'x'.join(str(n) for n in S)
         return f'Linear {shape(A)} -> {shape(B)}'
     

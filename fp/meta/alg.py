@@ -1,9 +1,9 @@
-from .type  import TypeMeta
+from .type  import TypeClass
 from .arrow import Arrow
 
 #--- Numerical types ---
 
-class RingMeta(TypeMeta):
+class RingClass(TypeClass):
     """ Ring type class. """
 
     def __new__(cls, name, bases, dct):
@@ -55,7 +55,7 @@ class RingMeta(TypeMeta):
         return _op_
 
 
-class AlgMeta(RingMeta):
+class AlgClass(RingClass):
     """ Algebra type class. """
     def __new__(cls, name, bases, dct):
         T = super().__new__(cls, name, bases, dct)
@@ -66,7 +66,7 @@ class AlgMeta(RingMeta):
         return T
 
 
-class Bool(int, metaclass=RingMeta):
+class Bool(int, metaclass=RingClass):
     """ Boolean values. """
 
     def __new__(cls, x):

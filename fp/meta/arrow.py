@@ -1,12 +1,12 @@
-from .type      import Type, TypeMeta
-from .functor   import BifunctorMeta, NFunctorMeta
+from .type      import Type, TypeClass
+from .functor   import BifunctorClass, NFunctorClass
 
 
-class Prod(metaclass=NFunctorMeta):
+class Prod(metaclass=NFunctorClass):
 
     def __new__(cls, *As):
 
-        class Prod_As(tuple, metaclass=TypeMeta):
+        class Prod_As(tuple, metaclass=TypeClass):
 
             types = As
 
@@ -59,7 +59,7 @@ class Prod(metaclass=NFunctorMeta):
         return f"({', '.join(names)})"  
 
 
-class ArrowMeta(BifunctorMeta):
+class ArrowClass(BifunctorClass):
     """
     Type constructor for arrow bifunctors. 
 
@@ -219,7 +219,7 @@ class ArrowMeta(BifunctorMeta):
         return _matmul_
 
 
-class Arrow(metaclass=ArrowMeta):
+class Arrow(metaclass=ArrowClass):
     
     def __new__(cls, A, B):
 

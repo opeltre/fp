@@ -1,4 +1,4 @@
-from fp.meta  import Type, Functor, Arrow
+from fp.meta  import Type, Functor, Arrow, FunctorClass
 
 class Id (Functor):
     
@@ -24,6 +24,7 @@ class Id (Functor):
     def name(cls, A):
         return A.__name__.capitalize()
 
+@FunctorClass.instance
 class List(Functor):
 
     def __new__(cls, A):

@@ -16,4 +16,4 @@ class Kind(type):
         return f"{self} : " + Fore.YELLOW + f"{self.kind}" + Fore.RESET
 
     def __str__(self):
-        return self.__name__.replace("Meta", "")
+        return self.__name__

@@ -10,3 +10,20 @@ from .tens   import Tens, Linear, Otimes
 from .tensor_mod import TensorMod
 
 from fp.meta import Arrow, Prod, Bool
+
+__all__ = [
+    'Int', 
+    'Float',
+    'Str', 
+    'List', 
+    'Wrap',
+    'Tensor',
+    'Torus', 
+    'Shape',
+    'Tens',
+    'Linear',
+    'Otimes',
+    'Arrow',
+    'Prod',
+    'Bool',
+]

@@ -1,5 +1,5 @@
 import torch
-from fp.meta import Arrow, Functor, RingMeta
+from fp.meta import Arrow, Functor, RingClass
 
 from .num       import Int
 from .list      import List
@@ -131,7 +131,7 @@ class Torus (Functor):
                 raise TypeError("Expecting integer arguments")
 
         dct = dict(BaseShape.__dict__)
-        SA = RingMeta(cls.name(A), BaseShape.__bases__, dct)
+        SA = RingClass(cls.name(A), BaseShape.__bases__, dct)
             
         SA.dim = len(A)
         SA.n   = list(A)

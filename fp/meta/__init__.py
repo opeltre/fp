@@ -1,11 +1,32 @@
 from .kind      import Kind
 
 
-from .functor   import  Functor, FunctorMeta,\
-                        Bifunctor, BifunctorMeta, \
-                        NFunctorMeta
+from .functor   import  Functor, FunctorClass,\
+                        Bifunctor, BifunctorClass, \
+                        NFunctorClass
 
-from .arrow     import ArrowMeta, Arrow, Prod
+from .arrow     import ArrowClass, Arrow, Prod
+from .hom       import Hom
 
-from .type      import Type, TypeMeta, TypeVar
-from .alg       import RingMeta, AlgMeta, Bool
+from .type      import Type, TypeClass, Variable, Constructor
+from .alg       import RingClass, AlgClass, Bool
+
+__all__ = [
+    'Kind',
+    'Functor',
+    'FunctorClass',
+    'Bifunctor', 
+    'BifunctorClass',
+    'NFunctorClass',
+    'ArrowClass',
+    'Arrow',
+    'Hom',
+    'Prod',
+    'Type',
+    'TypeClass', 
+    'Variable',
+    'Constructor',
+    'RingClass', 
+    'AlgClass',
+    'Bool',
+]

@@ -1,11 +1,18 @@
 from .kind import Kind
 import fp.io
-from colorama import init, Style
+import colorama
 
-init()
+colorama.init()
 
-class TypeMeta(type, metaclass=Kind):
-    """ Base type class. """
+class TypeClass(type, metaclass=Kind):
+    """
+    Base type class.
+    
+    This metaclass is used to define new type instances. 
+    Although all types do not inherit from `fp.Type`, they are all 
+    instances of `fp.meta.TypeClass` (same relationship as `abc.ABC` and 
+    `abc.ABCMeta`).
+    """
     
     kind = "*" 
 
@@ -29,7 +36,7 @@ class TypeMeta(type, metaclass=Kind):
             tx = f"{type(x)} : "
             indent = len(tx)
             rx = rep(x)
-            tx = Style.DIM + tx + Style.NORMAL
+            tx = colorama.Style.DIM + tx + colorama.Style.NORMAL
             if rx[:len(tx)] == tx:
                 return rx
             else:
@@ -61,7 +68,7 @@ class TypeMeta(type, metaclass=Kind):
 
 #--- Type variables ---
 
-class Variable(TypeMeta):
+class Variable(TypeClass):
     
     def __new__(cls, name, head=None, tail=None):
         A = super().__new__(cls, name, (), {})
@@ -118,47 +125,7 @@ class Constructor(Variable):
         return FB
 
 
-class TypeVar(TypeMeta):
-
-    def __new__(cls, name, bases=()):
-        A = super().__new__(cls, name, bases, {})
-        A.variables = [name]
-
-        def match(B): 
-            if 'functor' not in dir(A):
-                return {name: B}
-            if 'functor' not in dir(B): 
-                return None
-            if A.functor == B.functor and len(A.types) == len(B.types):
-                out = {}
-                for Ai, Bi in zip(A.types, B.types):
-                    if isinstance(Ai, TypeVar):
-                        mi = Ai.match(Bi)
-                        if mi == None: return None
-                        out |= mi
-                    elif Ai != Bi:
-                        return None
-                return out
-            return None
-
-        def substitute(matches):
-            if 'functor' not in dir(A): 
-                return matches[A.__name__]
-            types = []
-            for Ai in A.types: 
-                types.append(Ai.substitute(matches) if isinstance(Ai, TypeVar) else Ai)
-            return A.functor(*types)
-        
-        A.match = match
-        A.substitute = substitute
-        return A
-    
-    def __init__(self, name, bases=()):
-        pass
-
-
 #--- Instances ---
 
-class Type(metaclass=TypeMeta):
+class Type(metaclass=TypeClass):
     pass
-

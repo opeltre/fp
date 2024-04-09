@@ -1,8 +1,8 @@
 import unittest
 
-from fp.meta import TypeMeta, Type, Functor, Arrow
+from fp.meta import TypeClass, Type, Functor, Arrow
 
-A = TypeMeta("A", (), {})
+A = TypeClass("A", (), {})
 f = Arrow(A, A)(lambda x: x)
 
 class TestFunctor(unittest.TestCase):
@@ -12,7 +12,7 @@ class TestFunctor(unittest.TestCase):
         class T(Functor):
 
             def __new__(cls, A):
-                return TypeMeta(f"T {A.__name__}", (A,), {})
+                return TypeClass(f"T {A.__name__}", (A,), {})
             
             @classmethod
             def fmap(cls, f):

@@ -1,9 +1,9 @@
 import unittest
 
-from fp.meta import TypeMeta, Arrow
+from fp.meta import TypeClass, Arrow
 
-A = TypeMeta("A", (int,), {})
-B = TypeMeta("B", (str,), {})
+A = TypeClass("A", (int,), {})
+B = TypeClass("B", (str,), {})
 
 foo = Arrow(B, A)(lambda y: len(y))
 bar = Arrow(A, B)(lambda x: '|' * x)
