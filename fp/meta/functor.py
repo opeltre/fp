@@ -68,6 +68,15 @@ class BifunctorClass(FunctorClass):
     kind = "(*, *) -> *"
     arity = 2
 
+    @Method
+    def fmap(B):
+        src, tgt = B.src, B.tgt
+        return src.Hom("A", "B"), tgt.Hom(B("X", "A"), B("X", "B"))
+
+    @Method
+    def cofmap(B):
+        src, tgt = B.src, B.tgt
+        return src.Hom("X", "Y"), tgt.Hom(B("Y", "A"), B("X", "A"))
 
 class NFunctorClass(FunctorClass):
 

@@ -152,6 +152,10 @@ class ArrowType:
 class Arrow(metaclass=ArrowClass):
 
     @classmethod
+    def _base(cls): 
+        return ArrowType
+
+    @classmethod
     def new(cls, A, B):
         
         _src, _tgt, _arity = cls._parse_tail(A, B)
@@ -189,10 +193,6 @@ class Arrow(metaclass=ArrowClass):
             return f"{A.__name__} -> {B.__name__}"
         return f"A -> B"
     
-    @classmethod
-    def _base(cls): 
-        return ArrowType
-
     @classmethod
     def _parse_tail(cls, A: type | Iterable[type], B: type):
         """Check that `A: type | Iterable[type] and B: type`."""

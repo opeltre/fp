@@ -41,11 +41,21 @@ class ConstructorClass(TypeClass):
 
         # --- decorate constructor.new
         def new(T, *As, **Ks):
-            if cls.arity is not ... and cls.arity - len(As) != 0:
-                raise TypeError(
-                    f"Wrong kind : could not apply {cls.arity}-ary "
-                    + f"functor {cls} to input {As}"
-                )
+
+            def check_nargs(cls, As):
+                if cls.arity is not ... and cls.arity - len(As) != 0:
+                    raise TypeError(
+                        f"Wrong kind : could not apply {cls.arity}-ary "
+                        + f"functor {cls} to input {As}"
+                    )
+
+            def parse_variables(cls, As):
+                As = tuple(Variable(A) if isinstance(A, str) else A for A in As)
+                var = any(isinstance(A, Variable) for A in As)
+                return As, var
+
+            check_nargs(cls, As)
+            As, var = parse_variables(cls, As)
             # get __name__
             name = T.name(*As)
             # inherit from T.new(*As)
@@ -55,7 +65,7 @@ class ConstructorClass(TypeClass):
             TA._head = T
             TA._tail = tuple(As)
             # return variable if one input is a variable
-            if any(isinstance(A, Variable) for A in As):
+            if var:
                 return Variable(TA.__name__, TA._head, TA._tail)
             return TA
         
@@ -82,7 +92,19 @@ class ConstructorClass(TypeClass):
         names = [A.__name__ if "__name__" in dir(A) else str(A) for A in As]
         tail = ", ".join(names)
         return f"{T.__name__} ({tail})" if len(names) > 1 else f"{T.__name__} {tail}"
+    
+    def methods(T):
+        """
+        Return method signatures of T.
+        """
+        return {name: ' -> '.join(map(str, sgn(T))) for name, sgn in T._methods.items()}
 
     @classmethod
     def _base(cls):
         return Type
+
+    def __init_subclass__(child, **kwargs):
+        """Inherit annotations from parent class."""
+        super().__init_subclass__(**kwargs)
+        cls = super(child, child)
+        child._methods = cls._methods.copy() 
