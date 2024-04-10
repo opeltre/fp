@@ -10,9 +10,10 @@ class WrapRing(Wrap):
     lifts = {name: lambda a: Hom((a, a), a) for name in binops} | {
         "__neg__": lambda a: Hom(a, a)
     }
-
-    def __new__(cls, A):
-        Wrap_A = super().__new__(cls, A)
+    
+    @classmethod
+    def new(cls, A):
+        Wrap_A = super().new(A)
         # torch.tensor is the correct torch.Tensor constructor
         if A == torch.Tensor:
             Wrap_A.cast_data = torch.tensor

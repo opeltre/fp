@@ -1,4 +1,4 @@
-from fp.meta import Type, Functor, FunctorClass, Hom 
+from fp.meta import Type, FunctorClass, Hom 
 
 
 class Id(metaclass=FunctorClass):
@@ -22,7 +22,7 @@ class Id(metaclass=FunctorClass):
         return A.__name__.capitalize()
 
 
-class List(Functor, metaclass=FunctorClass):
+class List(metaclass=FunctorClass):
     
     @classmethod
     def new(cls, A):
@@ -53,6 +53,9 @@ class List(Functor, metaclass=FunctorClass):
                 return "[" + ", ".join([str(x) for x in self]) + "]"
 
         return List_A
+    
+    def __init__(LA, A):
+        ...
 
     @classmethod
     def fmap(cls, f):

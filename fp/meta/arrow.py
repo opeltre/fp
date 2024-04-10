@@ -21,7 +21,7 @@ class ArrowClass(BifunctorClass):
         return (Arr('B', 'C'), Arr('A', 'B')), Arr('A', 'C')
 
 
-class Arrow(metaclass=BifunctorClass):
+class Arrow(metaclass=ArrowClass):
     
     @classmethod
     def new(cls, A, B):
@@ -41,6 +41,9 @@ class Arrow(metaclass=BifunctorClass):
     def cofmap(cls, psi):
         return lambda f: f @ psi
 
+    @classmethod
+    def compose(cls, phi, psi):
+        return cls(psi.src, phi.tgt)
 
 class HomClass(ArrowClass):
     """
@@ -209,15 +212,21 @@ class Hom(Arrow, metaclass=HomClass):
     @classmethod
     def name(cls, A, B):
         """Return __name__ attribute of arrow type."""
-        if isinstance(A, type) and isinstance(B, type):
-            return f"{A.__name__} -> {B.__name__}"
-        elif isinstance(A, (tuple, list)):
-            input = " -> ".join(
-                [Ak.__name__ if '__name__' in dir(A) else '*' for Ak in A])
-            return f"{input} -> {B.__name__}"
-        elif "__name__" in dir(A) and "__name__" in dir(B):
-            return f"{A.__name__} -> {B.__name__}"
-        return f"A -> B"
+        def name_one(C, wrap_arr=True):
+            if hasattr(C, '__name__'):
+                if wrap_arr and hasattr(C, '_head') and hasattr(C._head, 'compose'):
+                    return '(' + C.__name__ + ')'
+                else:
+                    return C.__name__
+            else:
+                return str(C)
+        
+        if isinstance(A, (tuple, list)):
+            src = " -> ".join(name_one(C) for C in A)
+            return src + " -> " + name_one(B)
+
+        else:
+            return name_one(A) + " -> " + name_one(B)
     
     @classmethod
     def _parse_tail(cls, A: type | Iterable[type], B: type):

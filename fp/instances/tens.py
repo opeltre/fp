@@ -2,13 +2,14 @@ import torch
 
 from .tensor import Tensor, WrapRing
 from .shape import Torus
-from fp.meta import HomClass, Hom, Functor, Bifunctor
+from fp.meta import HomClass, Hom, FunctorClass, BifunctorClass
 from fp.meta import RingClass
 
 
-class Tens(Functor):
-
-    def __new__(cls, A):
+class Tens(metaclass=FunctorClass):
+    
+    @classmethod
+    def new(cls, A):
 
         class Field_A(Tensor):
 
@@ -103,6 +104,9 @@ class Tens(Functor):
         dct["domain"] = Torus(A)
         TA = RingClass(name, bases, dct)
         return TA
+    
+    def __init__(cls, A):
+        ...
 
     @classmethod
     def name(cls, shape):
@@ -303,7 +307,7 @@ class Linear(metaclass=HomClass):
             return Tens((*s_x[: -len(s_in)], *s_out))
 
 
-class Otimes(Bifunctor):
+class Otimes(metaclass=BifunctorClass):
     """
     Tensor product of linear spaces.
     """

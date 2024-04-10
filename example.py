@@ -16,5 +16,5 @@ foobar = foo @ bar
 barfoo = bar @ foo
 
 # Enumerate type class methods
-for k, vk in List.methods().items():
+for k, vk in Hom.methods().items():
     print(k, ':\t', vk)

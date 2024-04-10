@@ -2,6 +2,8 @@ from .kind import Kind
 from .type import Constructor, Variable, Type, TypeClass
 from .method import Method
 
+from functools import cache
+
 import fp.io as io
 
 class ConstructorClass(TypeClass):
@@ -13,7 +15,7 @@ class ConstructorClass(TypeClass):
     def new(cls):
         """Return a new type"""
         return Type, Type
-  
+    
     def __new__(cls, name, bases, dct):
         """
         Return a new type constructor.
@@ -36,10 +38,13 @@ class ConstructorClass(TypeClass):
             if k in dct:
                 method = dct[k]
                 setattr(constructor, k, method)
+            elif any(hasattr(base, k) for base in bases):
+                continue
             else:
                 print(f"Missing method {k}: {constructor.__name__} <= {cls.__name__}")
 
         # --- decorate constructor.new
+        @cache
         def new(T, *As, **Ks):
 
             def check_nargs(cls, As):
@@ -67,6 +72,7 @@ class ConstructorClass(TypeClass):
             # return variable if one input is a variable
             if var:
                 return Variable(TA.__name__, TA._head, TA._tail)
+            T.__init__(TA, *As, **Ks)
             return TA
         
         constructor.__new__ = new

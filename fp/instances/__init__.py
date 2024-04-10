@@ -3,12 +3,14 @@ from .string import Str
 from .list import List
 
 from .wrap import Wrap
-#from .tensor import Tensor
-#from .shape import Torus
-#from .shape import Torus as Shape
-#from .tens import Tens, Linear, Otimes
-
 from fp.meta import Hom, Arrow, Prod, Bool
+
+#### torch-backend dependent
+from .tensor import Tensor
+from .shape import Torus
+from .shape import Torus as Shape
+from .tens import Tens, Linear, Otimes
+####
 
 __all__ = [
     "Int",
@@ -16,13 +18,14 @@ __all__ = [
     "Str",
     "List",
     "Wrap",
-#    "Tensor",
-#    "Torus",
-#    "Shape",
-#    "Tens",
-#    "Linear",
-#    "Otimes",
     "Arrow",
     "Prod",
     "Bool",
+#### torch
+   "Tensor",
+   "Torus",
+   "Shape",
+   "Tens",
+   "Linear",
+   "Otimes",
 ]
