@@ -1,6 +1,7 @@
-import fp
-from fp.meta      import Arrow, Prod, Type
-from fp.instances import List, Str, Int, Float, Bool, Wrap
+from fp import *
+from fp.meta import *
+
+import inspect
 
 # List functor 
 x = List(Str)(["abc", "d", "ef"])
@@ -14,3 +15,6 @@ bar = Arrow(Int, Str)(lambda n: "|" * n)
 foobar = foo @ bar
 barfoo = bar @ foo
 
+# Enumerate type class methods
+for k, vk in List.methods().items():
+    print(k, ':\t', vk)

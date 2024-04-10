@@ -32,7 +32,7 @@ class ConstructorClass(TypeClass):
         constructor = super().__new__(cls, name, bases, dct)
 
         # --- register methods
-        for k, v in cls._methods.items():
+        for k, v in Method.list(cls):
             if k in dct:
                 method = dct[k]
                 setattr(constructor, k, method)
@@ -97,14 +97,9 @@ class ConstructorClass(TypeClass):
         """
         Return method signatures of T.
         """
-        return {name: ' -> '.join(map(str, sgn(T))) for name, sgn in T._methods.items()}
+        methods = Method.list(type(T))
+        return {k: ' -> '.join(map(str, mk.signature(T))) for k, mk in methods}
 
     @classmethod
     def _base(cls):
         return Type
-
-    def __init_subclass__(child, **kwargs):
-        """Inherit annotations from parent class."""
-        super().__init_subclass__(**kwargs)
-        cls = super(child, child)
-        child._methods = cls._methods.copy() 

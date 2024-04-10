@@ -1,3 +1,5 @@
+import inspect
+
 class Method:
     """
     Method descriptor used as attribute to describe a type class.
@@ -30,8 +32,6 @@ class Method:
     """
 
     def __set_name__(self, owner, name):
-        owner._methods = owner._methods if "_methods" in dir(owner) else {}
-        owner._methods[name] = self.signature
         self._name = "_" + name
         self.name = name
 
@@ -41,8 +41,15 @@ class Method:
     def __get__(self, obj, objtype=None):
         if obj is not None:
             return getattr(obj, self._name)
-        elif self._name in dir(objtype):
-            return getattr(objtype, self._name)
+        else:
+            return self
 
     def __set__(self, obj, value):
         setattr(obj, self._name, value)
+
+    @classmethod
+    def list(cls, objtype):
+        """
+        List method names and signatures defined on a type class.
+        """
+        return inspect.getmembers(objtype, lambda x: isinstance(x, cls))
