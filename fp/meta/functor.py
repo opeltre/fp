@@ -75,7 +75,7 @@ class NFunctorClass(FunctorClass):
     arity = ...
 
 
-class Functor(TypeClass, metaclass=FunctorClass):
+class Functor(metaclass=FunctorClass):
     """Functor type class."""
 
     def fmap(cls, f):

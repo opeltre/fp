@@ -4,7 +4,7 @@ from .method import Method
 
 import fp.io as io
 
-class ConstructorClass(Kind):
+class ConstructorClass(TypeClass):
 
     kind = "(*, ...) -> *"
     arity = ...
@@ -29,8 +29,6 @@ class ConstructorClass(Kind):
         - setting `C(*As)__name__` as the output value of `C.name(*As)`.
         - returning a `Variable` instance if any argument is a variable.
         """
-        if not any(issubclass(base, TypeClass) for base in bases):
-            bases = (*bases, TypeClass)
         constructor = super().__new__(cls, name, bases, dct)
 
         # --- register methods
@@ -52,15 +50,13 @@ class ConstructorClass(Kind):
             name = T.name(*As)
             # inherit from T.new(*As)
             bases = (T.new(*As, **Ks), T._base())
-            TA = TypeClass.__new__(T, name, bases, {})
+            TA = TypeClass(name, bases, {})
             # symbolic (T)::(*As) ---
             TA._head = T
             TA._tail = tuple(As)
             # return variable if one input is a variable
             if any(isinstance(A, Variable) for A in As):
                 return Variable(TA.__name__, TA._head, TA._tail)
-            # init
-            T.__init__(TA, *As, **Ks)
             return TA
         
         constructor.__new__ = new

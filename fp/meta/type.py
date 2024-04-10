@@ -30,7 +30,7 @@ class TypeClass(type, metaclass=Kind):
                 return self
             T.show = show
         return T
-
+    
     @staticmethod
     def repr_method(rep):
         def _rep_(x):
