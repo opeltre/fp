@@ -1,7 +1,7 @@
 import unittest
 
 from fp.instances import Str, Int, Wrap
-from fp.meta import Arrow
+from fp.meta import Hom
 
 
 class TestWrap(unittest.TestCase):
@@ -16,7 +16,7 @@ class TestWrap(unittest.TestCase):
 
     def test_fmap(self):
         x = Wrap(Str)("yo")
-        f = Arrow(Str, Int)(len)
+        f = Hom(Str, Int)(len)
         Wf = Wrap.fmap(f)
         result = Wf(x)
         expect = Wrap(Int)(2)

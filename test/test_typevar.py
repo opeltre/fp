@@ -1,6 +1,6 @@
 import unittest
 
-from fp.meta import Variable, Constructor, Arrow
+from fp.meta import Variable, Constructor, Hom
 from fp.instances import List, Int, Str
 
 
@@ -29,15 +29,15 @@ class TestVariable(unittest.TestCase):
         result = TAB.match(T(Int, Str))
         self.assertEqual(result, None)
         # no match
-        result = TAB.match(Arrow(List(Int), Int))
+        result = TAB.match(Hom(List(Int), Int))
         self.assertEqual(result, None)
 
     def test_substitute(self):
-        A = Arrow("a", "a")
+        A = Hom("a", "a")
         result = A.substitute({"a": Int})
-        expect = Arrow(Int, Int)
+        expect = Hom(Int, Int)
         self.assertEqual(expect, result)
-        B = Arrow(List("b"), "c")
+        B = Hom(List("b"), "c")
         result = B.substitute({"b": Str, "c": Int})
-        expect = Arrow(List(Str), Int)
+        expect = Hom(List(Str), Int)
         self.assertEqual(expect, result)

@@ -53,7 +53,6 @@ class Prod(metaclass=NFunctorClass):
         src = cls((f.src for f in fs))
         tgt = cls((f.tgt for f in fs))
 
-        @Arrow(src, tgt)
         def map_f(*xs):
             return tgt(*(f(x) for x, f in zip(xs, fs)))
 

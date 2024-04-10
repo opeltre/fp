@@ -4,8 +4,9 @@ from .type import Type, TypeClass, Variable, Constructor
 from .constructor import ConstructorClass
 
 from .functor import Functor, FunctorClass, BifunctorClass, NFunctorClass
-from .arrow import ArrowClass, Arrow, Prod
-from .hom import Hom
+from .arrow import ArrowClass, Arrow, HomClass, Hom
+from .prod import Prod
+
 
 from .alg import RingClass, AlgClass, Bool
 
@@ -19,6 +20,7 @@ __all__ = [
     "NFunctorClass",
     "ArrowClass",
     "Arrow",
+    "HomClass",
     "Hom",
     "Prod",
     "Type",
@@ -29,3 +31,6 @@ __all__ = [
     "AlgClass",
     "Bool",
 ]
+
+# Category of types: move this
+Type.Hom = Hom

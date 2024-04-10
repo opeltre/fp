@@ -1,5 +1,5 @@
 import torch
-from fp.meta import Arrow, Functor, RingClass
+from fp.meta import Hom, Functor, RingClass
 
 from .num import Int
 from .list import List
@@ -81,7 +81,7 @@ class BaseShape(Tensor):
             Tens d Long -> Tens 1 Long
         """
         tgt = Torus([cls.n[d]])
-        proj_d = Arrow(cls, tgt)(lambda x: x.data.select(-1, d))
+        proj_d = Hom(cls, tgt)(lambda x: x.data.select(-1, d))
         proj_d.__name__ = f"p{d}"
         return proj_d
 
@@ -96,7 +96,7 @@ class BaseShape(Tensor):
             ds = torch.tensor(ds, dtype=torch.long)
         tgt = Torus([cls.n[d] for d in ds])
 
-        @Arrow(cls, tgt)
+        @Hom(cls, tgt)
         def res_ds(x):
             return x.data.index_select(-1, ds)
 
@@ -115,7 +115,7 @@ class BaseShape(Tensor):
         for i, d in enumerate(ds):
             mat[d, i] = 1
 
-        @Arrow(src, cls)
+        @Hom(src, cls)
         def emb_index(x):
             y = mat @ x if x.dim() == 1.0 else (mat @ x.T).T
             return int(cls.index(y))
@@ -152,8 +152,8 @@ class Torus(Functor):
         SA.size = size
 
         flat = Torus([SA.size]) if SA.dim > 1 else SA
-        SA.index = Arrow(SA, flat)(SA.index)
-        SA.coords = Arrow(flat, SA)(SA.coords)
+        SA.index = Hom(SA, flat)(SA.index)
+        SA.coords = Hom(flat, SA)(SA.coords)
         return SA
 
     def __init__(self, ns):

@@ -1,7 +1,7 @@
 import unittest
 import torch
 
-from fp import Tens, Arrow
+from fp import Tens, Hom
 
 Tx = Tens([3, 2])
 Ty = Tens([3])
@@ -15,7 +15,7 @@ class TestTens(unittest.TestCase):
 
     def test_add_type(self):
         result = type(Tx.add)
-        expect = Arrow((Tx, Tx), Tx)
+        expect = Hom((Tx, Tx), Tx)
         self.assertEqual(expect, result)
 
     def test_add(self):
@@ -37,6 +37,6 @@ class TestTens(unittest.TestCase):
         y = Ty.randn()
         add_y = Ty.add(y)
         result = type(add_y)
-        expect = Arrow(Ty, Ty)
+        expect = Hom(Ty, Ty)
         self.assertEqual(expect, result)
         self.assertTrue(isinstance(add_y(y), Ty))

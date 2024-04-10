@@ -8,7 +8,7 @@ from .wrap import Wrap
 #from .shape import Torus as Shape
 #from .tens import Tens, Linear, Otimes
 
-from fp.meta import Arrow, Prod, Bool
+from fp.meta import Hom, Arrow, Prod, Bool
 
 __all__ = [
     "Int",

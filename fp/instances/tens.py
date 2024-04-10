@@ -2,7 +2,7 @@ import torch
 
 from .tensor import Tensor, WrapRing
 from .shape import Torus
-from fp.meta import ArrowClass, Arrow, Functor, Bifunctor
+from fp.meta import HomClass, Hom, Functor, Bifunctor
 from fp.meta import RingClass
 
 
@@ -123,7 +123,7 @@ class Tens(Functor):
         return Linear(ms, ns)(mat)
 
 
-class Linear(metaclass=ArrowClass):
+class Linear(metaclass=HomClass):
     """
     Linear maps types, containing dense or sparse matrices.
 
@@ -136,7 +136,7 @@ class Linear(metaclass=ArrowClass):
         A, B = Tens([2, 3]), Tens([4])
         assert Linear(A, B) == Linear([2, 3], [4])
 
-    Linear map instances inherit from the Arrow class, overriding
+    Linear map instances inherit from the Hom class, overriding
     composition and application by matrix-matrix and matrix-vector
     products respectively.
     """
@@ -150,7 +150,7 @@ class Linear(metaclass=ArrowClass):
         NA = int(torch.tensor(A).prod())
         NB = int(torch.tensor(B).prod())
 
-        class LinAB(Tens([NB, NA]), Arrow(Tens(A), Tens(B))):
+        class LinAB(Tens([NB, NA]), Hom(Tens(A), Tens(B))):
 
             functor = Linear
             input = (A, B)
@@ -163,11 +163,8 @@ class Linear(metaclass=ArrowClass):
                     mat = mat.coalesce()
                 self.data = mat
 
-                # Arrow(Tens([A]), Tens([B])) attributes
-                def call(x): 
-                    return cls.matvec(self.data, x)
-                self.call = call
-                           
+                # Hom(Tens([A]), Tens([B])) attributes
+                self.call = lambda x: cls.matvec(matrix, x)
                 if mat.is_sparse:
                     nnz = mat.indices().shape[-1]
                     self.__name__ = f"sparse {NB}x{NA} (nnz={nnz})"
@@ -325,7 +322,7 @@ class Otimes(Bifunctor):
                 return cls(x | y)
 
         Tens_AB.__name__ = cls.name(Tens_A, Tens_B)
-        Tens_AB.pure = Arrow((Tens_A, Tens_B), Tens_AB)(Tens_AB.pure)
+        Tens_AB.pure = Hom((Tens_A, Tens_B), Tens_AB)(Tens_AB.pure)
         return Tens_AB
 
     def __init__(self, Tens_A, Tens_B):

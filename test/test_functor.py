@@ -1,9 +1,9 @@
 import unittest
 
-from fp.meta import TypeClass, Type, Functor, Arrow
+from fp.meta import TypeClass, Type, Functor, Hom
 
 A = TypeClass("A", (), {})
-f = Arrow(A, A)(lambda x: x)
+f = Hom(A, A)(lambda x: x)
 
 
 class TestFunctor(unittest.TestCase):
@@ -24,7 +24,7 @@ class TestFunctor(unittest.TestCase):
         self.assertTrue(result)
 
         Tf = T.fmap(f)
-        result = isinstance(Tf, Arrow(A, A))
+        result = isinstance(Tf, Hom(A, A))
         self.assertTrue(result)
 
         y = TA()

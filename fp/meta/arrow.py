@@ -10,26 +10,53 @@ import fp.io as io
 
 class ArrowClass(BifunctorClass):
     """
-    Type constructor for arrow bifunctors.
+    Arrow type class. 
 
-    An `Arrow(A, B)` object f implements:
+    A bifunctor instance `Arr` implements composition:
 
-        f.src        = A
-        f.tgt        = B
-
-        f.__matmul__ : Arrow(B, C) -> Arrow(A, C)
-
-        f.arity      : Int (default 1)
-
-    Arrows of a concrete category moreover
-    implement a `.__call__` method.
+        Arr.compose: Arr(b, c) -> Arr(a, b) -> Arr(a, c)
     """
     @Method
     def compose(Arr):
         return (Arr('B', 'C'), Arr('A', 'B')), Arr('A', 'C')
 
 
-class ArrowType:
+class Arrow(metaclass=BifunctorClass):
+    
+    @classmethod
+    def new(cls, A, B):
+
+        class Arrow_AB:
+
+            src = A
+            tgt = B
+
+        return Arrow_AB
+
+    @classmethod
+    def fmap(cls, phi):
+        return lambda f: phi @ f
+
+    @classmethod
+    def cofmap(cls, psi):
+        return lambda f: f @ psi
+
+
+class HomClass(ArrowClass):
+    """
+    Morphism type class.
+
+    An arrow instance `Hom` implements evaluation:
+
+        Hom.eval: a -> Hom(a, b) -> b
+    """
+
+    @Method
+    def eval(Hom):
+        return ('A', Hom('A', 'B')), 'B'
+
+
+class HomType:
 
     src: type
     tgt: type
@@ -106,7 +133,6 @@ class ArrowType:
             f"Cannot curry {Arr.arity} function on " + f"{len(xs)}-ary input"
         )
 
-
     @staticmethod
     def source_type(arrow, xs):
         if "source_type" in dir(arrow._head):
@@ -149,18 +175,18 @@ class ArrowType:
         return self.__name__
 
 
-class Arrow(metaclass=ArrowClass):
+class Hom(Arrow, metaclass=HomClass):
 
     @classmethod
     def _base(cls): 
-        return ArrowType
+        return HomType 
 
     @classmethod
     def new(cls, A, B):
         
         _src, _tgt, _arity = cls._parse_tail(A, B)
 
-        class TAB(ArrowType):
+        class TAB:
 
             src = _src
             tgt = _tgt
@@ -168,10 +194,6 @@ class Arrow(metaclass=ArrowClass):
 
         return TAB
     
-    @classmethod
-    def fmap(cls, f):
-        return lambda phi: f @ phi
-
     def __init__(TAB, A, B):
         ...
 
@@ -179,6 +201,10 @@ class Arrow(metaclass=ArrowClass):
     def compose(cls, f, g):
         """Composition of functions"""
         return cls(g.src, f.tgt)(lambda *xs: f(g(*xs)))
+    
+    @classmethod
+    def eval(cls, x, f):
+        return f(x)
 
     @classmethod
     def name(cls, A, B):

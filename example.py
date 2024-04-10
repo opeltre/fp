@@ -7,9 +7,9 @@ import inspect
 x = List(Str)(["abc", "d", "ef"])
 y = List(Int)([0, 1, 2])
 
-# Arrow bifunctor
-foo = Arrow(Str, Int)(len)
-bar = Arrow(Int, Str)(lambda n: "|" * n)
+# Hom bifunctor
+foo = Hom(Str, Int)(len)
+bar = Hom(Int, Str)(lambda n: "|" * n)
 
 # composition 
 foobar = foo @ bar

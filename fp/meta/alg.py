@@ -1,5 +1,5 @@
 from .type import TypeClass
-from .arrow import Arrow
+from .arrow import Hom
 
 # --- Numerical types ---
 
@@ -23,7 +23,7 @@ class RingClass(TypeClass):
         arities = [2] * 3 + [1]
         for n, r in zip(names, arities):
             op = getattr(T, f"__{n}__")
-            op = Arrow(T, T)(op) if r == 1 else Arrow(tuple([T] * r), T)(op)
+            op = Hom(T, T)(op) if r == 1 else Hom(tuple([T] * r), T)(op)
             op.__name__ = n
             setattr(T, n, op)
         # eq : T -> T -> Bool
@@ -32,7 +32,7 @@ class RingClass(TypeClass):
         if "Bool" in dir(cls):
             eq = T.op_method(T, T.__eq__, tgt=cls.Bool)
             eq.__name__ = "eq"
-            T.eq = Arrow((T, T), cls.Bool)(eq)
+            T.eq = Hom((T, T), cls.Bool)(eq)
 
     @staticmethod
     def op_method(T, op, tgt=None, arity=2):
@@ -66,7 +66,7 @@ class AlgClass(RingClass):
     def __new__(cls, name, bases, dct):
         T = super().__new__(cls, name, bases, dct)
         T.__truediv__ = cls.op_method(T, T.__truediv__)
-        div = Arrow((T, T), T)(T.__truediv__)
+        div = Hom((T, T), T)(T.__truediv__)
         div.__name__ = "div"
         T.div = div
         return T

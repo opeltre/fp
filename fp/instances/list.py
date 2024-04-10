@@ -1,4 +1,4 @@
-from fp.meta import Type, Functor, FunctorClass, Arrow 
+from fp.meta import Type, Functor, FunctorClass, Hom 
 
 
 class Id(metaclass=FunctorClass):
@@ -15,7 +15,7 @@ class Id(metaclass=FunctorClass):
     @classmethod
     def fmap(cls, f):
         src, tgt = cls(f.src), cls(f.tgt)
-        return Arrow(src, tgt)(f)
+        return Hom(src, tgt)(f)
 
     @classmethod
     def name(cls, A):
@@ -58,7 +58,7 @@ class List(Functor, metaclass=FunctorClass):
     def fmap(cls, f):
         """List map: (A -> B) -> List A -> List B"""
 
-        #@Arrow(cls(f.src), cls(f.tgt))
+        #@Hom(cls(f.src), cls(f.tgt))
         def mapf(xs):
             return [f(x) for x in xs]
 

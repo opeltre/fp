@@ -1,4 +1,4 @@
-from fp.meta import Type, Functor, Arrow, Prod
+from fp.meta import Type, Functor, Hom, Prod
 
 
 class Wrap(Functor):
@@ -13,7 +13,7 @@ class Wrap(Functor):
 
     such that `homtype(A)` is the type of method `A.name`, e.g.
 
-        lifts = { 'add' : lambda A : Arrow((A, A), A)}
+        lifts = { 'add' : lambda A : Hom((A, A), A)}
 
     The output type `Wrap A` will inherit a method 'name' wrapping the
     call on contained values.
@@ -78,13 +78,13 @@ class Wrap(Functor):
     @classmethod
     def fmap(cls, f):
         src, tgt = cls(f.src), cls(f.tgt)
-        return Arrow(src, tgt)(lambda x: f(x.data))
+        return Hom(src, tgt)(lambda x: f(x.data))
 
     @classmethod
     def fmap2(cls, f):
         src = tuple([cls(si) for si in f.src.types])
         tgt = cls(f.tgt)
-        map_f = Arrow(src, tgt)(lambda x, y: f(x.data, y.data))
+        map_f = Hom(src, tgt)(lambda x, y: f(x.data, y.data))
         map_f.__name__ = f"map2 {f.__name__}"
         return map_f
 
@@ -92,6 +92,6 @@ class Wrap(Functor):
     def fmapN(cls, f):
         src = tuple([cls(si) for si in f.src.types])
         tgt = cls(f.tgt)
-        map_f = Arrow(src, tgt)(lambda *xs: f(*(x.data for x in xs)))
+        map_f = Hom(src, tgt)(lambda *xs: f(*(x.data for x in xs)))
         map_f.__name__ = f"mapN {f.__name__}"
         return map_f

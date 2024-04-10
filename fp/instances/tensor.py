@@ -1,5 +1,5 @@
 import torch
-from fp.meta import Arrow, AlgClass, TypeClass, Functor
+from fp.meta import Hom, AlgClass, TypeClass, Functor
 from .wrap import Wrap
 
 binops = ["__add__", "__sub__", "__mul__", "__truediv__"]
@@ -7,8 +7,8 @@ binops = ["__add__", "__sub__", "__mul__", "__truediv__"]
 
 class WrapRing(Wrap):
 
-    lifts = {name: lambda a: Arrow((a, a), a) for name in binops} | {
-        "__neg__": lambda a: Arrow(a, a)
+    lifts = {name: lambda a: Hom((a, a), a) for name in binops} | {
+        "__neg__": lambda a: Hom(a, a)
     }
 
     def __new__(cls, A):
