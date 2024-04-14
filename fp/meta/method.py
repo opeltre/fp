@@ -46,10 +46,16 @@ class Method:
 
     def __set__(self, obj, value):
         setattr(obj, self._name, value)
-
+    
     @classmethod
     def list(cls, objtype):
         """
         List method names and signatures defined on a type class.
+
+        Problem:
+        -------
+        Methods appear in alphabetical order, but it would be more
+        understandable if they appeared in the order they were 
+        created. 
         """
         return inspect.getmembers(objtype, lambda x: isinstance(x, cls))

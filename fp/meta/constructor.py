@@ -6,7 +6,7 @@ from functools import cache
 
 import fp.io as io
 
-class ConstructorClass(TypeClass):
+class ConstructorClass(type, metaclass=Kind):
 
     kind = "(*, ...) -> *"
     arity = ...
@@ -31,6 +31,9 @@ class ConstructorClass(TypeClass):
         - setting `C(*As)__name__` as the output value of `C.name(*As)`.
         - returning a `Variable` instance if any argument is a variable.
         """
+        # --- enforce TypeClass inheritance
+        #if not any(isinstance(B, type) for B in bases):
+        #    bases = (TypeClass, *bases)
         constructor = super().__new__(cls, name, bases, dct)
 
         # --- register methods
@@ -44,6 +47,7 @@ class ConstructorClass(TypeClass):
                 print(f"Missing method {k}: {constructor.__name__} <= {cls.__name__}")
 
         # --- decorate constructor.new
+
         @cache
         def new(T, *As, **Ks):
 
@@ -61,11 +65,10 @@ class ConstructorClass(TypeClass):
 
             check_nargs(cls, As)
             As, var = parse_variables(cls, As)
-            # get __name__
-            name = T.name(*As)
             # inherit from T.new(*As)
-            bases = (T.new(*As, **Ks), T._base())
-            TA = TypeClass(name, bases, {})
+            TA = T.new(*As, **Ks)
+            # get __name__
+            TA.__name__ = T.name(*As)
             # symbolic (T)::(*As) ---
             TA._head = T
             TA._tail = tuple(As)

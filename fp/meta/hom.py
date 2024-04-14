@@ -8,7 +8,7 @@ from .arrow import ArrowClass
 from typing import Literal
 
 
-class Prod(metaclass=NFunctorClass):
+class Prod(TypeClass, metaclass=NFunctorClass):
     """
     Product functor.
     """
@@ -57,7 +57,7 @@ class Prod(metaclass=NFunctorClass):
         return "(" + ", ".join(A.__name__ for A in As) + ")"
 
 
-class Hom(metaclass=ArrowClass):
+class Hom(TypeClass, metaclass=ArrowClass):
 
     @classmethod
     def new(cls, A, B):

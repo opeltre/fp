@@ -26,7 +26,7 @@ class Arrow(metaclass=ArrowClass):
     @classmethod
     def new(cls, A, B):
 
-        class Arrow_AB:
+        class Arrow_AB(Type):
 
             src = A
             tgt = B
@@ -59,7 +59,7 @@ class HomClass(ArrowClass):
         return ('A', Hom('A', 'B')), 'B'
 
 
-class HomType:
+class HomType(Type):
 
     src: type
     tgt: type
@@ -189,7 +189,7 @@ class Hom(Arrow, metaclass=HomClass):
         
         _src, _tgt, _arity = cls._parse_tail(A, B)
 
-        class TAB:
+        class TAB(HomType):
 
             src = _src
             tgt = _tgt

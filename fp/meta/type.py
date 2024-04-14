@@ -17,18 +17,19 @@ class TypeClass(type, metaclass=Kind):
 
     kind = "*"
 
-    def __new__(cls, name, bases, dct):
+    def __new__(cls, name, bases=(), dct={}, head=None, tail=None):
         """Create a new type."""
         T = super().__new__(cls, name, bases, dct)
+        # expression tree for pattern matching 
+        T._head = name if isinstance(head, type(None)) else head
+        T._tail = tail
+        # pretty print type annotations
         T.__str__ = cls.str_method(T.__str__)
         T.__repr__ = cls.repr_method(T.__repr__)
+        #### cast?
         if not "cast" in dir(T):
             T.cast = cls.cast_method(T)
-        if not "show" in dir(T):
-            def show(self):
-                print(self.__repr__())
-                return self
-            T.show = show
+        ####
         return T
     
     @staticmethod
@@ -48,7 +49,8 @@ class TypeClass(type, metaclass=Kind):
     @staticmethod
     def str_method(show):
         return lambda x: show(x)
-
+    
+    #### 
     @staticmethod
     def cast_method(T):
 
@@ -62,6 +64,7 @@ class TypeClass(type, metaclass=Kind):
                 raise fp.io.CastError(T, x)
 
         return _cast_
+    ####
 
     def __repr__(self):
         """Show type name."""
@@ -132,4 +135,5 @@ class Constructor(Variable):
 
 
 class Type(metaclass=TypeClass):
+
     pass

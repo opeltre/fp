@@ -21,7 +21,6 @@ class Id(metaclass=FunctorClass):
     def name(cls, A):
         return A.__name__.capitalize()
 
-
 class List(metaclass=FunctorClass):
     
     @classmethod
@@ -61,7 +60,7 @@ class List(metaclass=FunctorClass):
     def fmap(cls, f):
         """List map: (A -> B) -> List A -> List B"""
 
-        #@Hom(cls(f.src), cls(f.tgt))
+        @Hom(cls(f.src), cls(f.tgt))
         def mapf(xs):
             return [f(x) for x in xs]
 

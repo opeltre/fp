@@ -1,6 +1,5 @@
 from fp.meta import Type, FunctorClass, Hom, Prod
 
-
 class Wrap(metaclass=FunctorClass):
     """
     Type wrapper lifting selected methods to the contained value.
@@ -22,7 +21,7 @@ class Wrap(metaclass=FunctorClass):
 
     @classmethod
     def new(cls, A):
-
+        
         class Wrap_A(Type):
 
             def __init__(self, data):
@@ -41,7 +40,7 @@ class Wrap(metaclass=FunctorClass):
 
             def __repr__(self):
                 return A.__str__(self.data)
-
+            
             if "__eq__" in dir(A):
 
                 def __eq__(self, other):
@@ -64,6 +63,7 @@ class Wrap(metaclass=FunctorClass):
         # --- Lift methods
         cls = Wrap_A._head
         for name, homtype in cls.lifts.items():
+            break
             if not name in Wrap_A.lifts:
                 f = homtype(A)(getattr(A, name))
                 if f.arity == 1:
@@ -74,6 +74,28 @@ class Wrap(metaclass=FunctorClass):
                     Wf = cls.fmapN(f)
                 setattr(Wrap_A, name, Wf)
                 Wrap_A.lifts[name] = Wf
+    
+    ### not called ### 
+
+    def __getattr__(self, name):
+
+        lift_types = {name: sgn(self) for name, sgn in self.__class__.lifts.items()}
+
+        print("getattr", name)
+        try:
+            lift_type = lift_types[name]
+        except KeyError as error:
+            print("Could not find {name} in lifts")
+            raise error
+        
+        method = getattr(A, name)
+        if lift_type.arity == 1:
+            return lift_type(cls.fmap(method))
+        elif lift_type.arity == 2:
+            return lift_type(cls.fmap2(method))
+        else:
+            return lift_type(cls.fmapN(method))
+    ###
 
     @classmethod
     def fmap(cls, f):
@@ -81,7 +103,6 @@ class Wrap(metaclass=FunctorClass):
 
     @classmethod
     def fmap2(cls, f):
-        print(f.src._tail)
         map_f = lambda x, y: f(x.data, y.data)
         map_f.__name__ = f"map2 {f.__name__}"
         return map_f

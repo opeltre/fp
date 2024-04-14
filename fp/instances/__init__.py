@@ -6,10 +6,10 @@ from .wrap import Wrap
 from fp.meta import Hom, Arrow, Prod, Bool
 
 #### torch-backend dependent
-from .tensor import Tensor
-from .shape import Torus
-from .shape import Torus as Shape
-from .tens import Tens, Linear, Otimes
+#   from .tensor import Tensor
+#   from .shape import Torus
+#   from .shape import Torus as Shape
+#   from .tens import Tens, Linear, Otimes
 ####
 
 __all__ = [
@@ -22,10 +22,10 @@ __all__ = [
     "Prod",
     "Bool",
 #### torch
-   "Tensor",
-   "Torus",
-   "Shape",
-   "Tens",
-   "Linear",
-   "Otimes",
+#  "Tensor",
+#  "Torus",
+#  "Shape",
+#  "Tens",
+#  "Linear",
+#  "Otimes",
 ]
