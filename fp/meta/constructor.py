@@ -1,114 +1,79 @@
 from .kind import Kind
-from .type import Constructor, Variable, Type, TypeClass
+from .type import Type
 from .method import Method
 
 from functools import cache
 
 import fp.io as io
 
-class ConstructorClass(type, metaclass=Kind):
+
+class Constructor(Kind):
+    """
+    Constructor metaclass. 
+
+    Instances `T` of `Constructor` define a classmethod `T.new(*As)`
+    returning a type value `T(*As) = T A1 ... An`. 
+    """
 
     kind = "(*, ...) -> *"
     arity = ...
-
-    @Method
-    def new(cls):
-        """Return a new type"""
-        return Type, Type
     
+    class _defaults_: 
+        
+        kind = "(*, ...) -> *"
+
+        @classmethod
+        def new(cls, *As):
+            try:
+                base = cls._top_
+                return Type.__new__(cls, 'T As', (base,), {})
+                if isinstance(base, Type):
+                    return cls('T A', (base,), {})
+                return super(Type, cls).__new__(cls, base.__name__, (base,), {})
+            except:
+                raise RuntimeError(f"Method {cls.__name__}.new was not overriden.")
+
+        def _post_new_(TA, *As):
+            ...
+
+        def __init__(TA, *As):
+            ...
+
+    @Method 
+    def new(T):
+        return ..., type 
+
     def __new__(cls, name, bases, dct):
         """
-        Return a new type constructor.
-
-        The class body of a type constructor instance `C` will be looked up for 
-        methods whose signature has been registered with `@fp.meta.Method`. 
-
-        In particular, the type instance `C` is expected to have a classmethod `C.new`returning 
-        a class. It will be called from the actual `__new__` method of the constructor,
-        which takes care of:
-        - setting `_head` and `_tail` attributes of `C(*As)` as `C` and `As` respectively 
-        for symbolic representation of type expressions, 
-        - setting `C(*As)__name__` as the output value of `C.name(*As)`.
-        - returning a `Variable` instance if any argument is a variable.
+        Define a new type constructor by wrapping `T.new`.
         """
-        # --- enforce TypeClass inheritance
-        #if not any(isinstance(B, type) for B in bases):
-        #    bases = (TypeClass, *bases)
-        constructor = super().__new__(cls, name, bases, dct)
+        T = super().__new__(cls, name, (*bases, cls._defaults_), dct)
+        # wrap T.__new__
+        T.__new__ = Constructor._new_
+        return T
 
-        # --- register methods
-        for k, v in Method.list(cls):
-            if k in dct:
-                method = dct[k]
-                setattr(constructor, k, method)
-            elif any(hasattr(base, k) for base in bases):
-                continue
-            else:
-                print(f"Missing method {k}: {constructor.__name__} <= {cls.__name__}")
-
-        # --- decorate constructor.new
-
-        @cache
-        def new(T, *As, **Ks):
-
-            def check_nargs(cls, As):
-                if cls.arity is not ... and cls.arity - len(As) != 0:
-                    raise TypeError(
-                        f"Wrong kind : could not apply {cls.arity}-ary "
-                        + f"functor {cls} to input {As}"
-                    )
-
-            def parse_variables(cls, As):
-                As = tuple(Variable(A) if isinstance(A, str) else A for A in As)
-                var = any(isinstance(A, Variable) for A in As)
-                return As, var
-
-            check_nargs(cls, As)
-            As, var = parse_variables(cls, As)
-            # inherit from T.new(*As)
-            TA = T.new(*As, **Ks)
-            # get __name__
-            TA.__name__ = T.name(*As)
-            # symbolic (T)::(*As) ---
-            TA._head = T
-            TA._tail = tuple(As)
-            # return variable if one input is a variable
-            if var:
-                return Variable(TA.__name__, TA._head, TA._tail)
-            T.__init__(TA, *As, **Ks)
-            return TA
-        
-        constructor.__new__ = new
-        
-        # return initialized instance
-        cls.__init__(constructor, name, bases, dct)
-        return constructor
+    def _get_name_(T, *As):
+        """
+        String representation of output type.
+        """
+        get_name = lambda A: A.__name__ if hasattr(A, '__name__') else str(A)
+        if len(As) > 1:
+            tail = '(' + ', '.join(get_name(A) for A in As) + ')'
+        elif len(As) == 1: 
+            tail = get_name(As[0])
+        else: 
+            tail = ''
+        return T.__name__ + ' ' + tail
     
-    def __init__(T, name, bases, dct):
+    @cache
+    @staticmethod
+    def _new_(T, *As):
         """
-        Initialize a constructor class.
-
-        Override to append methods on the returned types.
+        Wrapper around T.new constructor to be referenced as T.__new__.
         """
-        super().__init__(name, bases, dct)
-
-    def name(T, *As):
-        """
-        Return `__name__` string of output type.
-
-        Override as a classmethod from `ConstructorClass` instances as needed.
-        """
-        names = [A.__name__ if "__name__" in dir(A) else str(A) for A in As]
-        tail = ", ".join(names)
-        return f"{T.__name__} ({tail})" if len(names) > 1 else f"{T.__name__} {tail}"
-    
-    def methods(T):
-        """
-        Return method signatures of T.
-        """
-        methods = Method.list(type(T))
-        return {k: ' -> '.join(map(str, mk.signature(T))) for k, mk in methods}
-
-    @classmethod
-    def _base(cls):
-        return Type
+        TA = T.new(*As)
+        TA.__name__ = T._get_name_(*As)
+        T._post_new_(TA, *As)
+        TA._head_ = T
+        TA._tail_ = As
+        return TA

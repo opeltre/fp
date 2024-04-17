@@ -1,94 +1,90 @@
 from __future__ import annotations
 
-from .kind import Kind
-from .type import Type, TypeClass, Variable, Constructor
 from .method import Method
-from .constructor import ConstructorClass
+from .kind import Kind
+from .constructor import Constructor
+from .type import Type
 
-import fp.io
+import fp.io as io
+
+class Category(Kind):
+    
+    @Method
+    def Hom(T):
+        return (T, T), Type
 
 
-class FunctorType:
-    """
-    Base class for types of the form `Functor(*As)`. 
-    """
-    def map(x, f, tgt=None):
+
+class Functor(Constructor):
+    
+    src: Category
+    tgt: Category
+    
+    kind = "* -> *"
+    arity = 1
+    
+    @Method
+    def fmap(T):
+        return T.src.Hom('A', 'B'), T.tgt.Hom(T('A'), T('B'))
+
+    class _instance_:
         """
-        Bound `map` method, equivalent to `Functor.fmap(f)(x)`.
+        Base class for types of the form `Functor(*As)`. 
         """
-        T = x._head
-        if not True:
-            src = x._tail if T.arity != 1 else x._tail[0]
+        def map(Tx, f, tgt=None):
+            """
+            Bound `map` method, equivalent to `Functor.fmap(f)(x)`.
+            """
+            T = Tx._head_
+            if isinstance(f, T.src.Hom._top_):
+                return T.fmap(f)(Tx)
+            src = x._tail_ if T.arity != 1 else Tx._tail_[0]
             f = T.src.Hom(src, tgt)(f)
-            return T.fmap(f)(x)
-        return T.fmap(f)(x)
+            return T.fmap(f)(Tx)
 
 
-class FunctorClass(ConstructorClass):
+class Cofunctor(Constructor):
+    
+    src: Category
+    tgt: Category
 
     kind = "* -> *"
     arity = 1
-    src, tgt = Type, Type
 
     @Method
-    def fmap(F):
-        """
-        Functorial transformation of morphisms.
-        """
-        return F.src.Hom("A", "B"), F.tgt.Hom(F("A"), F("B"))
-    
-    def __matmul__(F, G):
-        """
-        Composition of functors.
-        """
-
-        class FG(Functor):
-
-            kind = G.kind
-            arity = G.arity
-            src, tgt = G.src, F.tgt
-
-            def __new__(cls, *As, **Ks):
-                return F(G(*As, **Ks))
-
-            @classmethod
-            def fmap(cls, f):
-                return F.fmap(G.fmap(f))
-
-        FG.__name__ = f"{F.__name__} @ {G.__name__}"
-        return FG
-    
-    @classmethod
-    def _base(cls):
-        return FunctorType
+    def cofmap(T): 
+        return T.src.Hom('X', 'Y'), T.tgt.Hom(T('Y'), T('X'))
 
 
-class BifunctorClass(FunctorClass):
+class Bifunctor(Functor, Cofunctor):
 
-    kind = "(*, *) -> *"
+    kind = "(* , *) -> *"
     arity = 2
 
     @Method
-    def fmap(B):
-        src, tgt = B.src, B.tgt
-        return src.Hom("A", "B"), tgt.Hom(B("X", "A"), B("X", "B"))
+    def fmap(T):
+        return T.src.Hom('A', 'B'), T.tgt.Hom(T('X', 'A'), T('X', 'B'))
 
     @Method
-    def cofmap(B):
-        src, tgt = B.src, B.tgt
-        return src.Hom("X", "Y"), tgt.Hom(B("Y", "A"), B("X", "A"))
+    def cofmap(T):
+        return T.src.Hom('X', 'Y'), T.tgt.Hom(T('Y', 'A'), T('X', 'A'))
 
-class NFunctorClass(FunctorClass):
+
+class NFunctor(Functor):
 
     kind = "(*, ...) -> *"
     arity = ...
 
 
-class Functor(metaclass=FunctorClass):
-    """Functor type class."""
+class ArrowFunctor(Bifunctor):
 
-    def fmap(cls, f):
-        raise NotImplementedError(f"{cls}.fmap")
+    @Method
+    def compose(T):
+        return (T('A', 'B'), T('B', 'C')), T('A', 'C')
 
-    def new(cls, *As):
-        return Type
+
+class HomFunctor(ArrowFunctor):
+
+    @Method
+    def eval(T):
+        return ('A', T('A', 'B')), 'B'
