@@ -1,9 +1,45 @@
-from fp.meta import Type, FunctorClass, Hom, Prod
+from fp.meta import Type, Monad
+from .hom import Hom
+import fp.io as io
 
-class Wrap(metaclass=FunctorClass):
+from types import MethodType
+from typing import Callable, Iterable
+
+
+class WrappedType(Monad._instance_, metaclass=Type):
     """
-    Type wrapper lifting selected methods to the contained value.
+    Base type for wrapped values.
+    """
 
+    def __init__(self, data):
+        """Wrap a value."""
+        A = self._tail_[0]
+        if isinstance(data, A):
+            self.data = data
+        elif "cast_data" in dir(self.__class__):
+            self.data = self.__class__.cast_data(data)
+        else:
+            try:
+                self.data = A(data)
+            except:
+                raise io.TypeError("input for Wrap {A}", data, A)
+
+    def __repr__(self):
+        return self._tail_[0].__str__(self.data)
+    
+    @classmethod
+    def cast(cls, data):
+        if isinstance(data, cls):
+            return data
+        T = type(data)
+        if "_head_" in dir(T) and "data" in dir(data):
+            return cls(data.data)
+        return cls(data)
+
+
+class Wrap(Type, metaclass=Monad):
+    """
+    Type wrapper lifting selected methods to the container type.
 
     The `lifts` class attribute is looked up to assign lifted methods.
     It expects a dictionary of method type signatures of the following form:
@@ -12,90 +48,61 @@ class Wrap(metaclass=FunctorClass):
 
     such that `homtype(A)` is the type of method `A.name`, e.g.
 
-        lifts = { 'add' : lambda A : Hom((A, A), A)}
+        lifts = { 'add' : lambda A : Type.Hom((A, A), A)}
 
     The output type `Wrap A` will inherit a method 'name' wrapping the
     call on contained values.
     """
-    lifts = {} 
 
-    @classmethod
-    def new(cls, A):
-        
-        class Wrap_A(Type):
-
-            def __init__(self, data):
-                if isinstance(data, A):
-                    self.data = data
-                elif "cast_data" in dir(self.__class__):
-                    self.data = self.__class__.cast_data(data)
-                else:
-                    try:
-                        self.data = A(data)
-                    except:
-                        raise TypeError(
-                            f"Received invalid input {data} : {type(data)} "
-                            + f"for Wrap {A} instance"
-                        )
-
-            def __repr__(self):
-                return A.__str__(self.data)
-            
-            if "__eq__" in dir(A):
-
-                def __eq__(self, other):
-                    return self.data == other.data
-
-            @classmethod
-            def cast(cls, data):
-                if isinstance(data, cls):
-                    return data
-                T = type(data)
-                if "_head" in dir(T) and "data" in dir(data):
-                    return cls(data.data)
-                return cls(data)
-
+    _top_ = WrappedType
+    
+    _lifted_methods_ = []
+    
+    def _post_new_(Wrap_A, A):
+        # --- Lift methods
         Wrap_A.lifts = {}
+        cls = Wrap_A.__class__
+        for name, signature, lift_args in cls._lifted_methods_:
+            homtype = signature(Wrap_A)
+            f = getattr(A, name)
+            Wf = cls.lift(f, homtype, lift_args)
+            setattr(Wrap_A, name, Wf)
+            Wrap_A.lifts[name] = Wf
         return Wrap_A
 
-
-    def __init__(Wrap_A, A):
-        # --- Lift methods
-        cls = Wrap_A._head
-        for name, homtype in cls.lifts.items():
-            break
-            if not name in Wrap_A.lifts:
-                f = homtype(A)(getattr(A, name))
-                if f.arity == 1:
-                    Wf = cls.fmap(f)
-                elif f.arity == 2:
-                    Wf = cls.fmap2(f)
-                else:
-                    Wf = cls.fmapN(f)
-                setattr(Wrap_A, name, Wf)
-                Wrap_A.lifts[name] = Wf
+    @classmethod
+    def join(cls, wwx):
+        A = wwx._tail_[0]._tail_[0]
+        return cls(A)(x.data.data)
     
-    ### not called ### 
+    @classmethod
+    def unit(cls, x): 
+        return cls(type(x))(x)
+    
+    @classmethod
+    def lift(
+        cls, 
+        method: MethodType, 
+        homtype: Type, 
+        lift_args: Iterable[int] | type(...) = ...
+    ) -> Type.Hom._top_ :
+        """
+        Lift a method to the wrapped type. 
+        """
+        if isinstance(lift_args, int):
+            lift_args = (lift_args,)
+        elif lift_args is ...:
+            lift_args = tuple(range(homtype.arity))
 
-    def __getattr__(self, name):
+        @homtype
+        def lifted_method(*xs):
+            xs = list(xs)
+            for i in lift_args:
+                xs[i] = xs[i].data
+            return io.cast(method(*xs), homtype.tgt)
 
-        lift_types = {name: sgn(self) for name, sgn in self.__class__.lifts.items()}
+        return lifted_method
 
-        print("getattr", name)
-        try:
-            lift_type = lift_types[name]
-        except KeyError as error:
-            print("Could not find {name} in lifts")
-            raise error
-        
-        method = getattr(A, name)
-        if lift_type.arity == 1:
-            return lift_type(cls.fmap(method))
-        elif lift_type.arity == 2:
-            return lift_type(cls.fmap2(method))
-        else:
-            return lift_type(cls.fmapN(method))
-    ###
 
     @classmethod
     def fmap(cls, f):
@@ -111,6 +118,6 @@ class Wrap(metaclass=FunctorClass):
     def fmapN(cls, f):
         src = tuple([cls(si) for si in f.src._tail])
         tgt = cls(f.tgt)
-        map_f = Hom(src, tgt)(lambda *xs: f(*(x.data for x in xs)))
+        map_f = Type.Hom(src, tgt)(lambda *xs: f(*(x.data for x in xs)))
         map_f.__name__ = f"mapN {f.__name__}"
         return map_f

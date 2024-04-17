@@ -2,11 +2,11 @@ import torch
 
 from .tensor import Tensor, WrapRing
 from .shape import Torus
-from fp.meta import HomClass, Hom, FunctorClass, BifunctorClass
-from fp.meta import RingClass
+from fp.meta import HomFunctor, Functor, Bifunctor
+from fp.instances import Hom, Ring
 
 
-class Tens(metaclass=FunctorClass):
+class Tens(metaclass=Functor):
     
     @classmethod
     def new(cls, A):
@@ -127,7 +127,7 @@ class Tens(metaclass=FunctorClass):
         return Linear(ms, ns)(mat)
 
 
-class Linear(metaclass=HomClass):
+class Linear(metaclass=HomFunctor):
     """
     Linear maps types, containing dense or sparse matrices.
 
@@ -307,7 +307,7 @@ class Linear(metaclass=HomClass):
             return Tens((*s_x[: -len(s_in)], *s_out))
 
 
-class Otimes(metaclass=BifunctorClass):
+class Otimes(metaclass=Bifunctor):
     """
     Tensor product of linear spaces.
     """

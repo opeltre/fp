@@ -1,31 +1,26 @@
-from .num import Int, Float
-from .string import Str
+from fp.meta import Type
+from .arrow import Arrow
+from .hom import Hom
+from .prod import Prod
+from .num import Eq, Bool
+from .num import Operad, Monoid, Ring, Alg
+from .num import Int, Float, Str
+from .num import Str
 from .list import List
 
 from .wrap import Wrap
-from fp.meta import Hom, Arrow, Prod, Bool
-
-#### torch-backend dependent
-#   from .tensor import Tensor
-#   from .shape import Torus
-#   from .shape import Torus as Shape
-#   from .tens import Tens, Linear, Otimes
-####
 
 __all__ = [
-    "Int",
-    "Float",
-    "Str",
-    "List",
-    "Wrap",
-    "Arrow",
     "Prod",
+    "Arrow",
+    "Hom",
+    "Monoid",
+    "Ring",
+    "Alg",
     "Bool",
-#### torch
-#  "Tensor",
-#  "Torus",
-#  "Shape",
-#  "Tens",
-#  "Linear",
-#  "Otimes",
+    "Int", 
+    "Float",
+    "List",
+    "Str",
+    "Wrap",
 ]

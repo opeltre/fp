@@ -1,30 +1,32 @@
 import torch
-from fp.meta import Hom, AlgClass, TypeClass, Functor
-from .wrap import Wrap
+from fp.instances import Type, Hom, Wrap, Alg, Ring
 
-binops = ["__add__", "__sub__", "__mul__", "__truediv__"]
+signature = lambda n : lambda A: Hom(tuple([A] * n), A)
 
+class WrapRing(Wrap, Ring):
 
-class WrapRing(Wrap):
-
-    lifts = {name: lambda a: Hom((a, a), a) for name in binops} | {
-        "__neg__": lambda a: Hom(a, a)
-    }
+    _lifted_methods_ = [
+        ("__add__", signature(2) , ...),
+        ("__sub__", signature(2), ...),
+        ("__mul__", signature(2), ...),
+        ("__truediv__", signature(2), ...),
+        ("__neg__", signature(1), ...),
+    ]
     
     @classmethod
     def new(cls, A):
         Wrap_A = super().new(A)
         # torch.tensor is the correct torch.Tensor constructor
         if A == torch.Tensor:
-            Wrap_A.cast_data = torch.tensor
+            Wrap_A.cast_data = torch.as_tensor
             # torch.tensor casts
             for T in ["float", "cfloat", "long", "double"]:
                 method = lambda x: x.__class__(getattr(A, T)(x.data))
                 setattr(Wrap_A, T, method)
         return Wrap_A
+    
 
-
-class Tensor(WrapRing(torch.Tensor), metaclass=AlgClass):
+class Tensor(WrapRing(torch.Tensor)):
 
     @classmethod
     def sparse(cls, shape, indices, values=None):
