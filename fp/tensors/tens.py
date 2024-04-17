@@ -1,115 +1,123 @@
 import torch
 
-from .tensor import Tensor, WrapRing
+from ._wrap_alg import WrapRing
+from .tensor import Tensor
 from .shape import Torus
 from fp.meta import HomFunctor, Functor, Bifunctor
 from fp.instances import Hom, Ring
 
-
-class Tens(metaclass=Functor):
+class TypedTensor(Tensor, metaclass=Ring):
     
+    shape: Tensor
+    domain : Torus 
+
+    def __init__(self, data):
+        S = self.__class__.shape
+        if isinstance(data, Tensor):
+            data = data.data
+        if not isinstance(data, torch.Tensor):
+            data = torch.tensor(data)
+        if S == tuple(data.shape) or S == list(data.shape):
+            self.data = data
+        elif len(data.shape) == 0:
+            self.data = data
+        elif S[-len(data.shape) :] == list(data.shape):
+            self.data = data
+        else:
+            self.data = data.reshape(S)
+
+    def otimes(self, other):
+        """
+        Tensor product of two instances.
+
+        The tensor product xy of vectors x and y is defined by:
+
+            xy[i, j] = x[i] * y[j]
+
+        In general, if x : Tens(A) and y : Tens(B) then xy
+        is of type Tens([*A, *B])
+        """
+        TA, TB = self.__class__, other.__class__
+        TAB = cls([*TA.shape, *TB.shape])
+        xy = Tensor.otimes(self, other)
+        return TAB(xy)
+
+    @classmethod
+    def zeros(cls, **ks):
+        return cls(torch.zeros(cls.shape, **ks))
+
+    @classmethod
+    def ones(cls, **ks):
+        return cls(torch.ones(cls.shape, **ks))
+
+    @classmethod
+    def randn(cls, **ks):
+        return cls(torch.randn(cls.shape, **ks))
+
+    @classmethod
+    def rand(cls, **ks):
+        return cls(torch.rand(cls.shape, **ks))
+
+    @classmethod
+    def range(cls):
+        return cls(torch.arange(cls.domain.size).view(cls.shape))
+
+    @classmethod
+    def embed(cls, *ds):
+        """Linear embedding Tens B -> Tens A for B subface of A.
+
+        This algebra morphishm extends a tensor on the restriction
+        `B = [A[di] for di in ds]` by:
+
+            f_a[di] = f_b[i] for i, di in enumerate(d)
+            f_a[dj] = 0      for dj not in d
+
+        This is the pullback of the coordinate map `cls.domain.res(*ds)`,
+        and the linear adjoint of `cls.proj(*ds)`.
+        """
+        res = cls.domain.res(*ds)
+        return Tens.cofmap(res)
+
+    @classmethod
+    def proj(cls, *ds):
+        """Partial integration Tens A -> Tens B for B subface of A.
+
+        This linear map projects onto tensors of shape
+        `B = [A[di] for di in ds]` by:
+
+            g_b[xb] = sum_{xa[ds] = xb} g_a[xa]
+
+        This is the pushforward of the coordinate map `cls.domain.res(*ds)`
+        (acting on measures), and the adjoint of the algebra morphism `cls.embed(*ds)`.
+        """
+        return cls.embed(*ds).t()
+    
+
+class Tens(Ring, metaclass=Functor):
+
     @classmethod
     def new(cls, A):
 
-        class Field_A(Tensor):
+        class Tens_A(TypedTensor):
 
             shape = A
             domain = Torus(A)
+        
+        return Tens_A
 
-            def __init__(self, data):
-                S = self.__class__.shape
-                if isinstance(data, Tensor):
-                    data = data.data
-                if not isinstance(data, torch.Tensor):
-                    data = torch.tensor(data)
-                if S == tuple(data.shape) or S == list(data.shape):
-                    self.data = data
-                elif len(data.shape) == 0:
-                    self.data = data
-                elif S[-len(data.shape) :] == list(data.shape):
-                    self.data = data
-                else:
-                    self.data = data.reshape(S)
-
-            def otimes(self, other):
-                """
-                Tensor product of two instances.
-
-                The tensor product xy of vectors x and y is defined by:
-
-                    xy[i, j] = x[i] * y[j]
-
-                In general, if x : Tens(A) and y : Tens(B) then xy
-                is of type Tens([*A, *B])
-                """
-                TA, TB = self.__class__, other.__class__
-                TAB = cls([*TA.shape, *TB.shape])
-                xy = Tensor.otimes(self, other)
-                return TAB(xy)
-
-            @classmethod
-            def zeros(cls, **ks):
-                return cls(torch.zeros(cls.shape, **ks))
-
-            @classmethod
-            def ones(cls, **ks):
-                return cls(torch.ones(cls.shape, **ks))
-
-            @classmethod
-            def randn(cls, **ks):
-                return cls(torch.randn(cls.shape, **ks))
-
-            @classmethod
-            def rand(cls, **ks):
-                return cls(torch.rand(cls.shape, **ks))
-
-            @classmethod
-            def range(cls):
-                return cls(torch.arange(cls.domain.size).view(cls.shape))
-
-            @classmethod
-            def embed(cls, *ds):
-                """Linear embedding Tens B -> Tens A for B subface of A.
-
-                This algebra morphishm extends a tensor on the restriction
-                `B = [A[di] for di in ds]` by:
-
-                    f_a[di] = f_b[i] for i, di in enumerate(d)
-                    f_a[dj] = 0      for dj not in d
-
-                This is the pullback of the coordinate map `cls.domain.res(*ds)`,
-                and the linear adjoint of `cls.proj(*ds)`.
-                """
-                res = cls.domain.res(*ds)
-                return Tens.cofmap(res)
-
-            @classmethod
-            def proj(cls, *ds):
-                """Partial integration Tens A -> Tens B for B subface of A.
-
-                This linear map projects onto tensors of shape
-                `B = [A[di] for di in ds]` by:
-
-                    g_b[xb] = sum_{xa[ds] = xb} g_a[xa]
-
-                This is the pushforward of the coordinate map `cls.domain.res(*ds)`
-                (acting on measures), and the adjoint of the algebra morphism `cls.embed(*ds)`.
-                """
-                return cls.embed(*ds).t()
-
-        name = cls.name(A)
+        name = cls._get_name_(A)
         bases = (Tensor,)
         dct = dict(Field_A.__dict__)
         dct["shape"] = list(A)
         dct["domain"] = Torus(A)
-        TA = RingClass(name, bases, dct)
+        TA = Ring.__new__(cls, name, bases, dct)
         return TA
     
     def __init__(cls, A):
         ...
 
     @classmethod
-    def name(cls, shape):
+    def _get_name_(cls, shape):
         return f'Tens {"x".join(str(n) for n in shape)}'
 
     @classmethod
@@ -126,6 +134,8 @@ class Tens(metaclass=Functor):
         mat = Tensor.sparse([g.src.size, g.tgt.size], ij)
         return Linear(ms, ns)(mat)
 
+    def __str__(TA):
+        return TA.__name__
 
 class Linear(metaclass=HomFunctor):
     """
@@ -144,12 +154,13 @@ class Linear(metaclass=HomFunctor):
     composition and application by matrix-matrix and matrix-vector
     products respectively.
     """
+    
+    @classmethod
+    def new(cls, A, B):
 
-    def __new__(cls, A, B):
-
-        if isinstance(A, RingClass):
+        if isinstance(A, Ring):
             A = A.shape
-        if isinstance(B, RingClass):
+        if isinstance(B, Ring):
             B = B.shape
         NA = int(torch.tensor(A).prod())
         NB = int(torch.tensor(B).prod())

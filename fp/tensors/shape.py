@@ -1,6 +1,6 @@
 import torch
-from fp.meta import Functor
-from fp.instances import Int, List, Ring
+from fp.meta import Functor, Type
+from fp.instances import Int, List, Ring, Hom
 from .tensor import Tensor
 
 class BaseShape(Tensor):
@@ -120,38 +120,51 @@ class BaseShape(Tensor):
         return emb_index
 
 
-class Torus(Functor):
+class Torus(Ring, metaclass=Functor):
 
-    def __new__(cls, A):
+    class _top_(BaseShape):
+        ...
 
+    @classmethod
+    def new(cls, A):
+
+        class Torus_A(BaseShape, metaclass=Ring):
+            ...
+
+        return Torus_A
+
+            
+        # new shape instance
         if isinstance(A, type(None)):
-            A = []
-
-        d = len(A)
-        TA = torch.tensor(A)
-
+            A = ()
         if not all(isinstance(ni, (int, torch.LongTensor)) for ni in A):
             raise TypeError("Expecting integer arguments")
-
-        dct = dict(BaseShape.__dict__)
-        SA = RingClass(cls.name(A), BaseShape.__bases__, dct)
-
+        return super().new(A, (cls._top_,), {})
+    
+    @classmethod
+    def _post_new_(cls, SA, A):
+        print("Torus new", A)
+        dim = len(A)
+        TA = torch.tensor(A)
+        # attributes
         SA.dim = len(A)
         SA.n = list(A)
         SA.ns = torch.tensor(A)
         SA.shape = SA.n
-        SA.mod = torch.tensor([torch.prod(TA[i + 1 :]) for i in range(d)])
-        SA.rmod = torch.tensor([torch.prod(TA[:-i]) for i in range(d)])
+        SA.mod = torch.tensor([torch.prod(TA[i + 1 :]) for i in range(dim)])
+        SA.rmod = torch.tensor([torch.prod(TA[:-i]) for i in range(dim)])
 
         size = 1
         for ni in A:
             size *= ni
         SA.size = size
-
-        flat = Torus([SA.size]) if SA.dim > 1 else SA
+    
+        flat = Torus((SA.size,)) if SA.dim > 1 else SA
         SA.index = Hom(SA, flat)(SA.index)
         SA.coords = Hom(flat, SA)(SA.coords)
         return SA
+        '''
+        '''
 
     def __init__(self, ns):
         pass
@@ -161,7 +174,7 @@ class Torus(Functor):
         pass
 
     @classmethod
-    def name(cls, ns):
+    def _get_name_(cls, ns):
         if isinstance(ns, type(None)):
             return f"Torus ."
         return f'Torus {"x".join(str(n) for n in ns)}'

@@ -24,7 +24,7 @@ class TensorBase:
 
     # --- Type casts ---
 
-class Tensor(WrapRing(torch.Tensor)):
+class Tensor(WrapRing(torch.Tensor), TensorBase):
 
     @classmethod
     def sparse(cls, shape, indices, values=None):
