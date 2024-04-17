@@ -126,13 +126,12 @@ class Ring(Monoid):
 class Alg(Ring):
     """Algebra type class."""
 
-    def __new__(cls, name, bases, dct):
-        T = super().__new__(cls, name, bases, dct)
+    def __init__(T, name, bases, dct):
+        cls = T.__class__
         T.__truediv__ = cls.lift_op(T, T.__truediv__)
         div = Type.Hom((T, T), T)(T.__truediv__)
         div.__name__ = "div"
         T.div = div
-        return T
 
 #----- Instances ------
 

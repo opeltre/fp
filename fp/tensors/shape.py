@@ -1,6 +1,6 @@
 import torch
-from fp.meta import Functor, Ring
-from fp.instances import Int, List
+from fp.meta import Functor
+from fp.instances import Int, List, Ring
 from .tensor import Tensor
 
 class BaseShape(Tensor):

@@ -1,10 +1,15 @@
+from __future__ import annotations
+
 from .kind import Kind
 from .type import Type
 from .method import Method
 
-from functools import cache
+import functools
+
+from typing import Callable, Any
 
 import fp.io as io
+import fp.utils 
 
 
 class Constructor(Kind):
@@ -23,7 +28,7 @@ class Constructor(Kind):
         kind = "(*, ...) -> *"
 
         @classmethod
-        def new(cls, *As):
+        def new(cls, *As: Any):
             try:
                 base = cls._top_
                 return Type.__new__(cls, 'T As', (base,), {})
@@ -40,7 +45,7 @@ class Constructor(Kind):
             ...
 
     @Method 
-    def new(T):
+    def new(T: Constructor):
         return ..., type 
 
     def __new__(cls, name, bases, dct):
@@ -49,10 +54,10 @@ class Constructor(Kind):
         """
         T = super().__new__(cls, name, (*bases, cls._defaults_), dct)
         # wrap T.__new__
-        T.__new__ = Constructor._new_
+        T.__new__ = cls._cache_new_(Constructor._new_)
         return T
 
-    def _get_name_(T, *As):
+    def _get_name_(T, *As: Any) -> str:
         """
         String representation of output type.
         """
@@ -65,9 +70,24 @@ class Constructor(Kind):
             tail = ''
         return T.__name__ + ' ' + tail
     
-    @cache
+    @classmethod
+    def _cache_new_(cls, new : Callable) -> Callable:
+        """
+        Cached `Constructor.__new__`, compatible with subclass definitions.
+        """
+        new_ = functools.cache(new)
+        def cached_new(cls, *xs, **ys):
+            try: 
+                # T(*As)
+                return new_(cls, *xs, **ys)
+            except:
+                # class MyT(T(*As), metaclass=T):
+                return super().__new__(cls, *xs, **ys)
+
+        return cached_new
+
     @staticmethod
-    def _new_(T, *As):
+    def _new_(T:Constructor, *As: Any) -> Type:
         """
         Wrapper around T.new constructor to be referenced as T.__new__.
         """

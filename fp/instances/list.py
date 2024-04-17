@@ -38,9 +38,6 @@ class List(Monoid, metaclass=Monad):
     def new(cls, A):
         return Monoid.__new__(cls, 'List A', (cls._top_,), {})
     
-    def __init__(self, A):
-        super().__init__()
-
     @classmethod
     def fmap(cls, f):
         """List map: (A -> B) -> List A -> List B"""
