@@ -20,6 +20,7 @@ class Operad(Type):
     _operators_ : list[tuple[str, int]]
 
     def __init__(T, name="A", bases=(), dct={}):
+        super().__init__(name, bases, dct)
         cls = T.__class__
         for op_name, r in cls._operators_:
             # lift operator: '__add__', ...
@@ -75,20 +76,8 @@ class Ring(Monoid):
     ]
 
     def __init__(T, name="R", bases=(), dct={}):
+        super().__init__(name, bases, dct)
         cls = T.__class__
-        # operators
-        T.__add__ = cls.lift_op(T, T.__add__)
-        T.__sub__ = cls.lift_op(T, T.__sub__)
-        T.__mul__ = cls.lift_op(T, T.__mul__)
-        T.__neg__ = cls.lift_op(T, T.__neg__, arity=1)
-        # operator aliases
-        names = ["add", "sub", "mul", "neg"]
-        arities = [2] * 3 + [1]
-        for n, r in zip(names, arities):
-            op = getattr(T, f"__{n}__")
-            op = Type.Hom(T, T)(op) if r == 1 else Type.Hom(tuple([T] * r), T)(op)
-            op.__name__ = n
-            setattr(T, n, op)
         # eq : T -> T -> Bool
         if name == "Bool":
             cls.Bool = T
@@ -127,6 +116,7 @@ class Alg(Ring):
     """Algebra type class."""
 
     def __init__(T, name, bases, dct):
+        super().__init__(name, bases, dct)
         cls = T.__class__
         T.__truediv__ = cls.lift_op(T, T.__truediv__)
         div = Type.Hom((T, T), T)(T.__truediv__)
