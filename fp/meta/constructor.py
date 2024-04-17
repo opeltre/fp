@@ -31,11 +31,12 @@ class Constructor(Kind):
         def new(cls, *As: Any):
             try:
                 base = cls._top_
+                if isinstance(cls, Type):
+                    print("__new__ from type cls: ", type(cls))
+                    return type(cls).__new__(cls, 'T A', (base,), {})
                 return Type.__new__(cls, 'T As', (base,), {})
-                if isinstance(base, Type):
-                    return cls('T A', (base,), {})
-                return super(Type, cls).__new__(cls, base.__name__, (base,), {})
-            except:
+            except Exception as e:
+                print(e)
                 raise RuntimeError(f"Method {cls.__name__}.new was not overriden.")
 
         def _post_new_(TA, *As):
@@ -82,7 +83,7 @@ class Constructor(Kind):
                 return new_(cls, *xs, **ys)
             except:
                 # class MyT(T(*As), metaclass=T):
-                return super().__new__(cls, *xs, **ys)
+                return new(cls, *xs, **ys)
 
         return cached_new
 
@@ -91,9 +92,16 @@ class Constructor(Kind):
         """
         Wrapper around T.new constructor to be referenced as T.__new__.
         """
-        TA = T.new(*As)
-        TA.__name__ = T._get_name_(*As)
-        T._post_new_(TA, *As)
-        TA._head_ = T
-        TA._tail_ = As
-        return TA
+        try:
+            TA = T.new(*As)
+            TA.__name__ = T._get_name_(*As)
+            T._post_new_(TA, *As)
+            TA._head_ = T
+            TA._tail_ = As
+            return TA
+        except:
+            TA = Type.__new__(T, *As)
+            base = As[1][0]
+            TA._head_ = base._head_
+            TA._tail_ = base._tail_
+            return TA

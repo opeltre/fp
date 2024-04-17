@@ -13,9 +13,9 @@ class Kind(type):
     def __new__(cls, name, bases, dct):
         """Create a kind."""
         T = super().__new__(cls, name, bases, dct)
-        T.__str__ = lambda t: t.__name__
+        T.__str__ = lambda t: t.__name__ if hasattr(t, "__name__") else "?"
         T.__repr__ = lambda t: (
-            Fore.MAGENTA + f"{type(t)} : " + Fore.RESET + f"{t.__name__}"
+            Fore.MAGENTA + f"{type(t)} : " + Fore.RESET + T.__str__(t)
         )
         cls._check_methods_(T, bases, dct)
         return T
