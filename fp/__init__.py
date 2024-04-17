@@ -1,3 +1,9 @@
-from fp.instances import *
-import fp.meta as meta
 import fp.io as io
+import fp.meta as meta
+import fp.instances as instances
+from fp.instances import *
+Type = meta.Type
+
+__all__ = instances.__all__ + [
+    "Type",
+]
