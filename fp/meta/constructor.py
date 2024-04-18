@@ -11,6 +11,7 @@ from typing import Callable, Any
 import fp.io as io
 import fp.utils 
 
+from colorama import Fore
 
 class Constructor(Kind):
     """
@@ -23,7 +24,7 @@ class Constructor(Kind):
     kind = "(*, ...) -> *"
     arity = ...
     
-    class _defaults_: 
+    class _defaults_ : 
         
         kind = "(*, ...) -> *"
 
@@ -57,8 +58,8 @@ class Constructor(Kind):
         # wrap T.__new__
         T.__new__ = cls._cache_new_(Constructor._new_)
         return T
-
-    def _get_name_(T, *As: Any) -> str:
+    
+    def _get_name_(T , *As: Any) -> str:
         """
         String representation of output type.
         """
@@ -81,9 +82,10 @@ class Constructor(Kind):
             try: 
                 # T(*As)
                 return new_(cls, *xs, **ys)
-            except:
+            except Exception as e:
                 # class MyT(T(*As), metaclass=T):
                 return new(cls, *xs, **ys)
+                raise e
 
         return cached_new
 
@@ -93,15 +95,108 @@ class Constructor(Kind):
         Wrapper around T.new constructor to be referenced as T.__new__.
         """
         try:
-            TA = T.new(*As)
+            if any(isinstance(A, (str, Var)) for A in As):
+                if len(As) >= 3 and isinstance(As[2], dict):
+                    raise RuntimeError("")
+                Bs = []
+                if T is not Var:
+                    As = tuple(Var(A) if isinstance(A, str) else A for A in As)
+                if issubclass(T, Var):
+                    print("Var T A")
+                    TA = T.new(*Bs)
+                else:
+                    print("T.var(*As)")
+                    TA = T.var(T.__name__).new(*Bs)
+            else:
+                TA = T.new(*As)
             TA.__name__ = T._get_name_(*As)
-            T._post_new_(TA, *As)
             TA._head_ = T
             TA._tail_ = As
+            T._post_new_(TA, *As)
             return TA
-        except:
+        except Exception as e:
             TA = Type.__new__(T, *As)
             base = As[1][0]
             TA._head_ = base._head_
             TA._tail_ = base._tail_
             return TA
+        except:
+            raise io.ConstructorError("new", T, As)
+        
+    @classmethod
+    def var(cls, name="T") -> str:
+        """
+        Return constructor instance acting on type variables.
+        """
+        class VarT(Var, metaclass=cls):
+
+            src = Type
+            tgt = Var
+
+        VarT.__name__ = name
+        return VarT
+
+
+# --- Type variables ---
+
+class Var(Type, metaclass=Constructor):
+    
+    class _top_:
+
+        def __repr__(self):
+            return Fore.GREEN + self.__name__ + Fore.RESET
+
+        def __str__(self):
+            return Fore.YELLOW + self.__name__ + Fore.RESET
+
+    def __init__(A, name, head=None, tail=None):
+        if A._tail_ == (A.__name__,):
+            A._tail_ = None
+
+    def match(A, B):
+        """Matches `{"Ai": Type}` against a concrete type B."""
+        print("match A:", A, "\tB:", B) 
+        # --- leaf node ---
+        if A._tail_ == None:
+            return {A.__name__: B}
+        if not "_head_" in dir(B):
+            print("no head!")
+            return None
+
+        out = {}
+        # --- head of expression ---
+        if isinstance(A._head_, Var): 
+            out[A._head_.__name__] = B._head_
+
+        # --- tail of expression
+        if len(A._tail_) == len(B._tail_):
+            for Ai, Bi in zip(A._tail_, B._tail_):
+                print("match Ai:", Ai, "\tBi:", Bi)
+                if isinstance(Ai, Var):
+                    mi = Var.match(Ai, Bi)
+                    if mi == None:
+                        return None
+                    elif Ai.__name__ not in out:
+                        out |= mi
+                    elif out[Ai.__name__] != Bi:
+                        return None
+                elif Ai != Bi:
+                    return None
+            return out
+        return None
+    
+    @classmethod
+    def _get_name_(cls, name, *xs, **ys):
+        return name
+
+    def substitute(A, matches):
+        """Return concrete type obtained by substitution of matches."""
+        if A._tail_ == None:
+            return matches[A.__name__]
+        head = (
+            A._head_ if not isinstance(A._head_, Var) else matches[A._head_.__name__]
+        )
+        tail = []
+        for Ai in A._tail_:
+            tail.append(Ai.substitute(matches) if isinstance(Ai, Var) else Ai)
+        return head(*tail)

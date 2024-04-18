@@ -1,13 +1,13 @@
 import unittest
 
-from fp.meta import Variable, Constructor, Hom
+from fp.meta import Var, Constructor, Hom
 from fp.instances import List, Int, Str
 
 
-class TestVariable(unittest.TestCase):
+class TestVar(unittest.TestCase):
 
     def test_variable(self):
-        A = Variable("A")
+        A = Var("A")
         self.assertTrue(isinstance(A, type))
         self.assertTrue(A.__name__ == "A")
         result = A.match(Int)
@@ -21,7 +21,7 @@ class TestVariable(unittest.TestCase):
     def test_match(self):
         T, F = Constructor("T"), Constructor("F")
         TAB = T(F("A"), "B")
-        self.assertTrue(isinstance(TAB, Variable))
+        self.assertTrue(isinstance(TAB, Var))
         # match
         result = TAB.match(T(F(Int), Str))["A"]
         self.assertEqual(Int, result)

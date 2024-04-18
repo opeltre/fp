@@ -2,7 +2,7 @@ class Error(Exception): ...
 
 class TypeError(Error):
 
-    def __init__(self, name, x, Tx):
+    def __init__(self, name , x, Tx):
         msg = f"\n> Invalid type for " + name + ": "
         msg += f"\n      got {x}: {type(x)}, expected {Tx}"
         super().__init__(msg)
@@ -11,6 +11,12 @@ class CastError(Error):
 
     def __init__(self, T, x):
         msg = f"\n  Could not cast {x} to {T}"
+        super().__init__(msg)
+
+class ConstructorError(Error):
+
+    def __init__(self, name, T, As):
+        msg = f"\n\t{T}.new{As}"
         super().__init__(msg)
 
 class CompositionError(Error):
