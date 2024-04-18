@@ -111,6 +111,12 @@ class HomInstance(Arrow._top_):
 
 
 class Hom(Arrow, metaclass=HomFunctor):
+    """
+    Hom Functor.
+
+    The type `Hom(A, B) = A -> B` describes callables with input in `A` 
+    and output in `B`.
+    """
     
     _top_ = HomInstance
     
@@ -132,6 +138,24 @@ class Hom(Arrow, metaclass=HomFunctor):
 
     @classmethod
     def compose(cls, f, *fs):
+        """
+        Pipe a collection of functions. 
+
+        The usual composition of two functions `f @ g` is 
+        obtained as `Hom.compose(g, f)`. 
+        Applied on an input `x`, this returned pipe satisfies:
+
+        .. code::
+            
+            >>> Hom.compose(f, *fs)(x) == Hom.compose(*fs)(f(x))
+            True
+
+        Note:
+        -----
+        Composition is made associative by storing the sequence 
+        of functions in a flat tuple, instead of stacking function
+        closures. 
+        """
         src = f.src
         tgt = (fs[-1] if len(fs) else f).tgt
         pipe = sum((list(fi._pipe) for fi in (f, *fs)), [])
@@ -139,12 +163,29 @@ class Hom(Arrow, metaclass=HomFunctor):
 
     @classmethod
     def eval(cls, x, f):
+        """
+        Evaluate `f` on input `x`.
+        """
         return f(x)
     
     @classmethod
     def curry(cls, f, xs):
         """
-        Curried function applied to n-ary input xs for n < arity.
+        Curried function applied to n-ary input `xs` for n < arity.
+
+        Example:
+        --------
+
+        .. code::
+
+            >>> Int.add
+            Int -> Int -> Int: add
+            >>> Int.add(2, 3)
+            Int: 5
+            >>> Int.add(2):
+            Int -> Int: add 2
+            >>> Int.add(2)(3) 
+            Int: 3
         """
         if len(xs) < f.arity:
             ts = f.src._tail_[-(f.arity - len(xs)) :]

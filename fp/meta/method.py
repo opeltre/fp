@@ -1,4 +1,5 @@
 import inspect
+#import fp.meta.type 
 
 class Method:
     """
@@ -18,13 +19,17 @@ class Method:
     Returns:
     --------
         `method (Method)`:
-            a python descriptor with __dict__ lookup on type instances.
+            a python descriptor with `__dict__` lookup on type instances.
+            Warnings will be printed upon class instance creation 
+            for any missing method implementations.
 
     Example:
     --------
+    
+    .. code-block::
 
         # Type class `Eq` with a single method `eq : a -> a -> Bool`
-        >>> class EqClass(fp.TypeClass):
+        >>> class Eq(fp.Type):
         ...
         ...     @fp.Method
         ...     def eq(a):
@@ -52,9 +57,9 @@ class Method:
         """
         List method names and signatures defined on a type class.
 
-        Problem:
-        -------
-        Methods appear in alphabetical order, but it would be more
+        Note:
+        -----
+        Methods appear in alphabetical order. It would be more
         understandable if they appeared in the order they were 
         created. 
         """

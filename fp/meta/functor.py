@@ -16,6 +16,9 @@ class Category(Kind):
 
 
 class Functor(Constructor):
+    """
+    Covariant functors.
+    """
     
     src: Category
     tgt: Category
@@ -44,6 +47,9 @@ class Functor(Constructor):
 
 
 class Cofunctor(Constructor):
+    """
+    Contravariant functors.
+    """
     
     src: Category
     tgt: Category
@@ -57,6 +63,9 @@ class Cofunctor(Constructor):
 
 
 class Bifunctor(Functor, Cofunctor):
+    """
+    Functors with contravariant and covariant arguments.
+    """
 
     kind = "(* , *) -> *"
     arity = 2
@@ -71,12 +80,18 @@ class Bifunctor(Functor, Cofunctor):
 
 
 class NFunctor(Functor):
+    """
+    Functors with arbitrary signatures.
+    """
 
     kind = "(*, ...) -> *"
     arity = ...
 
 
 class ArrowFunctor(Bifunctor):
+    """
+    Bifunctors with a composition law.
+    """
 
     @Method
     def compose(T):
@@ -84,6 +99,9 @@ class ArrowFunctor(Bifunctor):
 
 
 class HomFunctor(ArrowFunctor):
+    """
+    Bifunctors with a composition law and an evaluation map.
+    """
 
     @Method
     def eval(T):

@@ -4,6 +4,23 @@ import fp.io as io
 from typing import Any
 
 class Type(type, metaclass=Kind):
+    """
+    Type Category.
+
+    All types within `fp` are instances of `Type`, 
+    while type classes subclass `Type`.
+
+    Example:
+    --------
+    .. code::
+
+        >>> isinstance(Int, Type) and isinstance(List(Int), Type)
+        True
+        >>> issubclass(List, Type)
+        True
+        >>> issubclass(Ring, Type)
+        True
+    """
     
     def __new__(cls, name, bases=(), dct={}, head=None, tail=None):
         """Create a new type expression."""

@@ -14,10 +14,10 @@ import fp.utils
 
 class Constructor(Kind):
     """
-    Constructor metaclass. 
+    Type constructors.
 
-    Instances `T` of `Constructor` define a classmethod `T.new(*As)`
-    returning a type value `T(*As) = T A1 ... An`. 
+    Instances define a classmethod `T.new(*As)`
+    returning the type value `T(*As) = T A1 ... An`. 
     """
 
     kind = "(*, ...) -> *"
