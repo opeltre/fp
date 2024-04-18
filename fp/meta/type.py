@@ -1,6 +1,8 @@
 from .kind import Kind
 import fp.io as io
 
+from typing import Any
+
 class Type(type, metaclass=Kind):
     
     def __new__(cls, name, bases=(), dct={}, head=None, tail=None):
@@ -12,13 +14,18 @@ class Type(type, metaclass=Kind):
         # pretty print type annotations
         T.__str__ = io.str_method(T.__str__)
         T.__repr__ = io.repr_method(T.__repr__)
+
+        def shows(x:Any, m:str) -> Any:
+            print(m, repr(x), sep=":\n") 
+            return x
+
+        T.shows = shows
         return T
     
     def __repr__(self):
         """Show type name."""
         return f"{self.__name__}"
-
-
+    
 # --- Type variables ---
 
 class Variable(Type):

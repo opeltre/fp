@@ -143,7 +143,6 @@ class Torus(Ring, metaclass=Functor):
     
     @classmethod
     def _post_new_(cls, SA, A):
-        print("Torus new", A)
         dim = len(A)
         TA = torch.tensor(A)
         # attributes

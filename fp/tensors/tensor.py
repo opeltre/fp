@@ -1,9 +1,13 @@
 import torch
-from ._wrap_alg import WrapRing
+import numpy as np
+
+from ._wrap_alg import WrapRing, Backend, TorchBackend, NumpyBackend
 from fp.instances import Type, Hom, Wrap, Alg, Ring
 
 
 class TensorBase:
+    
+    _backend_ : Backend
 
     # --- Tensor attributes ---
     
@@ -22,9 +26,55 @@ class TensorBase:
     def device(self):
         return self.data.device
 
-    # --- Type casts ---
+    def __getitem__(self, idx):
+        return Tensor(self.data[idx])
 
-class Tensor(WrapRing(torch.Tensor), TensorBase):
+    def __len__(self):
+        return int(torch.tensor(self.data.shape).prod())
+    
+    # --- tensor product --- 
+
+    def __or__(self, other):
+        return self.otimes(other)
+
+    # --- right actions ---
+
+    def __rmul__(self, other):
+        return self.__mul__(other)
+
+    def __radd__(self, other):
+        return self.__add__(other)
+
+    # --- constructors ---
+
+    @classmethod
+    def zeros(cls, ns, **ks):
+        return cls(cls._backend_.zeros(ns, **ks))
+
+    @classmethod
+    def ones(cls, ns, **ks):
+        return cls(cls._backend_.ones(ns, **ks))
+
+    @classmethod
+    def randn(cls, ns, **ks):
+        return cls(cls(torch.randn(ns, **ks)))
+
+    @classmethod
+    def rand(cls, ns, **ks):
+        return cls(torch.rand(ns, **ks))
+
+    @classmethod
+    def range(cls, n, **ks):
+        return cls(cls._backend_.arange(n, **ks))
+
+class Numpy(NumpyBackend(np.ndarray), TensorBase):
+
+    _backend_ = np
+    ...
+
+class Tensor(TorchBackend(torch.Tensor), TensorBase):
+    
+    _backend_ = torch
 
     @classmethod
     def sparse(cls, shape, indices, values=None):
@@ -37,33 +87,16 @@ class Tensor(WrapRing(torch.Tensor), TensorBase):
         t = torch.sparse_coo_tensor(ij, val, size=shape)
         return cls(t)
 
-    # --- Tensor casts ---
-
-    def float(self):
-        return self.__class__(self.data.float())
-
-    def cfloat(self):
-        return self.__class__(self.data.cfloat())
-
-    def long(self):
-        return self.__class__(self.data.long())
-
-    def double(self):
-        return self.__class__(self.data.double())
-
     def is_floating_point(self):
         return self.data.is_floating_point()
 
     def is_complex(self):
         return self.data.is_complex()
 
-    # ---
-
     def norm(self, p="fro", dim=None):
         return self.data.norm(p, dim)
 
-    def __getitem__(self, idx):
-        return Tensor(self.data[idx])
+    # ---
 
     def __str__(self):
         return (
@@ -75,9 +108,6 @@ class Tensor(WrapRing(torch.Tensor), TensorBase):
 
     def __repr__(self):
         return str(self)
-
-    def __len__(self):
-        return int(torch.tensor(self.data.shape).prod())
 
     # --- tensor product ---
 
@@ -98,35 +128,3 @@ class Tensor(WrapRing(torch.Tensor), TensorBase):
         xy = (X * Y).view([*self.data.shape, *other.data.shape])
         return Tensor(xy)
 
-    def __or__(self, other):
-        return self.otimes(other)
-
-    # --- right actions ---
-
-    def __rmul__(self, other):
-        return self.__mul__(other)
-
-    def __radd__(self, other):
-        return self.__add__(other)
-
-    # --- constructors ---
-
-    @classmethod
-    def zeros(cls, ns, **ks):
-        return cls(torch.zeros(ns, **ks))
-
-    @classmethod
-    def ones(cls, ns, **ks):
-        return cls(torch.ones(ns, **ks))
-
-    @classmethod
-    def randn(cls, ns, **ks):
-        return cls(torch.randn(ns, **ks))
-
-    @classmethod
-    def rand(cls, ns, **ks):
-        return cls(torch.rand(ns, **ks))
-
-    @classmethod
-    def range(cls, n):
-        return cls(torch.arange(n))

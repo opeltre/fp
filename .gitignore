@@ -2,3 +2,4 @@ __pycache__
 **/__pycache__
 fp.egg-info
 *.vscode
+docs/_build

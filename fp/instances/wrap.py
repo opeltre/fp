@@ -10,10 +10,11 @@ class WrappedType(Monad._instance_, metaclass=Type):
     """
     Base type for wrapped values.
     """
+    _wrapped_ : Type
 
     def __init__(self, data):
         """Wrap a value."""
-        A = self._tail_[0]
+        A = self._wrapped_
         if isinstance(data, A):
             self.data = data
         elif "cast_data" in dir(self.__class__):
@@ -58,6 +59,12 @@ class Wrap(Type, metaclass=Monad):
     
     _lifted_methods_ = []
     
+    @classmethod
+    def new(cls, A):
+        Wrap_A = super().new(cls, A)
+        Wrap_A._wrapped_ = A
+        return Wrap_A
+
     def _post_new_(Wrap_A, A):
         # --- Lift methods
         Wrap_A.lifts = {}
