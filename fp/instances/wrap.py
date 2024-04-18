@@ -113,10 +113,13 @@ class Wrap(Type, metaclass=Monad):
 
         return lifted_method
 
-
     @classmethod
     def fmap(cls, f):
-        return lambda x: f(x.data)
+        @Hom(f.src, f.tgt)
+        def wrap_f(x):
+            return f(x.data)
+        wrap_f.__name__ = "Wrap " + f.__name__
+        return wrap_f
 
     @classmethod
     def fmap2(cls, f):

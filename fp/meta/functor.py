@@ -31,7 +31,9 @@ class Functor(Constructor):
         """
         Map a source arrow `A -> B` to a target arrow `T(A) -> T(B)`.
         """
-        return T.src.Hom('A', 'B'), T.tgt.Hom(T('A'), T('B'))
+        src = T.src if hasattr(T, "src") else Type
+        tgt = T.tgt if hasattr(T, "tgt") else Type
+        return src.Hom('A', 'B'), tgt.Hom(T('A'), T('B'))
 
     class _instance_:
         """

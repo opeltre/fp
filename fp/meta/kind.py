@@ -74,12 +74,12 @@ class Kind(type):
             cut = doc.find("\n\n")
             head, tail = (doc[:cut], doc[cut:]) if cut >= 0 else (doc, "")
             methods = T.methods().items()
-            if tail[:8] == "Methods:" or not len(methods):
+            title = "\n\n**Methods:**\n\n"
+            if tail[:len(title)] == title or not len(methods):
                 return None
-            Mdoc = "\n\n" + "Methods:" + "\n" + "-" * 8 + "\n\n"
+            Mdoc = title 
             for k, mk in T.methods().items():
                 Mdoc += f"* {k} : `{mk}`  \n"
-            Mdoc += "\n"
             doc = head + Mdoc.replace("\n", "\n    ") + tail
         except Exception as e:
             (e)

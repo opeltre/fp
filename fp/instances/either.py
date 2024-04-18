@@ -29,10 +29,17 @@ class Either(Wrap, metaclass=Monad):
     @classmethod
     def new(cls, *As):
         return super().new(typing.Union[*As])
-
+    
+    @classmethod
+    def fmap(cls, f):
+        def either_f(x):
+            ...
+        ...
+        
     def _post_new_(EA, *As):
         return super()._post_new_(typing.Union[*As])
 
     @classmethod
     def _get_name_(cls, *As):
-        return "(" + " | ".join(A.__name__ for A in As) + ")"
+        name = lambda A: (A.__name__ if hasattr(A, '__name__') else str(A))
+        return "(" + " | ".join(name(A) for A in As) + ")"
