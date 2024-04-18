@@ -33,7 +33,6 @@ class Constructor(Kind):
             try:
                 base = cls._top_
                 if isinstance(cls, Type):
-                    print("__new__ from type cls: ", type(cls))
                     return type(cls).__new__(cls, 'T A', (base,), {})
                 return Type.__new__(cls, 'T As', (base,), {})
             except Exception as e:
@@ -48,7 +47,7 @@ class Constructor(Kind):
 
     @Method 
     def new(T: Constructor):
-        return ..., type 
+        return Type.Hom("...", Type)
 
     def __new__(cls, name, bases, dct):
         """
@@ -59,6 +58,17 @@ class Constructor(Kind):
         T.__new__ = cls._cache_new_(Constructor._new_)
         return T
     
+    def _eval_signature_(T, method) -> Type:
+        try:
+            sgn = method.signature(T)
+            if isinstance(sgn, tuple) and len(sgn) == 2:
+                return Type.Hom(*sgn)
+            elif isinstance(sgn, tuple):
+                return Type.Hom(sgn[:-1], sgn[-1])
+            return sgn
+        except:
+            return super()._eval_signature_(method)
+
     def _get_name_(T , *As: Any) -> str:
         """
         String representation of output type.
@@ -98,15 +108,12 @@ class Constructor(Kind):
             if any(isinstance(A, (str, Var)) for A in As):
                 if len(As) >= 3 and isinstance(As[2], dict):
                     raise RuntimeError("")
-                Bs = []
                 if T is not Var:
                     As = tuple(Var(A) if isinstance(A, str) else A for A in As)
                 if issubclass(T, Var):
-                    print("Var T A")
-                    TA = T.new(*Bs)
+                    TA = T.new(*As)
                 else:
-                    print("T.var(*As)")
-                    TA = T.var(T.__name__).new(*Bs)
+                    TA = T.var()(*As)
             else:
                 TA = T.new(*As)
             TA.__name__ = T._get_name_(*As)
@@ -123,17 +130,17 @@ class Constructor(Kind):
         except:
             raise io.ConstructorError("new", T, As)
         
-    @classmethod
-    def var(cls, name="T") -> str:
+    def var(T) -> Constructor:
         """
         Return constructor instance acting on type variables.
         """
-        class VarT(Var, metaclass=cls):
-
+        class VarT(T, Var, metaclass=T.__class__):
+            
             src = Type
             tgt = Var
 
-        VarT.__name__ = name
+
+        VarT.__name__ = T.__name__
         return VarT
 
 
@@ -155,12 +162,10 @@ class Var(Type, metaclass=Constructor):
 
     def match(A, B):
         """Matches `{"Ai": Type}` against a concrete type B."""
-        print("match A:", A, "\tB:", B) 
         # --- leaf node ---
         if A._tail_ == None:
             return {A.__name__: B}
         if not "_head_" in dir(B):
-            print("no head!")
             return None
 
         out = {}
@@ -171,7 +176,6 @@ class Var(Type, metaclass=Constructor):
         # --- tail of expression
         if len(A._tail_) == len(B._tail_):
             for Ai, Bi in zip(A._tail_, B._tail_):
-                print("match Ai:", Ai, "\tBi:", Bi)
                 if isinstance(Ai, Var):
                     mi = Var.match(Ai, Bi)
                     if mi == None:
@@ -187,7 +191,7 @@ class Var(Type, metaclass=Constructor):
     
     @classmethod
     def _get_name_(cls, name, *xs, **ys):
-        return name
+        return name if isinstance(name, str) else str(name)
 
     def substitute(A, matches):
         """Return concrete type obtained by substitution of matches."""

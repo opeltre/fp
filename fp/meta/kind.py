@@ -3,7 +3,7 @@ from colorama import Fore
 from .method import Method
 
 from functools import cache
-
+import fp.io as io
    
 class Kind(type):
     """
@@ -21,6 +21,7 @@ class Kind(type):
     """
     
     kind = "*"
+    _methods_ = []
 
     def __new__(cls, name, bases, dct):
         """Create a kind."""
@@ -39,8 +40,11 @@ class Kind(type):
 
         Called by `Kind.__new__` to explicitly call setattr as needed.
         """
+        if T.__base__.__name__ == 'Var': 
+            return None
+        T._holes_ = {}
         # --- register methods
-        for k, v in Method.list(cls):
+        for k, method in Method.list(cls):
             # explicit dct definition 
             if k in dct:
                 method = dct[k]
@@ -53,11 +57,35 @@ class Kind(type):
                     setattr(T, k, getattr(base, k).__get__(T, T.__class__))
                     inherited = True
                     break 
-            # raise warnings
+            # skip if found
             if inherited: 
+                #_doc_ += k + ": " + str(T._eval_signature_(method)) + "\n"
                 continue
+            # register hole and raise warning 
+            sgn = T._eval_signature_(method)
+            T._holes_[k] = sgn
             t, tc = T.__name__, type(T).__name__
-            print(f"! Missing method {k} : {v.signature} in {t} <= {tc}")
+            print(io.WARN, k, ":", sgn, f"missing in {t} <= {tc}")
+
+    def _doc_(T):
+        # document methods
+        doc = T.__doc__ or ""
+        try:
+            cut = doc.find("\n\n")
+            head, tail = (doc[:cut], doc[cut:]) if cut >= 0 else (doc, "")
+            methods = T.methods().items()
+            if tail[:8] == "Methods:" or not len(methods):
+                return None
+            Mdoc = "\n\n" + "Methods:" + "\n" + "-" * 8 + "\n\n"
+            for k, mk in T.methods().items():
+                Mdoc += f"* {k} : `{mk}`  \n"
+            Mdoc += "\n"
+            doc = head + Mdoc.replace("\n", "\n    ") + tail
+        except Exception as e:
+            (e)
+            raise e
+        finally:
+            T.__doc__ = doc
 
     def __repr__(self):
         """Show type name."""
@@ -71,4 +99,25 @@ class Kind(type):
         Method signatures.
         """
         methods = Method.list(T.__class__)
-        return {k: ' -> '.join(map(str, mk.signature(T))) for k, mk in methods}
+        return {k: T._eval_signature_(mk) for k, mk in methods}
+
+    def _eval_signature_(T, method):
+        """
+        Used to wrap evaluation of signature.
+
+        Override in subclasses with a reference to `Type.Hom`.
+        """
+        if hasattr(method, 'signature'):
+            signature = method.signature
+        try: 
+            return signature(T)
+        except:
+            name = signature.__name__
+            print(io.WARN, name, ": could not evaluate signature on", T)# end="")
+            return signature
+
+    def __init_subclass__(child, *xs, **ys):
+        child._methods_ = []
+        for m in super(child, child)._methods_:
+            child._methods_.append(m)
+

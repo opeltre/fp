@@ -1,5 +1,4 @@
 import inspect
-#import fp.meta.type 
 
 class Method:
     """
@@ -39,6 +38,10 @@ class Method:
     def __set_name__(self, owner, name):
         self._name = "_" + name
         self.name = name
+        if hasattr(owner, '_methods_'):
+            owner._methods_ += [(name, self)]
+        else:
+            owner._methods_ = [(name, self)]
 
     def __init__(self, signature):
         self.signature = signature
@@ -64,4 +67,20 @@ class Method:
         understandable if they appeared in the order they were 
         created. 
         """
-        return inspect.getmembers(objtype, lambda x: isinstance(x, cls))
+        out = []
+        methods = objtype._methods_
+        members = inspect.getmembers(objtype, lambda x: isinstance(x, cls))
+        for k, _ in methods:
+            for p, m in members:
+                if k == p:
+                    out.append((k, m))
+        return out 
+        #####
+        for k, _ in objtype._methods_:
+            try: 
+                mk = getattr(objtype, k)
+                out.append((k, mk))
+            except:
+                ...
+        return out
+

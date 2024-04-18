@@ -1,3 +1,7 @@
+from colorama import Fore
+
+WARN = Fore.MAGENTA + "/!\\" + Fore.RESET
+
 class Error(Exception): ...
 
 class TypeError(Error):

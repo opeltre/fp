@@ -6,6 +6,9 @@ class Arrow(Type, metaclass=ArrowFunctor):
     Default method implementations for Hom instances. 
     """
     
+    src = Type
+    tgt = Type
+
     class _top_(metaclass=Type):
 
         src: Type

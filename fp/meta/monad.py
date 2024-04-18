@@ -16,8 +16,7 @@ class Monad(Functor):
 
     @Method
     def bind(cls):
-        Hom = cls.src.Hom
-        return (cls('A'), Hom('A', cls('B'))), cls('B')
+        return (cls('A'), Type.Hom('A', cls('B'))), cls('B')
 
     class _defaults_(Functor._defaults_):
 

@@ -21,7 +21,7 @@ class Type(type, metaclass=Kind):
         >>> issubclass(Ring, Type)
         True
     """
-    
+
     def __new__(cls, name, bases=(), dct={}, head=None, tail=None):
         """Create a new type expression."""
         T = super().__new__(cls, name, bases, dct)
