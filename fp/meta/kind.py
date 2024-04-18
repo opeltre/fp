@@ -6,7 +6,19 @@ from functools import cache
 
    
 class Kind(type):
-    """Type kinds."""
+    """
+    Type kinds.
+
+    Subclasses of `Kind` may register class method signatures with 
+    the `@Method` decorator, e.g. 
+
+
+        >>> class Functor(Type):
+        ...
+        ...     @Method
+        ...     def fmap(F):
+        ...         return Hom('A', 'B'), Hom(F('A'), F('B'))
+    """
     
     kind = "*"
 

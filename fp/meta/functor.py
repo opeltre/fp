@@ -28,12 +28,16 @@ class Functor(Constructor):
     
     @Method
     def fmap(T):
+        """
+        Map a source arrow `A -> B` to a target arrow `T(A) -> T(B)`.
+        """
         return T.src.Hom('A', 'B'), T.tgt.Hom(T('A'), T('B'))
 
     class _instance_:
         """
         Base class for types of the form `Functor(*As)`. 
         """
+
         def map(Tx, f, tgt=None):
             """
             Bound `map` method, equivalent to `Functor.fmap(f)(x)`.

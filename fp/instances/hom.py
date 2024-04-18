@@ -159,7 +159,9 @@ class Hom(Arrow, metaclass=HomFunctor):
         src = f.src
         tgt = (fs[-1] if len(fs) else f).tgt
         pipe = sum((list(fi._pipe) for fi in (f, *fs)), [])
-        return cls(src, tgt)(tuple(pipe))
+        pipe = cls(src, tgt)(tuple(pipe))
+        pipe.__name__ = cls._composed_name_(f, *fs)
+        return pipe
 
     @classmethod
     def eval(cls, x, f):
@@ -218,6 +220,14 @@ class Hom(Arrow, metaclass=HomFunctor):
         else:
             return name_one(A) + ' -> ' + name_one(B)
     
+    @classmethod
+    def _composed_name_(cls, *fs):
+        name = lambda f: f.__name__ if hasattr(f, '__name__') else str(f)
+        if len(fs) <= 4:
+            return " . ".join(name(f) for f in fs[::-1])
+        else: 
+            return "(" + name(fs[0]) + " . ... . " + str(name[-1]) + ")"
+
     @classmethod
     def _parse_input_(cls, A, B):
         """

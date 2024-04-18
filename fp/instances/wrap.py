@@ -77,6 +77,9 @@ class Wrap(Type, metaclass=Monad):
             Wrap_A.lifts[name] = Wf
         return Wrap_A
 
+    def __init__(Wrap_A, *As):
+        ...
+
     @classmethod
     def join(cls, wwx):
         A = wwx._tail_[0]._tail_[0]

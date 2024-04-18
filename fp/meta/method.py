@@ -42,6 +42,7 @@ class Method:
 
     def __init__(self, signature):
         self.signature = signature
+        self.__doc__ = signature.__doc__
 
     def __get__(self, obj, objtype=None):
         if obj is not None:

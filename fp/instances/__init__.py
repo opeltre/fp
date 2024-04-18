@@ -9,6 +9,7 @@ from .num import Str
 from .list import List
 
 from .wrap import Wrap
+from .either import Either
 
 __all__ = [
     "Prod",
@@ -23,4 +24,5 @@ __all__ = [
     "List",
     "Str",
     "Wrap",
+    "Either",
 ]
