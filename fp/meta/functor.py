@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from .method import Method
 from .kind import Kind
-from .constructor import Constructor
+from .constructor import Constructor, Var
 from .type import Type
 
 import fp.io as io
@@ -92,7 +92,12 @@ class NFunctor(Functor):
 
     kind = "(*, ...) -> *"
     arity = ...
-
+    
+    @Method
+    def fmap(T):
+        source = (Type.Hom("A", "B"), Var("..."))
+        target = Type.Hom(T("A", Var("...").src), T("B", Var("...").tgt))
+        return source, target
 
 class ArrowFunctor(Bifunctor):
     """
