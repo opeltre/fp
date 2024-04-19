@@ -23,7 +23,7 @@ class Either(Wrap, metaclass=Monad):
 
         def __repr__(self):
             prefix = Fore.YELLOW + f"{self._i_} : " + Fore.RESET
-            data = repr(self.data).replace("\n", "\n" + " " * len(prefix))
+            data = str(self.data).replace("\n", "\n" + " " * len(prefix))
             return prefix + data
              
     @classmethod
@@ -31,10 +31,20 @@ class Either(Wrap, metaclass=Monad):
         return super().new(typing.Union[*As])
     
     @classmethod
-    def fmap(cls, f):
+    def fmap(cls, *fs):
+
+        src = Either(*(f.src for f in fs), ...)
+        tgt = Either(*(f.tgt for f in fs), ...)
+
+        @Hom(src, tgt)
         def either_f(x):
-            ...
-        ...
+            if x._i_ < len(fs):
+                return fs[x._i_](x.data)
+            return x
+
+        either_f.__name__ = Either._get_name_(*fs)
+
+        return either_f
         
     def _post_new_(EA, *As):
         return super()._post_new_(typing.Union[*As])
