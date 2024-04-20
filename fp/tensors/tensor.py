@@ -1,7 +1,8 @@
 import torch
 import numpy as np
+import jax.numpy as jnp
 
-from ._wrap_alg import WrapRing, Backend, TorchBackend, NumpyBackend
+from ._wrap_alg import WrapRing, Backend, TorchBackend, NumpyBackend, JaxBackend
 from fp.instances import Type, Hom, Wrap, Alg, Ring
 
 
@@ -26,12 +27,20 @@ class TensorBase:
     def device(self):
         return self.data.device
 
+    # --- access --- 
+
     def __getitem__(self, idx):
         return Tensor(self.data[idx])
 
     def __len__(self):
         return int(torch.tensor(self.data.shape).prod())
     
+    def __iter__(self):
+        return self.data.__iter__()
+    
+    def reshape(self, *shape:int | tuple[int]):
+        return self.__class__(self.data.reshape(shape))
+
     # --- tensor product --- 
 
     def __or__(self, other):
@@ -67,10 +76,40 @@ class TensorBase:
     def range(cls, n, **ks):
         return cls(cls._backend_.arange(n, **ks))
 
+
 class Numpy(NumpyBackend(np.ndarray), TensorBase):
 
     _backend_ = np
-    ...
+
+    def is_floating_point(self):
+        return self.data.is_floating_point()
+
+    def is_complex(self):
+        return self.data.is_complex()
+
+    def norm(self, p="fro", dim=None):
+        return self.data.norm(p, dim)
+
+    def otimes(self, other):
+        """
+        Tensor product of two instances.
+
+        The tensor product xy of two vectors x and y is defined by:
+
+            xy[i, j] = x[i] * y[j]
+
+        In general, if x and y are of shape A and B respectively,
+        the tensor product xy will be of shape [*A, *B].
+        """
+        x, y = self.data.flatten(), other.data.flatten()
+        X = x.repeat_interleave(y.numel(), 0)
+        Y = y.repeat(x.numel())
+        xy = (X * Y).view([*self.data.shape, *other.data.shape])
+        return Tensor(xy)
+
+class Jax(JaxBackend(JaxBackend.Array), TensorBase):
+
+    _backend_ = jnp
 
 class Tensor(TorchBackend(torch.Tensor), TensorBase):
     
@@ -127,4 +166,3 @@ class Tensor(TorchBackend(torch.Tensor), TensorBase):
         Y = y.repeat(x.numel())
         xy = (X * Y).view([*self.data.shape, *other.data.shape])
         return Tensor(xy)
-

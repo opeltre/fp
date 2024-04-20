@@ -37,22 +37,41 @@ class WrappedType(Monad._instance_, metaclass=Type):
             return cls(data.data)
         return cls(data)
 
+    def __init_subclass__(child, **kws):
+        cls = super(child, child)
+        try:
+            type(child)._post_new_(child, cls._wrapped_)
+        except:
+            ...
+
+
 
 class Wrap(Type, metaclass=Monad):
     """
     Type wrapper lifting selected methods to the container type.
 
-    The `lifts` class attribute is looked up to assign lifted methods.
-    It expects a dictionary of method type signatures of the following form:
+    The class method `lift` will iterate over the class attribute 
+    `_lifted_methods_` to assign lifted methods on the wrapped type.
+    
+    Attributes:
+    -----------
+        _lifted_methods_ (`list`): 
+            A list of of triples `(name, signature, lift_args)` where
+                * name (`str`): name of the method to be lifted,
+                * signature (`Callable[type, Type]`) yielding lifted method type `signature(cls)`,
+                * lift_args (`int | tuple[int] | type(...)`) index of arguments to be unwrapped.
+            
+            **Example**
 
-        lifts = { 'name' : (homtype: Type -> Type) }
+            .. code::
+            
+                class StrWrapper(Wrap):
 
-    such that `homtype(A)` is the type of method `A.name`, e.g.
-
-        lifts = { 'add' : lambda A : Type.Hom((A, A), A)}
-
-    The output type `Wrap A` will inherit a method 'name' wrapping the
-    call on contained values.
+                    _lifted_methods_ = [
+                        ('upper', lambda A: Hom(A, A), ...)
+                        ('isalnum', lambda A: Hom(A, Bool), ...)
+                        ('join', lambda A: Hom((A, List[A]), Bool), 0)
+                    ]
     """
 
     _top_ = WrappedType
@@ -94,7 +113,7 @@ class Wrap(Type, metaclass=Monad):
         cls, 
         method: MethodType, 
         homtype: Type, 
-        lift_args: Iterable[int] | type(...) = ...
+        lift_args: Iterable[int] | type(...) = ...,
     ) -> Type.Hom._top_ :
         """
         Lift a method to the wrapped type. 
@@ -110,7 +129,8 @@ class Wrap(Type, metaclass=Monad):
             for i in lift_args:
                 xs[i] = xs[i].data
             return io.cast(method(*xs), homtype.tgt)
-
+        
+        lifted_method.__name__ = method.__name__
         return lifted_method
 
     @classmethod
