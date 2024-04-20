@@ -39,23 +39,30 @@ class List(Monoid, metaclass=Monad):
         return Monoid.__new__(cls, 'List A', (cls._top_,), {})
     
     @classmethod
-    def fmap(cls, f):
-        """List map: (A -> B) -> List A -> List B"""
-
+    def fmap(cls, f: Hom("A", "B")) -> Hom(cls("A"), cls("B")):
+        """
+        Map a function on lists.
+        """
         @Type.Hom(cls(f.src), cls(f.tgt))
         def mapf(xs):
             return [f(x) for x in xs]
 
         mapf.__name__ = f"map {f.__name__}"
         return mapf
-
+    
     @classmethod
-    def join(cls, xx):
+    def join(cls, xx: cls(cls("A"))) -> cls("A"):
+        """
+        Flatten a list of lists.
+        """
         A = xx._tail_[0]._tail_[0]
         return cls(A)(sum((x for  x in xx), []))
     
     @classmethod
     def unit(cls, a):
+        """
+        Singleton list.
+        """
         return cls(type(a))([a])
     
 

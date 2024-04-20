@@ -169,3 +169,6 @@ class Str(str, metaclass=Monoid):
     
     def __str__(self):
         return super().__repr__() 
+
+    
+Str.len = Hom(Str, Int)(len)
