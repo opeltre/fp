@@ -116,7 +116,7 @@ class HomInstance(Arrow._top_):
                 return arrow.tgt.substitute(match)
         else:
             # curried type
-            As = tuple(subst(A) for t in arrow.src._tail_[len(xs):])
+            As = tuple(subst(A) for A in arrow.src._tail_[len(xs):])
             return arrow._head_(Type.Prod(*As), subst(arrow.tgt))
 
     @staticmethod
