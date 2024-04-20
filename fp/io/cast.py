@@ -1,5 +1,5 @@
 from typing import Any
-
+from .exceptions import CastError
 
 def cast(x: Any, A: type):
 
@@ -12,8 +12,7 @@ def cast(x: Any, A: type):
         try:
             return A(x)
         except Exception as e:
-            print(f"> Casting {type(x)} value to type {A}")
-            raise e
+            raise CastError(A, x)
 
     # strict mode
     if not isinstance(x, A):

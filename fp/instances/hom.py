@@ -1,6 +1,7 @@
 from __future__ import annotations
+
 from .arrow import Arrow
-from fp.meta import Type, HomFunctor, ArrowFunctor
+from fp.meta import Type, Var, HomFunctor, ArrowFunctor
 from typing import Iterable, Callable
 
 import fp.io as io
@@ -37,7 +38,7 @@ class HomInstance(Arrow._top_):
             return io.cast(x, self.tgt)
 
         # --- Input and output types
-        Src = self.source_type(self, xs)
+        Src, match = self.source_type(self, xs)
         Tgt = self.target_type(self, xs)
 
         # --- Full application
@@ -73,12 +74,16 @@ class HomInstance(Arrow._top_):
     @staticmethod
     def source_type(arrow, xs):
         if "source_type" in dir(arrow._head_):
-            return arrow._head_.source_type(arrow, xs)
+            Src = arrow._head_.source_type(arrow, xs)
         if len(xs) == arrow.arity:
-            return arrow.src
+            Src = arrow.src
         else:
             ts = arrow.src._tail_[: len(xs)]
-            return Type.Prod(*ts)
+            Src = Type.Prod(*ts)
+        if not isinstance(Src, Var):
+            return Src, True
+        else:
+            return Src, Src.match(type(xs))
 
     @staticmethod
     def source_cast(Src, r, xs):
@@ -92,27 +97,36 @@ class HomInstance(Arrow._top_):
             return io.cast(xs, Src)
 
     @staticmethod
-    def target_type(arrow, xs):
+    def target_type(arrow, xs, match=True):
+        """
+        Target type inference.
+        """
+        def subst(ty):
+            return ty.substitute(match) if isinstance(ty, Var) else ty
+
         if "target_type" in dir(arrow._head_):
             return arrow._head_.target_type(arrow, xs)
         if len(xs) == arrow.arity:
-            return arrow.tgt
+            # full application type
+            if match is True or not isinstance(match, Var):
+                # concrete type
+                return arrow.tgt
+            elif match is not None:
+                # substitute type variables
+                return arrow.tgt.substitute(match)
         else:
-            ts = arrow.src._tail_[len(xs) :]
-            return arrow._head_(Type.Prod(*ts), arrow.tgt)
+            # curried type
+            As = tuple(subst(A) for t in arrow.src._tail_[len(xs):])
+            return arrow._head_(Type.Prod(*As), subst(arrow.tgt))
 
     @staticmethod
     def target_cast(Tgt, y):
-        if isinstance(y, Tgt):
-            return y
-        elif "cast" in dir(Tgt):
-            return Tgt.cast(y)
-        raise TypeError(f"Could not cast output")
+        return io.cast(y, Tgt)
 
 
 class Hom(Arrow, metaclass=HomFunctor):
     """
-    Hom Functor.
+    Hom functor, mapping type pairs to their callable type.
 
     The type `Hom(A, B) = A -> B` describes callables with input in `A` 
     and output in `B`.
@@ -150,11 +164,10 @@ class Hom(Arrow, metaclass=HomFunctor):
             >>> Hom.compose(f, *fs)(x) == Hom.compose(*fs)(f(x))
             True
 
-        Note:
-        -----
+        **Note:**  
         Composition is made associative by storing the sequence 
-        of functions in a flat tuple, instead of stacking function
-        closures. 
+        of functions in a flat tuple. This also avoids nesting 
+        function closures.
         """
         src = f.src
         tgt = (fs[-1] if len(fs) else f).tgt
@@ -164,7 +177,7 @@ class Hom(Arrow, metaclass=HomFunctor):
         return pipe
 
     @classmethod
-    def eval(cls, x, f):
+    def eval(cls, x:A, f: callable[A, B]) -> B:
         """
         Evaluate `f` on input `x`.
         """
@@ -216,9 +229,13 @@ class Hom(Arrow, metaclass=HomFunctor):
                 return str(T)
 
         if isinstance(A, tuple):
-            return ' -> '.join(name_one(T) for T in A) + ' -> ' + name_one(B)
-        else:
-            return name_one(A) + ' -> ' + name_one(B)
+            names = tuple(name_one(T) for T in A)
+            if "..." in names:
+                source = "(" + ", ".join(names) + ")"
+            else:
+                source = " -> ".join(names)
+            return source + ' -> ' + B.__name__
+        return name_one(A) + ' -> ' + B.__name__ 
     
     @classmethod
     def _composed_name_(cls, *fs):
@@ -244,5 +261,4 @@ class Hom(Arrow, metaclass=HomFunctor):
             raise io.TypeError("source", A, Type | Iterable[Type])
         return src, tgt, arity
         
-
 Type.Hom = Hom

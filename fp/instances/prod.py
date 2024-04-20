@@ -4,6 +4,24 @@ import fp.io as io
 class Prod(Type, metaclass=NFunctor):
     """
     Product functor.
+
+    The type `Product(A, B, ...)` is a type-aware subclass of `tuple`.
+    
+    Example:
+    --------
+    .. code::
+
+        >>> a, b = Str("abcd"), Int(8)
+        >>> x = Prod(Str, Int)(a, b)
+        >>> x
+        (Str, Int) : ('abcd', 8)
+        >>> @Hom(Int, Str)
+        ... def bar(n): return n * "|"
+        ...
+        >>> Pf = Prod.fmap(Str.len, bar).show()
+        (Str, Int) -> (Int, Str) : (len, bar)
+        >>> Pf(x)
+        (Int, Str) : (4, '||||||||')
     """
     
     class _top_(tuple):
@@ -32,12 +50,13 @@ class Prod(Type, metaclass=NFunctor):
     @classmethod
     def fmap(cls, *fs):
 
-        src = cls((f.src for f in fs))
-        tgt = cls((f.tgt for f in fs))
+        src = cls(*(f.src for f in fs))
+        tgt = cls(*(f.tgt for f in fs))
 
         @Type.Hom(src, tgt)
-        def map_f(*xs):
-            return tgt(*(f(x) for x, f in zip(xs, fs)))
+        def map_f(xs):
+            ys = tuple(f(x) for x, f in zip(xs, fs))
+            return ys
 
         map_f.__name__ = "(" + ", ".join((f.__name__ for f in fs)) + ")"
         return map_f
@@ -46,5 +65,10 @@ class Prod(Type, metaclass=NFunctor):
     def _get_name_(cls, *As):
         return "(" + ", ".join(A.__name__ for A in As) + ")"
 
+    @classmethod
+    def cast(cls, xs):
+        if isinstance(xs, tuple):
+            return cls(*xs)
+        return io.cast(xs, cls)
+
 Type.Prod = Prod
-Type.__mul__ = Prod
