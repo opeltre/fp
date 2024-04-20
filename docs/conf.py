@@ -18,6 +18,7 @@ default_role = 'code'
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx_rtd_theme',
+    'sphinx.ext.napoleon',
 ]
 
 add_module_names = False
