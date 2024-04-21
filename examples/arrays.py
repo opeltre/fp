@@ -1,16 +1,22 @@
 from fp.instances import *
-from fp.tensors import Tens, Tensor, Numpy, Jax
+from fp.tensors import Tens, Tensor, Torch, Numpy, Jax
 
 
-E = Tens((3, 2))
+E = Tens((4, 3))
 
 idx = E.range()
 idx.shows("idx")
 
 E.add("idx").show()
 
+#--- switch backends
 
-x = Numpy.zeros((2, 6)).shows("x")
-y = Jax.zeros((3, 4)).shows("y")
-z = Tensor.zeros((4, 3)).shows("z")
+x = idx.numpy().shows("x")
+y = idx.jax().shows("y")
+z = idx.torch().shows("z")
 
+class A:
+    x = 0
+
+class B(A):
+    y = 1

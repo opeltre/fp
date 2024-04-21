@@ -51,7 +51,7 @@ class Tens(Ring, metaclass=Functor):
     def __str__(TA):
         return TA.__name__
 
-class Linear(metaclass=HomFunctor):
+class Linear(Tens, metaclass=HomFunctor):
     """
     Linear maps types, containing dense or sparse matrices.
 

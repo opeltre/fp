@@ -2,6 +2,8 @@ import torch
 import jax
 import numpy as np
 
+from typing import Callable
+
 from fp.instances import Type, Hom, Prod, Wrap, Alg, Ring
 from .backend import backend
 
@@ -17,6 +19,7 @@ class WrapRing(Ring, Wrap):
         ("__truediv__", signature(2), ...),
         ("__neg__", signature(1), ...),
         # reshapes 
+        ("flatten", lambda T: Hom(T, T), ...),
         ("reshape", lambda T: Hom((T, tuple), T), 0),
     ]
 
@@ -24,16 +27,21 @@ class WrapRing(Ring, Wrap):
 class Backend(WrapRing):
 
     Array : Type
-    as_tensor : str
+    asarray : Callable
     dtypes : list[str]
+    # aliases
+    repeat : str = "repeat"
+    tile : str = "tile"
     
     @classmethod
     def new(cls, A=None):
         if A is None:
             A = cls.Array
         Wrap_A = super().new(A)
+        Wrap_A._backend_ = cls
+        Wrap_A._module_ = cls.module
         # backend-specific constructor 
-        Wrap_A.cast_data = getattr(cls.module, cls.as_tensor)
+        Wrap_A.cast_data = cls.asarray
         # dtype casts
         for dtype in cls.dtypes:
             alias = dtype.split(":")[-1]
@@ -48,7 +56,7 @@ class TorchBackend(Backend):
     module = torch 
     # Array type
     Array = torch.Tensor
-    as_tensor = "as_tensor"
+    asarray = torch.as_tensor
     # dtypes
     dtypes = [
         "float",
@@ -57,13 +65,15 @@ class TorchBackend(Backend):
         "long", 
         "cfloat",
     ]
+    repeat = "repeat_interleave"
+    tile = "repeat"
 
 
 class NumpyBackend(Backend):
     
     module = np 
     Array = np.ndarray
-    as_tensor = "asarray"
+    asarray = np.asarray
 
     dtypes = [
         "float:float32",
@@ -73,10 +83,12 @@ class NumpyBackend(Backend):
         "cfloat",
     ]
 
+
 class JaxBackend(NumpyBackend):
 
     module = jax.numpy
     Array = jax.lib.xla_extension.ArrayImpl
+    asarray = jax.numpy.asarray
 
     dtypes = NumpyBackend.dtypes[:-1] + [
         "cfloat:complex64",

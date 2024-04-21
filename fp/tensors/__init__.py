@@ -1,4 +1,4 @@
-from .tensor import Tensor, Numpy, Jax
+from .tensor import Tensor, Numpy, Jax, Torch
 from .shape import Torus
 from .shape import Torus as Shape
 from .tens import Tens, Linear, Otimes
@@ -8,6 +8,7 @@ __all__ = [
    "Tensor",
    "Numpy",
    "Jax",
+   "Torch",
    "Torus",
    "Shape",
    "Tens",
