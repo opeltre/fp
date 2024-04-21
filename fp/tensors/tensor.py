@@ -77,9 +77,12 @@ class TensorBase:
         repeat = getattr(self._module_, self._backend_.repeat)
         return cls(repeat(self.data, repeats))
 
-    def tile(self, repeats: tuple[int,...]):
+    def tile(self, ntiles: tuple[int,...]):
+        """
+        Tile input array across given dimension-wise repetitions.
+        """
         repeat = getattr(self._module_, self._backend_.tile)
-        return self.__class__(repeat(self.data, repeats))
+        return self.__class__(repeat(self.data, ntiles))
 
     # --- tensor product --- 
 
@@ -125,12 +128,25 @@ class TensorBase:
         """
         Tensor product of two instances.
 
-        The tensor product xy of two vectors x and y is defined by:
+        The tensor product `xy` of two vectors `x` and `y` is defined by:
+
+        .. code::
 
             xy[i, j] = x[i] * y[j]
 
-        In general, if x and y are of shape A and B respectively,
-        the tensor product xy will be of shape [*A, *B].
+        In general, if `x` and `y` are of shape `A` and `B` respectively,
+        the tensor product xy will be of shape `(*A, *B)`.
+
+        **Example**
+        ..code:: 
+
+            >>> ints = Numpy.range(4) + 1
+            >>> table = ints | ints
+            >>> Numpy.otimes(ints, ints)
+            Numpy : [[ 1  2  3  4]
+                     [ 2  4  6  8]
+                     [ 3  6  9 12]
+                     [ 4  8 12 16]]
         """
         cls = self.__class__
         flatten = cls.flatten

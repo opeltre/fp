@@ -4,7 +4,7 @@ from ._wrap_alg import WrapRing
 from .tensor import Tensor
 from .typed_tensor import TypedTensor
 from .shape import Torus
-from fp.meta import HomFunctor, Functor, Bifunctor
+from fp.meta import HomFunctor, Functor, NFunctor
 from fp.instances import Hom, Ring
 
 class Tens(Ring, metaclass=Functor):
@@ -51,7 +51,7 @@ class Tens(Ring, metaclass=Functor):
     def __str__(TA):
         return TA.__name__
 
-class Linear(Tens, metaclass=HomFunctor):
+class Linear(Hom, Tens, metaclass=HomFunctor):
     """
     Linear maps types, containing dense or sparse matrices.
 
@@ -60,9 +60,11 @@ class Linear(Tens, metaclass=HomFunctor):
 
     The arguments `A` and `B` can either be given as tensor shapes
     or as associated tensor types e.g.
+        
+        .. code::
 
-        A, B = Tens([2, 3]), Tens([4])
-        assert Linear(A, B) == Linear([2, 3], [4])
+            A, B = Tens([2, 3]), Tens([4])
+            assert Linear(A, B) == Linear([2, 3], [4])
 
     Linear map instances inherit from the Hom class, overriding
     composition and application by matrix-matrix and matrix-vector
@@ -79,7 +81,7 @@ class Linear(Tens, metaclass=HomFunctor):
         NA = int(torch.tensor(A).prod())
         NB = int(torch.tensor(B).prod())
 
-        class LinAB(Tens([NB, NA]), Hom(Tens(A), Tens(B))):
+        class LinAB(Tens((NB, NA)), Hom(Tens(A), Tens(B))):
 
             functor = Linear
             input = (A, B)
@@ -198,7 +200,7 @@ class Linear(Tens, metaclass=HomFunctor):
             data = f.data @ g.data
         fg = cls(f.tgt.shape, g.src.shape)(data)
         return fg
-
+    
     @classmethod
     def name(cls, A, B):
         if isinstance(A, RingClass):
@@ -232,7 +234,7 @@ class Linear(Tens, metaclass=HomFunctor):
             return Tens((*s_x[: -len(s_in)], *s_out))
 
 
-class Otimes(metaclass=Bifunctor):
+class Otimes(metaclass=NFunctor):
     """
     Tensor product of linear spaces.
     """
