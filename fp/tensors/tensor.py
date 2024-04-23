@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-import torch
-import numpy as np
-import jax.numpy as jnp
+from .backend import torch, np, jnp
 
 import typing
 from types import ModuleType

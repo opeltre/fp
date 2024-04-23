@@ -167,3 +167,8 @@ class backend(ArrayInterface):
 
 
 backend.init()
+
+backend.torch = has_torch and torch
+backend.hax = has_jax and jax
+backend.jnp = has_jax and jax.numpy
+backend.np = np

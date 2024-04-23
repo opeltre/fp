@@ -7,28 +7,31 @@ license = "MIT"
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.10"
+python = "^3.11"
+poethepoet = "*"
 colorama = "^0.4.6"
 numpy = "^1.26"
-#--- extras ---
-torch = { version = "^2.1", optional = true }
+torch = "^2.1.0"
 jax = { version = "^0.4", optional = true }
 
 [tool.poetry.extras]
-torch = ["torch"]
 jax = ["jax"]
 
 [tool.poetry.scripts]
-qml-tests = 'qml.scripts.tests:main'
+#fp-tests = 'echo test'
+#fp-tests = 'fp.scripts.tests:main'
 
-[tool.poe.tasks]
-force-cpu = "pip install torch --index-url https://download.pytorch.org/whl/cpu"
+[tool.poe.tasks.torchinstall]
+cmd = "pip install torch --index-url https://download.pytorch.org/whl/cpu"
 
-[[tool.poetry.source]]
-name = "pytorch_cpu"
-url = "https://download.pytorch.org/whl/cpu"
-priority = "explicit"
+[tool.poe.tasks.jaxinstall]
+cmd = "pip install jax[cpu]"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+packages=[
+    {include = "meta"},
+    {include = "instances"},
+    {include = "tensors"}
+]
