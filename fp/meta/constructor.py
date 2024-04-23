@@ -29,6 +29,17 @@ class Constructor(Kind):
         kind = "(*, ...) -> *"
 
         @classmethod
+        def _pre_new_(cls, *As):
+            """
+            Parse input variables to a type constructor.
+
+            Defaults to the identity, override to extend support for arguments 
+            (e.g. support unhashable inputs, enforce equality of equivalent inputs, 
+            ...).
+            """
+            return As
+
+        @classmethod
         def new(cls, *As: Any):
             try:
                 base = cls._top_
@@ -38,7 +49,7 @@ class Constructor(Kind):
             except Exception as e:
                 print(e)
                 raise RuntimeError(f"Method {cls.__name__}.new was not overriden.")
-
+        
         def _post_new_(TA, *As):
             ...
 
@@ -91,6 +102,7 @@ class Constructor(Kind):
         def cached_new(cls, *xs, **ys):
             try: 
                 # T(*As)
+                xs = cls._pre_new_(*xs)
                 return new_(cls, *xs, **ys)
             except Exception as e:
                 # class MyT(T(*As), metaclass=T):
@@ -106,6 +118,7 @@ class Constructor(Kind):
         """
         try:
             if any(isinstance(A, (str, Var, type(...))) for A in As):
+                # action on type variables
                 if len(As) >= 3 and isinstance(As[2], dict):
                     raise RuntimeError("")
                 if T is not Var:
@@ -117,13 +130,18 @@ class Constructor(Kind):
                 else:
                     TA = T.var()(*As)
             else:
+                # concrete action 
                 TA = T.new(*As)
+            # post new 
             TA.__name__ = T._get_name_(*As)
             TA._head_ = T
             TA._tail_ = As
             T._post_new_(TA, *As)
             return TA
         except Exception as e:
+            # subclass definition
+            if hasattr(T, "_subclass_"):
+                return T._subclass_(*As)
             TA = Type.__new__(T, *As)
             base = As[1][0]
             TA._head_ = base._head_
@@ -205,7 +223,6 @@ class Var(Type, metaclass=Constructor):
                 if mi == None:
                     return None
                 elif Ai.__name__ == "...":
-                    print(Bi)
                     dots.append(Bi)
                 elif Ai.__name__ not in out:
                     out |= mi

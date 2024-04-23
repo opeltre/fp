@@ -51,6 +51,14 @@ class TensorBase:
     def reshape(self, *shape:int | tuple[int]):
         return self.__class__(self.data.reshape(shape))
     
+    # --- reductions ---
+
+    def prod(self, *xs, **ks):
+        return self.__class__(self.data.prod())
+
+    def sum(self, *xs, **ks):
+        return self.__class__(self.data.sum())
+
     # --- backend switch ---
 
     def numpy(self):
@@ -102,6 +110,7 @@ class TensorBase:
     @classmethod
     def asarray(cls, data: typing.Any) -> cls:
         return cls(cls._module_.asarray(data))
+
     @classmethod
     def zeros(cls, ns, **ks):
         return cls(cls._module_.zeros(ns, **ks))
@@ -135,7 +144,8 @@ class TensorBase:
             xy[i, j] = x[i] * y[j]
 
         In general, if `x` and `y` are of shape `A` and `B` respectively,
-        the tensor product xy will be of shape `(*A, *B)`.
+        the tensor product xy will be of shape `(*A, *B)`. Its values are
+        obtained by `Tensor.otimes(x.flatten(), y.flatten())`.
 
         **Example**
         ..code:: 

@@ -1,22 +1,25 @@
 from fp.instances import *
-from fp.tensors import Tens, Tensor, Torch, Numpy, Jax
+from fp.meta import Type, HomFunctor
+from fp.tensors import * 
+from fp.tensors.typed_tensor import TypedTensor
+
+import fp.io as io
 
 
 E = Tens((4, 3))
+F = Tens((6,))
 
 idx = E.range()
 idx.shows("idx")
 
 E.add("idx").show()
 
-#--- switch backends
+# --- switch backends
 
 x = idx.numpy().shows("x")
 y = idx.jax().shows("y")
 z = idx.torch().shows("z")
 
-class A:
-    x = 0
+# --- linear maps
 
-class B(A):
-    y = 1
+LinEF = Linear(E, F)

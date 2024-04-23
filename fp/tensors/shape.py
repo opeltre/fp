@@ -147,7 +147,7 @@ class Torus(Ring, metaclass=Functor):
         TA = torch.tensor(A)
         # attributes
         SA.dim = len(A)
-        SA.n = list(A)
+        SA.n = tuple(A)
         SA.ns = torch.tensor(A)
         SA.shape = SA.n
         SA.mod = torch.tensor([torch.prod(TA[i + 1 :]) for i in range(dim)])

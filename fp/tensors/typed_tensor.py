@@ -1,6 +1,6 @@
 import torch
 
-from .tensor import Tensor
+from .tensor import Tensor, TensorBase
 from .shape import Torus
 from fp.instances import Ring
 

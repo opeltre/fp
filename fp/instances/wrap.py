@@ -1,4 +1,4 @@
-from fp.meta import Type, Monad
+from fp.meta import Type, Functor, Functor
 from .hom import Hom
 import fp.io as io
 
@@ -6,7 +6,7 @@ from types import MethodType
 from typing import Callable, Iterable
 
 
-class WrappedType(Monad._instance_, metaclass=Type):
+class WrappedType(Functor._instance_, metaclass=Type):
     """
     Base type for wrapped values.
     """
@@ -26,7 +26,7 @@ class WrappedType(Monad._instance_, metaclass=Type):
                 raise io.TypeError("input for Wrap {A}", data, A)
 
     def __repr__(self):
-        return self._tail_[0].__str__(self.data)
+        return self._wrapped_.__str__(self.data)
     
     @classmethod
     def cast(cls, data):
@@ -39,6 +39,8 @@ class WrappedType(Monad._instance_, metaclass=Type):
 
     def __init_subclass__(child, **kws):
         cls = super(child, child)
+        msg = str(cls._head_) + " __init_subclass__: " + child.__name__
+        io.log(msg, v=1)
         try:
             type(child)._post_new_(child, cls._wrapped_)
         except:
@@ -46,7 +48,7 @@ class WrappedType(Monad._instance_, metaclass=Type):
 
 
 
-class Wrap(Type, metaclass=Monad):
+class Wrap(Type, metaclass=Functor):
     """
     Type wrapper lifting selected methods to the container type.
 
@@ -83,6 +85,13 @@ class Wrap(Type, metaclass=Monad):
         Wrap_A = super().new(cls, A)
         Wrap_A._wrapped_ = A
         return Wrap_A
+    
+    @classmethod
+    def _subclass_(cls, *As):
+        msg = str(cls) + " _subclass_: "
+        msg += " ".join(str(A) for A in As[:2])
+        io.log(msg, v=1)
+        return Type.__new__(cls, *As)
 
     def _post_new_(Wrap_A, A):
         # --- Lift methods
@@ -90,6 +99,7 @@ class Wrap(Type, metaclass=Monad):
         cls = Wrap_A.__class__
         for name, signature, lift_args in cls._lifted_methods_:
             homtype = signature(Wrap_A)
+            io.log(f"lifting {name}: {homtype}", v=2)
             f = getattr(A, name)
             Wf = cls.lift(f, homtype, lift_args)
             setattr(Wrap_A, name, Wf)
@@ -125,6 +135,9 @@ class Wrap(Type, metaclass=Monad):
 
         @homtype
         def lifted_method(*xs):
+            """
+            Lifted method. 
+            """
             xs = list(xs)
             for i in lift_args:
                 xs[i] = xs[i].data

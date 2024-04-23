@@ -1,33 +1,53 @@
 import torch
 
 from ._wrap_alg import WrapRing
-from .tensor import Tensor
+from .tensor import Tensor, TorchBackend
 from .typed_tensor import TypedTensor
 from .shape import Torus
 from fp.meta import HomFunctor, Functor, NFunctor
 from fp.instances import Hom, Ring
+import fp.io as io
 
-class Tens(Ring, metaclass=Functor):
+class Tens(TorchBackend, Ring, metaclass=Functor):
+    """
+    Typed tensor spaces.
+
+    The `Tens` functor maps shapes to their associated tensor type.
+
+    **Example:**
+    .. code:: 
+
+        >>> E = Tens((3, 2))
+        >>> E.range()
+        Tens 3x2 : [[ 0,  1],
+                    [ 2,  3],
+                    [ 4,  5]]
+    """
 
     @classmethod
     def new(cls, A):
-
-        class Tens_A(TypedTensor):
+        class Tens_A:
 
             shape = A
             domain = Torus(A)
-        
-        return Tens_A
+
 
         name = cls._get_name_(A)
-        bases = (Tensor,)
-        dct = dict(Field_A.__dict__)
-        dct["shape"] = list(A)
+        Tens_A.__name__ = name
+        bases = (Tens_A, TypedTensor,)
+        dct = dict(Tens_A.__dict__)
+        dct["shape"] = tuple(A)
         dct["domain"] = Torus(A)
         TA = Ring.__new__(cls, name, bases, dct)
+        io.log(("Tens new", TA, type(TA), type(TA) is cls), v=1)
         return TA
-    
-    def __init__(cls, A):
+     
+    def _post_new_(Tens_A, A):
+        cls = Tens_A.__class__
+        io.log((cls, "_post_new_", Tens_A, A), v=1)
+        super(cls, cls)._post_new_(Tens_A, Tens_A._wrapped_)
+
+    def __init__(cls, A, *xs, **ks):
         ...
 
     @classmethod
@@ -51,6 +71,10 @@ class Tens(Ring, metaclass=Functor):
     def __str__(TA):
         return TA.__name__
 
+    def __repr__(TA):
+        return TA.__name__
+
+
 class Linear(Hom, Tens, metaclass=HomFunctor):
     """
     Linear maps types, containing dense or sparse matrices.
@@ -61,103 +85,168 @@ class Linear(Hom, Tens, metaclass=HomFunctor):
     The arguments `A` and `B` can either be given as tensor shapes
     or as associated tensor types e.g.
         
-        .. code::
+    .. code::
 
-            A, B = Tens([2, 3]), Tens([4])
-            assert Linear(A, B) == Linear([2, 3], [4])
+        A, B = Tens((2, 3)), Tens((4))
+        assert Linear(A, B) == Linear((2, 3), (4))
 
     Linear map instances inherit from the Hom class, overriding
     composition and application by matrix-matrix and matrix-vector
     products respectively.
     """
+
+    class _top_:
+        
+        def __new__(cls, matrix, name=None):
+            self = super().__new__(cls, matrix, name)
+            return self
+
+        def __init__(self, matrix, name=None):
+            cls = self.__class__
+            # Tens([B, A]) attributes
+            mat = matrix.data if isinstance(matrix, Tensor) else matrix
+            if mat.is_sparse:
+                mat = mat.coalesce()
+            self.data = mat
+
+            # Hom(Tens([A]), Tens([B])) attributes
+            A, B = ("x".join(str(n) for n in C) for C in self._tail_)
+            if mat.is_sparse:
+                nnz = mat.indices().shape[-1]
+                self.__name__ = f"sparse {B}<{A} (nnz={nnz})"
+            else:
+                self.__name__ = f"dense {B}<{A}"
+
+        @classmethod
+        def matvec(cls, mat, x):
+            """Matrix vector product."""
+            if isinstance(x, (Tensor, torch.Tensor)):
+                sx = list(x.shape)
+                src = list(cls.src.shape)
+                M, X = mat.data, x.data
+                # cast dtype
+                if torch.is_complex(M) and not torch.is_complex(X):
+                    X = X.complex()
+                if M.is_floating_point() and not X.is_floating_point():
+                    X = X.float()
+                # apply to 1d vector
+                if sx == [cls.src.domain.size]:
+                    return M @ X
+                # apply to tensor
+                elif sx == src:
+                    return M @ X.view([-1])
+                # apply to last dimensions of tensor
+                elif sx[-len(src) :] == src:
+                    n1 = cls.src.domain.size
+                    xT = X.view([-1, n1]).T
+                    return (M @ xT).T
+                raise TypeError(f"Did not find a caller for input {x.shape}")
+
+        def __mul__(self, other):
+            if isinstance(other, (int, float)):
+                return self.__class__(
+                    self.data * other, name=f"{other} * {self.__name__}"
+                )
+            if isinstance(other, torch.Tensor) and other.numel() == 1:
+                return self.__class__(
+                    self.data * other, name=f"{other} * {self.__name__}"
+                )
+            return super().__mul__(other)
+
+        def __rmul__(self, other):
+            if isinstance(other, (int, float)):
+                return self.__mul__(other)
+            if isinstance(other, torch.Tensor) and other.numel() == 1:
+                return self.__mul__(other)
+            return super().__rmul__(other)
+
+        def t(self):
+            """Adjoint operator in Linear(B, A)."""
+            A, B = self._tail_
+            return Linear(B, A)(self.data.t())
+
+        def __repr__(self):
+            return self.__name__
     
+    # --- Type creation 
+
     @classmethod
     def new(cls, A, B):
+        src, tgt = Tens(A), Tens(B)
+        bases = cls._top_, Tens((*B, *A)), Hom(src, tgt)
+        name = cls._get_name_(A, B)
+        LAB = Ring.__new__(cls, name, bases, {})
+        Ring.__init__(LAB, name, bases, {})
+        return LAB
+    
+    @classmethod
+    def _get_name_(cls, A, B):
+        name_one = lambda C: "x".join(str(n) for n in C)
+        A, B = name_one(A), name_one(B)
+        return f"Linear {A} {B}"
 
-        if isinstance(A, Ring):
-            A = A.shape
-        if isinstance(B, Ring):
-            B = B.shape
-        NA = int(torch.tensor(A).prod())
-        NB = int(torch.tensor(B).prod())
+    @classmethod
+    def _pre_new_(cls, A, B):
+        def parse_one(C):
+            if isinstance(C, tuple):
+                return C
+            if isinstance(C, int):
+                return (C,)
+            if isinstance(C, Ring):
+                return C.shape
+            elif isinstance(C, list):
+                return tuple(C)
+        return parse_one(A), parse_one(B)
+    
+    def _post_new_(LinAB, A, B, *xs):
+        msg = (str(m) for m in (LinAB.__name__, "_post_new_", A, B, *xs))
+        io.log(" ".join(msg), v=1)
+        cls = LinAB.__class__
+        TorchBackend._post_new_(LinAB, LinAB._wrapped_)
+    
+    # --- Class methods 
+    
+    @classmethod
+    def compose(cls, f, *gs):
+        if not len(gs):
+            return f
+        g = gs[0]
+        if len(gs) > 1:
+            return cls.compose(cls.compose(f, g), *gs[1:])
+        """Composition of matrices."""
+        if f.data.is_sparse and g.data.is_sparse:
+            data = torch.sparse.mm(g.data, f.data)
+        else:
+            data = g.data @ f.data
+        gf = cls(f.src, g.tgt)(data)
+        return gf
 
-        class LinAB(Tens((NB, NA)), Hom(Tens(A), Tens(B))):
+    @classmethod
+    def eval(cls, x, f):
+        return f @ x
+    
+    @classmethod
+    def source_type(cls, f, xs):
+        assert (len(xs)) == 1
+        x = xs[0]
+        s_x = tuple(x.shape)
+        s_in = tuple(f.src.domain.shape)
+        if s_x == s_in:
+            return f.src
+        elif s_x[-len(s_in) :] == s_in:
+            return Tens(s_x)
 
-            functor = Linear
-            input = (A, B)
-
-            def __init__(self, matrix, name=None):
-                cls = self.__class__
-                # Tens([B, A]) attributes
-                mat = matrix.data if isinstance(matrix, Tensor) else matrix
-                if mat.is_sparse:
-                    mat = mat.coalesce()
-                self.data = mat
-
-                # Hom(Tens([A]), Tens([B])) attributes
-                self.call = lambda x: cls.matvec(matrix, x)
-                if mat.is_sparse:
-                    nnz = mat.indices().shape[-1]
-                    self.__name__ = f"sparse {NB}x{NA} (nnz={nnz})"
-                else:
-                    self.__name__ = f"dense {NB}x{NA}"
-
-            @classmethod
-            def matvec(cls, mat, x):
-                """Matrix vector product."""
-                if isinstance(x, (Tensor, torch.Tensor)):
-                    sx = list(x.shape)
-                    src = list(cls.src.shape)
-                    M, X = mat, (x.data if isinstance(x, Tensor) else x)
-                    # cast dtype
-                    if torch.is_complex(M) and not torch.is_complex(X):
-                        X = X.complex()
-                    if M.is_floating_point() and not X.is_floating_point():
-                        X = X.float()
-                    # apply to 1d vector
-                    if sx == [cls.src.domain.size]:
-                        return M @ X
-                    # apply to tensor
-                    elif sx == src:
-                        return M @ X.view([-1])
-                    # apply to last dimensions of tensor
-                    elif sx[-len(src) :] == src:
-                        n1 = cls.src.domain.size
-                        ns = sx[:-len(src)]
-                        xT = X.view([-1, n1]).T
-                        return (M @ xT).T.view([*ns, *cls.tgt.shape])
-                    print(sx, src, x.shape)
-                    raise TypeError(f"Did not find a caller for input {x.shape}")
-
-            def __mul__(self, other):
-                if isinstance(other, (int, float)):
-                    return self.__class__(
-                        self.data * other, name=f"{other} * {self.__name__}"
-                    )
-                if isinstance(other, torch.Tensor) and other.numel() == 1:
-                    return self.__class__(
-                        self.data * other, name=f"{other} * {self.__name__}"
-                    )
-                return super().__mul__(other)
-
-            def __rmul__(self, other):
-                if isinstance(other, (int, float)):
-                    return self.__mul__(other)
-                if isinstance(other, torch.Tensor) and other.numel() == 1:
-                    return self.__mul__(other)
-                return super().__rmul__(other)
-
-            def t(self):
-                """Adjoint operator in Linear(B, A)."""
-                return Linear(B, A)(self.data.t())
-
-            def __repr__(self):
-                return self.__name__
-
-        return LinAB
-
-    def __init__(self, A, B):
-        pass
+    @classmethod
+    def target_type(cls, f, xs):
+        assert (len(xs)) == 1
+        x = xs[0]
+        s_x = tuple(x.shape)
+        s_in = tuple(f.src.domain.shape)
+        s_out = tuple(f.tgt.domain.shape)
+        if s_x == s_in:
+            return f.tgt
+        elif s_x[-len(s_in) :] == s_in:
+            return Tens((*s_x[: -len(s_in)], *s_out))
 
     @classmethod
     def otimes(cls, f, g):
@@ -190,48 +279,6 @@ class Linear(Hom, Tens, metaclass=HomFunctor):
             return data
         # dense tensor product
         raise Exception("Dense tensor product of operators not implemented")
-
-    @classmethod
-    def compose(cls, f, g):
-        """Composition of matrices."""
-        if f.data.is_sparse and g.data.is_sparse:
-            data = torch.sparse.mm(f.data, g.data)
-        else:
-            data = f.data @ g.data
-        fg = cls(f.tgt.shape, g.src.shape)(data)
-        return fg
-    
-    @classmethod
-    def name(cls, A, B):
-        if isinstance(A, RingClass):
-            A = A.shape
-        if isinstance(B, RingClass):
-            B = B.shape
-        shape = lambda S: "x".join(str(n) for n in S)
-        return f"Linear {shape(A)} -> {shape(B)}"
-
-    @classmethod
-    def source_type(cls, f, xs):
-        assert (len(xs)) == 1
-        x = xs[0]
-        s_x = tuple(x.shape)
-        s_in = tuple(f.src.domain.shape)
-        if s_x == s_in:
-            return f.src
-        elif s_x[-len(s_in) :] == s_in:
-            return Tens(s_x)
-
-    @classmethod
-    def target_type(cls, f, xs):
-        assert (len(xs)) == 1
-        x = xs[0]
-        s_x = tuple(x.shape)
-        s_in = tuple(f.src.domain.shape)
-        s_out = tuple(f.tgt.domain.shape)
-        if s_x == s_in:
-            return f.tgt
-        elif s_x[-len(s_in) :] == s_in:
-            return Tens((*s_x[: -len(s_in)], *s_out))
 
 
 class Otimes(metaclass=NFunctor):
