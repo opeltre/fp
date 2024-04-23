@@ -1,7 +1,7 @@
 # This workflow will install Python dependencies, run tests and lint with a variety of Python versions
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
 
-name: Build and run tests
+name: Build
 
 on:
   workflow_dispatch:
@@ -14,6 +14,7 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
+    
     strategy:
       fail-fast: false
       matrix:
@@ -45,7 +46,7 @@ jobs:
       run: | 
         cd ${{ github.workspace }} 
         poetry install
-    - name: Test with unittest
+    - name: Run foobar 
       run: |
         #poetry run fp-tests
         poetry run python examples/foobar.py
