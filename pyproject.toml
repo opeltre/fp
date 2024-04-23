@@ -1,0 +1,29 @@
+[tool.poetry]
+name = "fp"
+version = "0.2.0"
+description = "A functional programming framework for python."
+authors = ["Olivier Peltre <opeltre@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+
+python = "^3.10"
+colorama = "^0.4.6"
+numpy = "^1.26"
+#--- extras ---
+torch = { version = "^2.1", optional = true }
+jax = { version = "^0.4", optional = true }
+
+[tool.poetry.extras]
+torch = ["torch"]
+jax = ["jax"]
+
+[[tool.poetry.source]]
+name = "pytorch_cpu"
+url = "https://download.pytorch.org/whl/cpu"
+priority = "explicit"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
