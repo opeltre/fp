@@ -5,7 +5,6 @@ import numpy as np
 from typing import Callable
 
 from fp.instances import Type, Hom, Prod, Wrap, Alg, Ring
-from .backend import backend
 
 signature = lambda n : lambda A: Hom(tuple([A] * n), A)
 

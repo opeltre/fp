@@ -5,7 +5,7 @@ from .backend import torch, np, jnp
 import typing
 from types import ModuleType
 
-from ._wrap_alg import WrapRing, Backend, TorchBackend, NumpyBackend, JaxBackend
+from .backend.wrap_alg import WrapRing, Backend, TorchBackend, NumpyBackend, JaxBackend
 from fp.instances import Type, Hom, Wrap, Alg, Ring
 
 

@@ -1,34 +1,8 @@
-import pkg_resources
-import os
-
 import typing
 from typing import TypeAlias, Union, Any, Callable, Dict, Iterable
 
-import numpy as np
-
-# --- Get available backends ---
-
-pkgs = [p.project_name for p in pkg_resources.working_set]
-
-has_jax = "jax" in pkgs
-has_torch = "torch" in pkgs
-
-del pkgs
-
-# --- Export references ---
-
-if has_jax:
-    import jax
-else:
-    jax = False
-
-if has_torch:
-    import torch
-else:
-    torch = False
-
-# --- Interface for helpers  ---
-
+import os
+from ._pkgs import has_jax, has_torch, np, jax, torch
 
 class ArrayInterface:
     module: Any = None
@@ -74,7 +48,7 @@ if has_jax:
             return jax.device_put(x, device)
 
 
-# --- Array Types ---
+# --- Available backends ---
 
 AVAILABLE = {}
 for name, available, Interface in zip(
@@ -85,8 +59,7 @@ for name, available, Interface in zip(
     if available:
         AVAILABLE[name] = Interface
 
-# --- Get / set preferred backend ---
-
+# --- Global backend state ---
 
 class backend(ArrayInterface):
     """
@@ -167,8 +140,3 @@ class backend(ArrayInterface):
 
 
 backend.init()
-
-backend.torch = has_torch and torch
-backend.hax = has_jax and jax
-backend.jnp = has_jax and jax.numpy
-backend.np = np

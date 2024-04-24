@@ -1,6 +1,6 @@
 import torch
 
-from ._wrap_alg import WrapRing
+from .backend.wrap_alg import WrapRing
 from .tensor import Tensor, TorchBackend
 from .typed_tensor import TypedTensor
 from .shape import Torus
