@@ -49,5 +49,7 @@ jobs:
         #poetry run fp-tests
         poetry run python examples/foobar.py
     - name: Run arrays
-      run: "poetry run python examples/arrays.py"
+      run: |
+        poetry poe jaxinstall
+        poetry run python examples/arrays.py
     - run: echo "🍏 This job's status is ${{ job.status }}."

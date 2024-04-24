@@ -126,10 +126,24 @@ class HomInstance(Arrow._top_):
 
 class Hom(Arrow, metaclass=HomFunctor):
     """
-    Hom functor, mapping type pairs to their callable type.
+    Hom functor: maps type pairs to their callable types.
 
-    The type `Hom(A, B) = A -> B` describes callables with input in `A` 
-    and output in `B`.
+    The type `Hom(A, B)` describes callables with input in `A` 
+    and output in `B`, it can be used as a decorator to type 
+    a function definition.
+
+    Example:
+    --------
+    .. code::
+        
+        >>> @Hom(Int, Str):
+        ... def bar(n):
+        ...     return n * "|"
+        ...
+        >>> bar
+        Int -> Str : bar
+        >>> bar(8)
+        Str : '||||||||'
     """
     
     _top_ = HomInstance
@@ -260,5 +274,3 @@ class Hom(Arrow, metaclass=HomFunctor):
         else:
             raise io.TypeError("source", A, Type | Iterable[Type])
         return src, tgt, arity
-        
-Type.Hom = Hom

@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-from .backend import torch, np, jnp
-
 import typing
 from types import ModuleType
 
-from .backend.wrap_alg import WrapRing, Backend, TorchBackend, NumpyBackend, JaxBackend
-from fp.instances import Type, Hom, Wrap, Alg, Ring
+from fp.cartesian import Type, Hom
+from fp.instances import Wrap, Alg, Ring
 
+from .backend import torch, np, jnp
+from .backend.wrap_alg import WrapRing, Backend, TorchBackend, NumpyBackend, JaxBackend
 
 class TensorBase:
     

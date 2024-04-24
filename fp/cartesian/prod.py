@@ -3,9 +3,7 @@ import fp.io as io
 
 class Prod(Type, metaclass=NFunctor):
     """
-    Product functor.
-
-    The type `Product(A, B, ...)` is a type-aware subclass of `tuple`.
+    Product functor: type-aware subclass of `tuple`.
     
     Example:
     --------
@@ -70,5 +68,3 @@ class Prod(Type, metaclass=NFunctor):
         if isinstance(xs, tuple):
             return cls(*xs)
         return io.cast(xs, cls)
-
-Type.Prod = Prod

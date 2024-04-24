@@ -4,8 +4,10 @@ from .backend.wrap_alg import WrapRing
 from .tensor import Tensor, TorchBackend
 from .typed_tensor import TypedTensor
 from .shape import Torus
+
 from fp.meta import HomFunctor, Functor, NFunctor
-from fp.instances import Hom, Ring
+from fp.cartesian import Hom
+from fp.instances import Ring
 import fp.io as io
 
 class Tens(TorchBackend, Ring, metaclass=Functor):

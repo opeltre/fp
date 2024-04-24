@@ -1,5 +1,5 @@
 from fp.meta import Type, Functor, Functor
-from .hom import Hom
+from fp.cartesian import Hom
 import fp.io as io
 
 from types import MethodType

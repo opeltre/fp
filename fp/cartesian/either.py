@@ -2,14 +2,13 @@ from __future__ import annotations
 from fp.meta import Type, NFunctor, Monad
 from .prod import Prod
 from .hom import Hom
-from .wrap import Wrap
 
 from colorama import Fore
 
 import typing
 
 
-class Either(Wrap, metaclass=Monad):
+class Either(Type, metaclass=Monad):
     """
     Direct sum of types (union).
 
@@ -30,7 +29,7 @@ class Either(Wrap, metaclass=Monad):
         >>> List.fmap(Either.fmap(bar, foo))(x)
         List (str | int | ...) : [1 : 5, 0 : ||||||||||||, 1 : 6, 0 : ||||||||]
     """
-    class _top_(Wrap._top_):
+    class _top_:
         
         def __init__(self, x):
             union = self._wrapped_.__args__
@@ -60,30 +59,38 @@ class Either(Wrap, metaclass=Monad):
         """
         Apply a mapping on each case.
         """
-        src = Either(*(f.src for f in fs), ...)
-        tgt = Either(*(f.tgt for f in fs), ...)
+        if fs[-1] is ...:
+            fs = (*fs[:-1], lambda x:x)
+            src = Either(*(f.src for f in fs[:-1]), ...)
+            tgt = Either(*(f.tgt for f in fs[:-1]), ...)
+            name = Either._get_name_(*fs, "...")
+        else:
+            src = Either(*(f.src for f in fs))
+            tgt = Either(*(f.tgt for f in fs))
+            name = Either._get_name_(*fs)
 
         @Hom(src, tgt)
         def either_f(x):
             if x._i_ < len(fs):
                 return fs[x._i_](x.data)
-            return x
 
-        either_f.__name__ = Either._get_name_(*fs, "...")
+        either_f.__name__ = name
 
         return either_f
     
+    @classmethod
+    def unit(cls, x: Var("A")) -> cls(Var("A"), ...):
+        return cls("A", ...)(x)
+
     @classmethod
     def join(cls, EEx: cls(cls("A", ...), ...)) -> cls("A", ...):
         """
         Access unwrapped either value.
         """
-        tgt = Either._tail_[0] 
+        tgt = cls._tail_[0] 
         return tgt(x)
 
     @classmethod
     def _get_name_(cls, *As):
         name = lambda A: (A.__name__ if hasattr(A, '__name__') else str(A))
         return "(" + " | ".join(name(A) for A in As) + ")"
-
-Type.Sum = Either

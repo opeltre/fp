@@ -4,7 +4,8 @@ import numpy as np
 
 from typing import Callable
 
-from fp.instances import Type, Hom, Prod, Wrap, Alg, Ring
+from fp.cartesian import Type, Hom, Prod
+from fp.instances import Wrap, Alg, Ring
 
 signature = lambda n : lambda A: Hom(tuple([A] * n), A)
 

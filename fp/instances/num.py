@@ -1,8 +1,8 @@
 import re
 
 from fp.meta import Type
+from fp.cartesian import Hom
 import fp.io as io
-from .hom import Hom
 
 class Eq(Type):
 

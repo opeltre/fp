@@ -55,6 +55,9 @@ class Type(type, metaclass=Kind):
         T.show = show
         return T
     
+    def __init__(self, *xs, **ys):
+        ...
+
     def __repr__(self):
         """Show type name."""
         return f"{self.__name__}"
