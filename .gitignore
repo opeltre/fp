@@ -3,3 +3,5 @@ __pycache__
 fp.egg-info
 *.vscode
 docs/_build
+docs/source
+poetry.lock
