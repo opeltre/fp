@@ -38,11 +38,25 @@ class Arrow(Type, metaclass=ArrowFunctor):
 
     @classmethod
     def fmap(cls, phi):
-        return lambda f: cls.compose(f, phi)
+        """
+        Pushforward : post-composition on the target.
+        """
+        @Type.Hom(cls("X", phi.src), cls("X", phi.tgt))
+        def push(f):
+            return cls.compose(f, phi)
+        push.__name__ = "push " + phi.__name__
+        return push
 
     @classmethod
     def cofmap(cls, psi):
-        return lambda f: cls.compose(psi, f)
+        """
+        Pullback : pre-composition on the source.
+        """
+        @Type.Hom(cls(psi.tgt, "Y"), cls(psi.src, "Y"))
+        def pull(f):
+            return cls.compose(psi, f)
+        pull.__name__ = "pull " + psi.__name__
+        return pull
 
     @classmethod
     def _get_name_(cls, A, B):

@@ -39,7 +39,7 @@ class HomInstance(Arrow._top_):
 
         # --- Input and output types
         Src, match = self.source_type(self, xs)
-        Tgt = self.target_type(self, xs)
+        Tgt = self.target_type(self, xs, match)
 
         # --- Full application
         if len(xs) == self.arity:
@@ -83,7 +83,8 @@ class HomInstance(Arrow._top_):
         if not isinstance(Src, Var):
             return Src, True
         else:
-            return Src, Src.match(type(xs))
+            Tx = Type.Prod(type(x) for x in xs) if len(xs) > 1 else type(xs[0])
+            return Src, Src.match(Tx)
 
     @staticmethod
     def source_cast(Src, r, xs):
@@ -108,7 +109,7 @@ class HomInstance(Arrow._top_):
             return arrow._head_.target_type(arrow, xs)
         if len(xs) == arrow.arity:
             # full application type
-            if match is True or not isinstance(match, Var):
+            if match is True or not isinstance(arrow.tgt, Var):
                 # concrete type
                 return arrow.tgt
             elif match is not None:
