@@ -42,6 +42,8 @@ class Kind(type):
         """
         if T.__base__.__name__ == 'Var': 
             return None
+        elif any(b.__name__ == 'Var' for b in T.__bases__):
+            return None
         T._holes_ = {}
         # --- register methods
         for k, method in Method.list(cls):

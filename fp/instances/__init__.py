@@ -1,10 +1,10 @@
 from fp.meta import Type
-from .num import Eq, Bool
-from .num import Operad, Monoid, Ring, Alg
-from .num import Int, Float, Str
+from .algebra import Eq, Operad, Monoid, Ring, Alg
+from .num import Bool, Int, Float, Str
 from .num import Str
 from .list import List
 from .wrap import Wrap
+from .state import State
 
 __all__ = [
     "Monoid",
@@ -16,4 +16,5 @@ __all__ = [
     "List",
     "Str",
     "Wrap",
+    "State",
 ]

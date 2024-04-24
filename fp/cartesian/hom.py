@@ -161,9 +161,6 @@ class Hom(Arrow, metaclass=HomFunctor):
         TAB.arity = arity
         return TAB
 
-    def __init__(TAB, A, B):
-        ...
-
     @classmethod
     def compose(cls, f, *fs):
         """

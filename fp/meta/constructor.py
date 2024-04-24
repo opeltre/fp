@@ -50,6 +50,13 @@ class Constructor(Kind):
                 print(e)
                 raise RuntimeError(f"Method {cls.__name__}.new was not overriden.")
         
+        @classmethod
+        def _subclass_(cls, *As):
+            msg = str(cls.__name__) + " _subclass_: "
+            msg += " ".join(str(A) for A in As[:2])
+            io.log(msg, v=1)
+            return Type.__new__(cls, *As)
+
         def _post_new_(TA, *As):
             ...
 
@@ -107,7 +114,6 @@ class Constructor(Kind):
             except Exception as e:
                 # class MyT(T(*As), metaclass=T):
                 return new(cls, *xs, **ys)
-                raise e
 
         return cached_new
 
@@ -161,6 +167,14 @@ class Constructor(Kind):
             
             def _post_new_(A, *xs, **ys):
                 ...
+
+        def _check_methods_(self, T, bases, dct):
+            """
+            Check that declared class methods are defined.
+
+            Called by `Kind.__new__` to explicitly call setattr as needed.
+            """
+            ...
 
         VarT.__name__ = T.__name__
         return VarT
@@ -292,4 +306,3 @@ class Ellipsis(Var):
 
     def substitute(A, matches):
         ...
-

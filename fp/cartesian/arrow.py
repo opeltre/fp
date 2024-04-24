@@ -32,9 +32,6 @@ class Arrow(Type, metaclass=ArrowFunctor):
         TAB.tgt = B
         return TAB
 
-    def __init__(TAB, A, B):
-        ...
-    
     @classmethod
     def compose(cls, f, g):
         return cls(f.src, g.tgt)()
