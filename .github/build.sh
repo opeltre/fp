@@ -22,8 +22,8 @@ function jaxinstall () {
 
 function build() {
     poetry install
-    poetry run torchinstall $1
-    poetry run jaxinstall $1
+    poetry poe torchinstall
+    poetry poe jaxinstall
 }
 
 build $1
