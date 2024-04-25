@@ -7,6 +7,9 @@ Type.Sum = Either
 Type.Prod = Prod
 Type.Hom = Hom
 
+Type.Unit = Prod.Unit
+Type.Zero = Either.Unit
+
 __all__ = [
     "Type", 
     "Hom",

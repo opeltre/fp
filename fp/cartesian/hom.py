@@ -35,7 +35,7 @@ class HomInstance(Arrow._top_):
         def pipe(x):
             for f in self._pipe:
                 x = f(x)
-            return io.cast(x, self.tgt)
+            return x
 
         # --- Input and output types
         Src, match = self.source_type(self, xs)
@@ -60,6 +60,11 @@ class HomInstance(Arrow._top_):
     
     def __rshift__(self, other):
         return self._head_.compose(self, other)
+    
+    def __str__(self):
+        if hasattr(self, '__name__'):
+            return self.__name__
+        return "λ"
 
     def __repr__(self):
         if hasattr(self, '__name__'):
@@ -91,11 +96,11 @@ class HomInstance(Arrow._top_):
         if r == 1 and isinstance(xs[0], Src):
             return xs[0]
         elif r == 1: 
-            return io.cast(xs[0], Src)
+            return io.cast(xs[0], Src) if not isinstance(Src, Var) else xs[0]
         elif r > 1 and all(isinstance(x, S) for x, S in zip(xs, Src._tail_)):
             return xs
         else:
-            return io.cast(xs, Src)
+            return io.cast(xs, Src) if not isinstance(Src, Var) else xs
 
     @staticmethod
     def target_type(arrow, xs, match=True):
@@ -122,8 +127,9 @@ class HomInstance(Arrow._top_):
 
     @staticmethod
     def target_cast(Tgt, y):
-        return io.cast(y, Tgt)
-
+        if not isinstance(Tgt, Var):
+            return io.cast(y, Tgt)
+        return y
 
 class Hom(Arrow, metaclass=HomFunctor):
     """

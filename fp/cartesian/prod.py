@@ -33,6 +33,9 @@ class Prod(Type, metaclass=NFunctor):
             return super().__new__(P, xs)
 
         def __init__(prod, *xs): ...
+        
+        def __str__(self):
+            return "(" + ", ".join(str(x) for x in self) + ")"
 
         def __repr__(self):
             return "(" + ", ".join(str(x) for x in self) + ")"
@@ -44,6 +47,11 @@ class Prod(Type, metaclass=NFunctor):
     
     def __init__(P, *As):
         ...
+    
+    def __getitem__(P, i:int | slice):
+        if isinstance(i, int):
+            return P._tail_[i]
+        return P.__class__(*P._tail_[i])
 
     @classmethod
     def fmap(cls, *fs):
@@ -68,3 +76,5 @@ class Prod(Type, metaclass=NFunctor):
         if isinstance(xs, tuple):
             return cls(*xs)
         return io.cast(xs, cls)
+
+Prod.Unit = Prod()
