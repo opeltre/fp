@@ -4,7 +4,7 @@ from .num import Bool, Int, Float, Str
 from .num import Str
 from .list import List
 from .wrap import Wrap
-from .state import State
+from .state import State, StateMonad, Stateful
 
 __all__ = [
     "Monoid",
@@ -17,4 +17,6 @@ __all__ = [
     "Str",
     "Wrap",
     "State",
+    "StateMonad",
+    "Stateful",
 ]

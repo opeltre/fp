@@ -1,8 +1,12 @@
 from colorama import Fore
 
 WARN = Fore.MAGENTA + "/!\\" + Fore.RESET
+RULE = Fore.YELLOW + "-" * 50 + Fore.RESET + "\n"
 
-class Error(Exception): ...
+class Error(Exception): 
+
+    def __init__(self, msg):
+        super().__init__(RULE + msg)
 
 class TypeError(Error):
 
