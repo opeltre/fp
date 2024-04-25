@@ -25,7 +25,7 @@ jax = ["jax"]
 cmd = "pip install torch --index-url https://download.pytorch.org/whl/cpu"
 
 [tool.poe.tasks.jaxinstall]
-cmd = "pip install jax[cpu]"
+cmd = "pip install 'jax[cpu]'"
 
 [build-system]
 requires = ["poetry-core"]
