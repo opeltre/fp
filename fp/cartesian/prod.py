@@ -64,8 +64,35 @@ class Prod(Type, metaclass=NFunctor):
             ys = tuple(f(x) for x, f in zip(xs, fs))
             return ys
 
-        map_f.__name__ = "(" + ", ".join((f.__name__ for f in fs)) + ")"
+        map_f.__name__ = cls._fmap_name_(*fs)
         return map_f
+    
+    @classmethod
+    def _fmap_name(cls, *fs):
+        return "(" + ", ".join((f.__name__ for f in fs)) + ")"
+
+    @classmethod
+    def branch(cls, f, *fs):
+        """
+        Universal property of categorical products.
+
+        Given a collection of arrows with the same source `X`,
+        return an arrow from `X` to the product of targets.
+
+            (X -> A, X -> B, ...) -> X -> (A, B, ...)
+
+        The terminal arrow to `(A, B, ...)`projections 
+        """
+        src = f.src
+        tgt = Prod(fi.tgt for fi in (f, *fs))
+
+        @Hom(src, tgt)
+        def branch_f(x):
+            return (fi(x) for fi in (f, *fs))
+
+        branch_f.__name__ = cls._fmap_name(f, *fs) + "*"
+        return branch_f
+
 
     @classmethod
     def _get_name_(cls, *As):

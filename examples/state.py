@@ -74,6 +74,13 @@ loopbaz(1).value.show()
 
 #--- state context manager
 
+bazz = loopbaz(0)
+with bazz.use("Foo Bar Baz") as bazz1:
+    bazzz = bazz1.map(resume).bind(loopbaz)
+bazzz.show()
+
+with bazzz.use("F O O B A R B A Z") as bazzz1:
+
 with MyString.use("Bar Baz"):
     repeatbaz(2).show()
     repeatbaz(2).value.show()

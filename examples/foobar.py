@@ -1,3 +1,4 @@
+import fp
 from fp import *
 from fp.meta import *
 

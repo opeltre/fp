@@ -140,6 +140,14 @@ class State(Hom, metaclass=HomFunctor):
         True
         >>> State(Str, Int) is State(Str)(Int)
         True
+        # monadic types `State S A` are of type `State`
+        >>> type(State(Str)(Int) is State)
+        True
+
+    Note that this is an important difference with the `Stateful` implementation, 
+    which puts the emphasis on state-type specific implementations. Using the 
+    `State` bifunctor may be considered safer at a little convenience cost
+    (the global class state of `Stateful(S, s0)` types). 
     """
 
     class _top_(Monad._instance_, Hom._top_): 
@@ -182,11 +190,9 @@ class State(Hom, metaclass=HomFunctor):
             try:
                 s0 = self._initial_
                 self._initial_ = state
-                pipe = self._pipe
-                #self._pipe = (lambda s: (s1, a),)
-                yield self
+                s1, a = self.run(state)
+                yield self._monad_.put(s1).unit(a)
             finally:
-                self._pipe = pipe
                 self._initial_ = s0
         
         # --- Compositions by method chaining ---
@@ -195,22 +201,34 @@ class State(Hom, metaclass=HomFunctor):
             if tgt is None: 
                 tgt = f.tgt
             pipe = (*self._pipe, lambda pair: f(*pair))
-            return self._monad_(tgt)(pipe, self._initial_)
-
-        def gets(self, f):
-            out = self.then(lambda s, a: (s, f(s)), tgt=f.tgt)
-            out.__name__ = self.__name__ + " >> get " + f.__name__
+            out = self._monad_(tgt)(pipe, self._initial_)
+            out.__name__ = self.__name__ + " ; " + f.__name__
             return out
+
+        def gets(self, f, tgt=None):
+            tgt = tgt or f.tgt
+            if callable(f):
+                get_f = lambda s, a: (s, f(s))
+            elif isinstance(f, str):
+                get_f = lambda s, a: (s, getattr(s, f))
+            get_f.__name__ = "get " + f.__name__
+            return self.then(get_f, tgt=tgt)
 
         def put(self,  s):
             out = self.then(lambda *_: (s, ()), tgt=Type.Unit)
             out.__name__ = self.__name__ + " >> put " + str(s)
             return out
+        
+        def unit(self, a):
+            unit_a = lambda s, _: (s, a)
+            unit_a.__name__ = "return " + str(a)
+            out = self.then(unit_a, type(a))
+            return out
 
         def puts(self, f):
-            out = self.then(lambda s, a: (f(a), a), tgt=f.src)
-            out.__name__ = self.__name__ + " >> puts " + f.__name__
-            return out
+            puts_f = lambda s, a: (f(s), a)
+            puts_f.__name__ = "put " + f.__name__
+            return self.then(puts_f, tgt=self._value_)
 
     @classmethod
     def new(cls, S, A=...):
@@ -277,7 +295,15 @@ class State(Hom, metaclass=HomFunctor):
 
 
 class StatefulMonad(StateMonad):
-    
+    """
+    Stateful Monads on a pointed state type.
+
+    Fully stateful monads are defined by both a state 
+    type `S` and an initial state `_initial_ : S`.
+
+        >>> MyString = Stateful(Str, "Hello World!")
+
+    """
     _state_ : Type = Var("S")
     _initial_ : Var("S")
 
@@ -308,6 +334,18 @@ class StatefulMonad(StateMonad):
     @classmethod
     @contextmanager
     def use(cls, s0: Var("S")):
+        """
+        Context manager for the `_initial_` class attribute.
+        
+        Within a managed block, evaluation of any stateful 
+        instance will be computed from `s0`. 
+
+        Yields
+        ------
+        put_s0 : cls(Type.Unit)
+            a stateful instance with initial state `s0` and 
+            returning `()`.
+        """
         s1 = cls._initial_
         try:
             cls._initial_ = s0
@@ -319,7 +357,7 @@ class StatefulMonad(StateMonad):
     def new(cls, A):
         name = cls._get_name_(A)
         bases = (cls._top_,)
-        dct = dict(
+l       dct = dict(
             _state_ = cls._state_,
             _value_ = A,
             src = cls._state_,
@@ -332,7 +370,7 @@ class StatefulMonad(StateMonad):
 
 
 class Stateful(Monad):
-
+    
     _defaults_ = StatefulMonad
 
     def __new__(cls, S, initial=None, dct=None):
