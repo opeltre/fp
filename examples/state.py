@@ -31,6 +31,49 @@ print("\n")
 
 #--- Monad subclasses ---
 
-class MyState(Stateful):
-    _state_ = Str
-    _initial_ = "Hello World!" 
+class MyString(Stateful(Str, "Hello World!")):
+    ...
+
+@Hom((Int, Str), Prod(Str, Int))
+def baz(n, s):
+    """
+    Stateful string updates indexed by integers.
+    """
+    print(repr(s))
+    if n >= len(s):
+        return (s, -1)
+    if s[n] == ' ':
+        return (s, -n)
+    s = s[:n] + '*' + s[n+1:]
+    return (s, n + 1)
+
+@Hom(Int, MyString(Int))
+def loopbaz(n):
+    """
+    Do `baz` while value is not negative.
+    """
+    if n < 0:
+        return MyString.unit(n)
+    return MyString(Int)(baz(n)).bind(loopbaz)
+
+resume = (Int.add(1) @ Int.neg).shows("resume")
+
+@Hom(Int, MyString(Int))
+def repeatbaz(n):
+    """
+    Resume and repeat `loop baz` exactly n times.
+    """
+    if n == 1:
+        return loopbaz(0)
+    elif n > 1:
+        return repeatbaz(n - 1).map(resume).bind(loopbaz)
+
+loopbaz.show()
+loopbaz(0).value.show()
+loopbaz(1).value.show()
+
+#--- state context manager
+
+with MyString.use("Bar Baz"):
+    repeatbaz(2).show()
+    repeatbaz(2).value.show()

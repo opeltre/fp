@@ -26,11 +26,14 @@ class Monad(Functor):
             return cls.join(mmb)
 
     class _instance_(Functor._instance_):
+        
+        @property
+        def _monad_(ma):
+            return ma._head_
 
         def bind(ma, mf):
-            monad = ma._head_
-            return monad.bind(ma, mf)
+            monad = ma._monad_
+            return ma._monad_.bind(ma, mf)
 
         def __rshift__(ma, mf):
-            monad = ma._head_
-            return monad.bind(ma, mf)
+            return ma.bind(mf)

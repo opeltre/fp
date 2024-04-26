@@ -9,6 +9,14 @@ import fp.io as io
 Point = Type.Unit()
 
 class StateMonad(Type, metaclass=Monad):
+    """
+    State monad.
+
+    The monad `State S` maps any type `A` to the stateful computation 
+    type `State S A`. 
+
+
+    """
     
     _state_ : Type = Var("S")
 
@@ -30,24 +38,24 @@ class StateMonad(Type, metaclass=Monad):
     
     @classmethod
     def fmap(cls, f):
-
-        def id_f(pair):
-            s, a = pair
-            return s, f(a) 
-        id_f.__name__ = f"map {f.__name__}"
-
+        """
+        Map pure callables `A -> B` by post-transform of the return value.
+            
+            >>> State.fmap(f)(st_a)(s0) == st_a.exec(s0), f(st_a.eval(s0))
+            True
+        """ 
         @Hom(cls(f.src), cls(f.tgt))
         def push_f(st_a):
-            St_b = State(st_a._state_, f.tgt)
-            return St_b((*st_a._pipe, id_f))
+            return st_a.then(lambda s, a: (s, f(a)), tgt=f.tgt)
         
         push_f.__name__ = "map " + f.__name__
         return push_f
 
-        return State.fmap(f)
-
     @classmethod
     def unit(cls, a=Type.Unit()):
+        """
+        Return a value `a : A`.
+        """
         S, A = cls._state_, type(a)
         unit_a = cls(A)(lambda s: (s, a))
         unit_a.__name__ = str(a)
@@ -55,17 +63,23 @@ class StateMonad(Type, metaclass=Monad):
     
     @classmethod
     def join(cls, ffa):
+        """
+        Evaluate the returned stateful subprocess.
+        """
         S, A = cls._state_, ffa._value_._value_
         def state_join(s0):
             """
             Flattened stateful computation.
             """
             s1, fa = ffa.run(s0)
-            return fa.run(s1)
+            return  fa.run(s1)
         return cls(A)(state_join)
 
     @classmethod
     def gets(cls, f):
+        """
+        Get and return an image of the state by `f : S -> A`.
+        """
         S, A = f.src, f.tgt
         io.asserts.subclass(S, f.src)
         gets_f = cls.unit(Point).gets(f)
@@ -74,6 +88,9 @@ class StateMonad(Type, metaclass=Monad):
     
     @classmethod
     def puts(cls, f):
+        """
+        Update the state by an image of `f : A -> S`.
+        """
         S, A = f.tgt, f.src
         io.asserts.subclass(A, f.src)
 
@@ -86,17 +103,52 @@ class StateMonad(Type, metaclass=Monad):
     
     @classmethod
     def put(cls, s):
+        """
+        Update the state and return `()`.
+        """
         put_s = cls.unit().put(s)
         put_s.__name__ = "put " + str(s)
         return put_s
-
+    
+    @classmethod
+    def chain(cls, *sts):
+        ...
 
 class State(Hom, metaclass=HomFunctor):
+    """
+    State bifunctor and monad. 
+
+    The type `State(S, A)` describes stateful computations yielding a return 
+    value of type `A` while acting on the state type `S`. The isomorphism::
+
+        S -> (S, A) ~= State(S, A)
+    
+    may be used as a decorator do define stateful computations.::
+
+        >>> @State(Str, Str)
+        ... def popchar(s):
+        ...     return s[1:], s[0]
+        ...
+        >>> popchar.run("cat")
+        (Str, Str) : ('at', 'c')
+
+    Calling `State` with only one argument `S` will return a `StateMonad` subclass
+    with a class attribute `_state_`. Calling this monad on a type `A` will also 
+    return the type `State(S, A)`, i.e.::
+        
+        >>> isinstance(State(Str), Monad)
+        True
+        >>> State(Str, Int) is State(Str)(Int)
+        True
+    """
 
     class _top_(Monad._instance_, Hom._top_): 
+        """
+        Stateful computation.
+        """
         
         def __init__(self, pipe, initial=None):
-            self.__name__ = "st"
+            self.__name__ = pipe.__name__ if hasattr(pipe, '__name__') else "st"
             super().__init__(pipe)
             self._initial_ = initial
 
@@ -105,7 +157,9 @@ class State(Hom, metaclass=HomFunctor):
             return self._head_(self._state_)
         
         def map(self, f):
-            return State(self._state_).fmap(f)(self)
+            map_f = self._monad_.fmap(f)(self)
+            map_f.__name__ = self.__name__ + " > " + f.__name__
+            return map_f
         
         def bind(self, mf):
             maf = super().bind(mf)
@@ -115,8 +169,8 @@ class State(Hom, metaclass=HomFunctor):
         def run(self, s=None):
             if s is None:
                 s = self._initial_
-            return super().__call__(s)
-        
+            return Hom._top_.__call__(self, s)
+
         def exec(self, s=None):
             return self.run(s)[0]
 
@@ -129,9 +183,8 @@ class State(Hom, metaclass=HomFunctor):
                 s0 = self._initial_
                 self._initial_ = state
                 pipe = self._pipe
-                s1, a = self.run()
                 #self._pipe = (lambda s: (s1, a),)
-                yield a
+                yield self
             finally:
                 self._pipe = pipe
                 self._initial_ = s0
@@ -149,7 +202,7 @@ class State(Hom, metaclass=HomFunctor):
             out.__name__ = self.__name__ + " >> get " + f.__name__
             return out
 
-        def put(self, s):
+        def put(self,  s):
             out = self.then(lambda *_: (s, ()), tgt=Type.Unit)
             out.__name__ = self.__name__ + " >> put " + str(s)
             return out
@@ -204,7 +257,13 @@ class State(Hom, metaclass=HomFunctor):
 
         puts_f.__name__ = "puts " + f.__name__
         return puts_f
-
+    
+    @classmethod
+    def put(cls, s):
+        S = type(s)
+        put_s = cls(S, Type.Unit)(lambda s0: (s, ())) 
+        return put_s
+       
     @classmethod
     def eval(cls, s, f):
         s1, a = super().eval(s, f)
@@ -216,7 +275,8 @@ class State(Hom, metaclass=HomFunctor):
         return Monad.__new__(cls, *xs, **ys)
 
 
-class Stateful(StateMonad):
+
+class StatefulMonad(StateMonad):
     
     _state_ : Type = Var("S")
     _initial_ : Var("S")
@@ -231,8 +291,11 @@ class Stateful(StateMonad):
         
         def __init__(self, pipe, initial=None):
             super().__init__(pipe, initial)
-            if initial is None:
-                self._initial_ = type(self)._initial_
+        
+        def run(self, s=None):
+            if s is None:
+                s = self.__class__._initial_
+            return super().run(s)
 
         @property
         def state(self):
@@ -241,16 +304,52 @@ class Stateful(StateMonad):
         @property
         def value(self):
             return self.run()[1]
+    
+    @classmethod
+    @contextmanager
+    def use(cls, s0: Var("S")):
+        s1 = cls._initial_
+        try:
+            cls._initial_ = s0
+            yield cls.put(s0)
+        finally:
+            cls._initial_ = s1
 
     @classmethod
     def new(cls, A):
         name = cls._get_name_(A)
         bases = (cls._top_,)
         dct = dict(
+            _state_ = cls._state_,
             _value_ = A,
             src = cls._state_,
             tgt = Prod(cls._state_, A),
         )
         SA = Type.__new__(cls, name, bases, dct)
         Type.__init__(SA, name, bases, dct)
+        SA._monad_ = cls
         return SA
+
+
+class Stateful(Monad):
+
+    _defaults_ = StatefulMonad
+
+    def __new__(cls, S, initial=None, dct=None):
+        if isinstance(S, Type):
+            name = "Stateful(" + S.__name__ + ")"
+            bases = ()
+            dct = dict(
+                _state_ = S,
+                _initial_ = initial
+            )
+        else: 
+            name, bases = S, initial
+        SA = super().__new__(cls, name, bases, dct)
+        super().__init__(SA, name, bases, dct)
+        SA._head_ = cls
+        SA._tail_ = (S,)
+        return SA
+
+    def __init__(SA, A, initial=None, dct=None):
+        ...

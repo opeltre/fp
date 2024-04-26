@@ -91,7 +91,9 @@ class Kind(type):
 
     def __repr__(self):
         """Show type name."""
-        return f"{self} : " + Fore.YELLOW + f"{type(self).kind}" + Fore.RESET
+        out = f"{self} : " + Fore.YELLOW + f"{type(self).kind}" + Fore.RESET
+        out += f" ({type(self).__name__})"
+        return out
 
     def __str__(self):
         return self.__name__

@@ -10,7 +10,7 @@ class WrappedType(Functor._instance_, metaclass=Type):
     """
     Base type for wrapped values.
     """
-    _wrapped_ : Type
+    _wrapped_: Type
 
     def __init__(self, data):
         """Wrap a value."""

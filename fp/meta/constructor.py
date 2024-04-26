@@ -300,7 +300,10 @@ class Var(Type, metaclass=Constructor):
     @classmethod
     def _read_vars_(cls, As:tuple[type,...]):
         return tuple(cls._read_var_(A) for A in As)
-
+    
+    @classmethod
+    def cast(cls, x):
+        return x
 
 class Ellipsis(Var):
 

@@ -84,3 +84,12 @@ class Method:
                 ...
         return out
 
+class ClassMethod(classmethod):
+
+    def __init__(self, method):
+        super().__init__(method)
+        self._name = method.__name__
+    
+    def name(self, getname):
+        ...
+
