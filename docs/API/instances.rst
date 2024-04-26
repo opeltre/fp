@@ -1,14 +1,5 @@
-fp.instances
-============
-
-.. autoclass:: fp.instances.Hom
-   :members:
-
-.. automodule:: fp.instances.prod
-   :members:
-
-.. automodule:: fp.instances.either
-   :members:
+instances
+=========
 
 .. automodule:: fp.instances.list
    :members:
@@ -18,3 +9,7 @@ fp.instances
 
 .. automodule:: fp.instances.wrap
    :members:
+
+.. automodule:: fp.instances.state
+   :members:
+   :undoc-members:

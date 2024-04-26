@@ -7,16 +7,19 @@ Welcome to fp's documentation!
 ==============================
 
 .. toctree::
-    :maxdepth: 1
-    :caption: API:
-    
-    API/meta
-    API/instances
-    API/tensors
+     :maxdepth: 2
+     :caption: Contents
+     
+     installation
+     API/modules
+
+..  .. toctree::
+       :maxdepth: 2
+       :caption: module documentations
+
+        API/tensors.rst
 
 Indices and tables
 ==================
 
 * :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`

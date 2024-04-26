@@ -1,10 +1,7 @@
-fp.meta
-=========
+meta
+====
 
 .. automodule:: fp.meta.kind
-   :members:
-
-.. automodule:: fp.meta.type
    :members:
 
 .. automodule:: fp.meta.constructor

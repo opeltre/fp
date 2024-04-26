@@ -24,14 +24,19 @@ extensions = [
 add_module_names = False
 autodoc_typehints = "description"
 
-html_theme = "sphinx_rtd_theme"
+
+# -- Templates ----------------------------------------------------------------
 
 templates_path = ['_templates']
+
+# These not
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 
+# -- HTML output ---------------------------------------------------------------
 
-# -- Options for HTML output -------------------------------------------------
-# https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
-
+html_theme = "sphinx_rtd_theme"
 html_static_path = ['_static']
+html_css_files = [
+    'css/custom.css',
+]

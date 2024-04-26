@@ -4,4 +4,5 @@ fp.egg-info
 *.vscode
 docs/_build
 docs/source
+docs/_*
 poetry.lock
