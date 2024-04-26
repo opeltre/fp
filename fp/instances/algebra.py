@@ -22,12 +22,13 @@ class Operad(Type):
         cls = T.__class__
         for op_name, r in cls._operators_:
             # lift operator: '__add__', ...
-            op = cls.lift_op(T, getattr(T, op_name))
+            op = cls.lift_op(T, getattr(T, op_name), arity=r)
             setattr(T, op_name, op)
             # alias operators: 'add', ...
             alias = re.match(r'__(\w*)__', op_name).groups()
             op.__name__ = alias[0] if len(alias) else op_name
-            setattr(T, op.__name__, Hom(tuple([T] * r), T)(op))
+            src = T if r == 1 else tuple([T] * r)
+            setattr(T, op.__name__, Hom(src, T)(op))
 
     @staticmethod
     def lift_op(T, op, tgt=None, arity=2):
