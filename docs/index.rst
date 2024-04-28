@@ -1,16 +1,18 @@
-.. fp documentation master file, created by
-   sphinx-quickstart on Thu Apr 18 01:56:10 2024.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+.. fp documentation master file
 
-Welcome to fp's documentation!
-==============================
+fp docs
+=======
+
+Welcome to the `fp`_ package documentation! 
+
+.. _fp: https://github.com/opeltre/fp
+
 
 .. toctree::
      :maxdepth: 2
      :caption: Contents
      
-     installation
+     manual/toc
      API/modules
 
 ..  .. toctree::
