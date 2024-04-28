@@ -1,10 +1,9 @@
 # This workflow will install Python dependencies, run tests and lint with a variety of Python versions
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
 
-name: Build and run examples 
+name: Build fp
 
 on:
-
   workflow_dispatch:
   push:
     branches: 
@@ -13,43 +12,47 @@ on:
   pull_request:
     branches: [ main ]
 
+#   workflow_call:
+#     inputs:
+#       jax:
+#         type: string
+#         required: true
+#       torch:
+#         type: string
+#         required: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
-    strategy:
+    strategy: 
       fail-fast: false
     steps:
-    - uses: actions/checkout@v4
-    - uses: actions/setup-python@v4
-      with:
-        python-version: "3.11"
-    - uses: actions/cache@v4
-      with:
-        path: |
-          ~/.cache/pypoetry
-          ~/.cache/pip
-        key: ${{ runner.os }}-${{ hashFiles('**/pyproject.toml') }} 
-    - name: Install pip and poetry
-      run: |
-        python -m pip install --upgrade pip
-        python -m pip install pytest poetry poethepoet
-        python -m pip install flake8-future-annotations
-    - name: Lint with flake8
-      run: |
-        # stop the build if there are Python syntax errors or undefined names
-        #flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-    - name: Build fp
-      run: |
-        poetry install
-    - name: Run foobar 
-      run: |
-        #poetry run fp-tests
-        poetry run python examples/foobar.py
-    - name: Run arrays
-      run: |
-        poetry poe torchinstall
-        poetry poe jaxinstall
-        poetry run python examples/arrays.py
-    - run: echo "🍏 This job's status is ${{ job.status }}."
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/pypoetry
+            ~/.cache/pip
+          key: ${{ runner.os }}-${{ hashFiles('**/pyproject.toml') }} 
+
+      - name: Build fp
+        run: |
+          cd ${{ github.workspace }} && source .github/build.sh
+          build "jax:torch"
+
+      - name: Run foobar 
+        run: |
+          #poetry run fp-tests
+          poetry run python examples/foobar.py
+
+      - name: Run arrays
+        run: |
+          poetry poe torchinstall
+          poetry poe jaxinstall
+          poetry run python examples/arrays.py
+
+      - run: echo "🍏 This job's status is ${{ job.status }}."
