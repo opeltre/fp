@@ -48,6 +48,9 @@ jobs:
         run: |
           #poetry run fp-tests
           poetry run python examples/foobar.py
+      
+      - name: Run structs 
+        run: poetry run python examples/structs.py
 
       - name: Run arrays
         run: |
