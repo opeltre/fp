@@ -1,7 +1,7 @@
 import colorama 
 from colorama import Fore, Style
 
-VERBOSITY = 2
+VERBOSITY = 0
 
 def log(text, v=0, prefix=None):
     if v <= VERBOSITY:

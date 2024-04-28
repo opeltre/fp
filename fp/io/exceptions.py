@@ -8,6 +8,9 @@ class Error(Exception):
     def __init__(self, msg):
         super().__init__(RULE + msg)
 
+class KeyError(Error):
+    ...
+
 class TypeError(Error):
 
     def __init__(self, name , x, Tx):

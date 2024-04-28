@@ -19,3 +19,13 @@ def repr_method(rep):
 
 def str_method(show):
     return lambda x: show(x)
+
+
+def showStruct(struct):
+    out = "{\n"
+    N = len(struct)
+    for i, (k, vk) in enumerate(struct.items()):
+        prefix = "    " + str(k) + ": "
+        val = str(vk).replace("\n", "\n" + " " * 2) #len(prefix)  
+        out += prefix + val + ("\n" if i == N - 1 else ",\n")
+    return out + "}"

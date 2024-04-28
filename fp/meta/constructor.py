@@ -43,9 +43,13 @@ class Constructor(Kind):
         def new(cls, *As: Any):
             try:
                 base = cls._top_
+                try:
+                    name = cls._get_name_(*As)
+                except:
+                    name = "T As"
                 if isinstance(cls, Type):
-                    return type(cls).__new__(cls, 'T A', (base,), {})
-                return Type.__new__(cls, 'T As', (base,), {})
+                    return type(cls).__new__(cls, name, (base,), {})
+                return Type.__new__(cls, name, (base,), {})
             except Exception as e:
                 print(e)
                 raise RuntimeError(f"Method {cls.__name__}.new was not overriden.")
@@ -146,8 +150,10 @@ class Constructor(Kind):
             return TA
         except Exception as e:
             # subclass definition
-            if hasattr(T, "_subclass_"):
-                return T._subclass_(*As)
+            io.log(f"_subclass_ {T}: {As[0]} -> {As[1]}", v=1)
+            is_def = len(As) >= 3 and type(As[0]) is str and type(As[2]) is dict
+            if hasattr(T, "_subclass_") and is_def:
+                return T._subclass_(*As[:3])
             TA = Type.__new__(T, *As)
             base = As[1][0]
             TA._head_ = base._head_
