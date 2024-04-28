@@ -68,7 +68,7 @@ class Prod(Type, metaclass=NFunctor):
         return map_f
     
     @classmethod
-    def _fmap_name(cls, *fs):
+    def _fmap_name_(cls, *fs):
         return "(" + ", ".join((f.__name__ for f in fs)) + ")"
 
     @classmethod
@@ -90,7 +90,7 @@ class Prod(Type, metaclass=NFunctor):
         def branch_f(x):
             return (fi(x) for fi in (f, *fs))
 
-        branch_f.__name__ = cls._fmap_name(f, *fs) + "*"
+        branch_f.__name__ = cls._fmap_name_(f, *fs) + "*"
         return branch_f
 
 

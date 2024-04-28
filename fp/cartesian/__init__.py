@@ -1,6 +1,7 @@
 from fp.meta import Type
 from .either import Either
 from .prod import Prod
+from .arrow import Arrow
 from .hom import Hom
 # make `Type` a cartesian category here 
 Type.Sum = Either
@@ -15,4 +16,5 @@ __all__ = [
     "Hom",
     "Prod",
     "Either",
+    "Arrow",
 ]
