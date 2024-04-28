@@ -357,7 +357,7 @@ class StatefulMonad(StateMonad):
     def new(cls, A):
         name = cls._get_name_(A)
         bases = (cls._top_,)
-l       dct = dict(
+        dct = dict(
             _state_ = cls._state_,
             _value_ = A,
             src = cls._state_,
