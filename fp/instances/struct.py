@@ -18,7 +18,6 @@ class Field:
     """
     Manage `Struct` access and updates.
     
-
         # getter
         Struct.field : Struct -> V
         # setter 
@@ -241,6 +240,8 @@ class Struct(Type, metaclass=Cofunctor):
         for b in bases[::-1]:
             if isinstance(b, Struct):
                 Sgn |= {k: v for k, v in zip(b._keys_, b._values_)}
+        if not "__annotations__" in dct:
+            dct["__annotations__"] = {k: Sgn[k][0] for k in Sgn if k in dct}
         keys, values = cls._annotations_(dct)
         Sgn |= {k: v for k, v in zip(keys, values)}
         keys, values = tuple(Sgn.keys()), tuple(Sgn.values())
@@ -278,9 +279,9 @@ class Struct(Type, metaclass=Cofunctor):
     def cofmap(cls, f):
         ...
 
-def struct(C):
+def struct(C : type) -> Struct:
     """
-    Decorator declaration of `Struct` types à-la-dataclass
+    Decorator definition of `Struct` types (dataclass-like).
     """
     if isinstance(C, Struct):
         return C
