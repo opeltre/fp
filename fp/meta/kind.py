@@ -4,14 +4,15 @@ from .method import Method
 
 from functools import cache
 import fp.io as io
-   
+
+Args = tuple[int] | type(...) 
+
 class Kind(type):
     """
     Type kinds.
 
     Subclasses of `Kind` may register class method signatures with 
     the `@Method` decorator, e.g. 
-
 
         >>> class Functor(Type):
         ...
@@ -76,7 +77,8 @@ class Kind(type):
             cut = doc.find("\n\n")
             head, tail = (doc[:cut], doc[cut:]) if cut >= 0 else (doc, "")
             methods = T.methods().items()
-            title = "\n\n**Methods:**\n\n"
+            title = "Methods"
+            title = "\n\n" + title + "\n" + "-" * len(title) + "\n"
             if tail[:len(title)] == title or not len(methods):
                 return None
             Mdoc = title 
@@ -91,7 +93,7 @@ class Kind(type):
 
     def __repr__(self):
         """Show type name."""
-        out = f"{self} : " + Fore.YELLOW + f"{type(self).kind}" + Fore.RESET
+        out = f"{self} : " + Fore.YELLOW + f"{self.kind}" + Fore.RESET
         out += f" ({type(self).__name__})"
         return out
 
@@ -117,11 +119,43 @@ class Kind(type):
             return signature(T)
         except:
             name = signature.__name__
-            print(io.WARN, name, ": could not evaluate signature on", T)# end="")
+            if not any(b.__name__ == 'Var' for b in T.__bases__):
+                print(io.WARN, name, ": could not evaluate signature on", T)
             return signature
-
+    
     def __init_subclass__(child, *xs, **ys):
         child._methods_ = []
         for m in super(child, child)._methods_:
             child._methods_.append(m)
 
+    @staticmethod
+    def _functor_kind_(r : int | type(...), cov: Args, contrav: Args) -> str:
+        """
+        Kind string of a functor. 
+        """
+        op = "ꜝ"
+        # fixed and variable arity
+        if r is ...:
+            if cov is ...:
+                return "(*, ...) -> *"
+            if contrav is ...:
+                return f"(*{op}, ...{op}) -> *"
+            # varargs
+            r = len(cov) + len(contrav) - 1
+            args = ["*" * r] + ["..."]
+        else: 
+            # r-ary
+            args = ["*" for _ in range(r)]
+        op_args = contrav
+        if op_args is ...:
+            op_args = tuple(range(r))
+        # tag contravariant arguments
+        for i in op_args:
+            if i is ...:
+                args[-1] += op
+            else:
+                args[i] += op
+        # add brackets conditionally
+        if len(args) == 1:
+            return args[0] + " -> *"
+        return "(" + ", ".join(args) + ") -> *"

@@ -21,7 +21,6 @@ class Constructor(Kind):
     returning the type value `T(*As) = T A1 ... An`. 
     """
 
-    kind = "(*, ...) -> *"
     arity = ...
     
     class _defaults_ : 
@@ -66,6 +65,11 @@ class Constructor(Kind):
 
         def __init__(TA, *As):
             ...
+    
+    @property
+    def kind(T):
+        print("Constructor kind")
+        return "(*, ...) -> *"
 
     @Method 
     def new(T: Constructor):
