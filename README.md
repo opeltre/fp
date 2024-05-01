@@ -1,16 +1,30 @@
-# Install
+# fp
+
+Functional programming with [jax] and [torch] support. 
+
+[jax]:https://jax.readthedocs.io/en/latest/
+[torch]:https://pytorch.org/docs
+
+## Installation 
+
+**Note:** This project is still under active development, and
+a stable release should released soon (may 2024). 
+
+In the meantime, we recommend that you try `fp` 
+within a poetry environment:
 
 ```bash
-git clone 'https://github.com/opeltre/fp'
-cd fp && pip install -r requirements.txt && pip install -e ./
+git clone https://github.com/opeltre/fp
+cd fp && poetry install
 ```
 
-# Types in Python
+## Types in Python
 
-The python language allows some kind of functorial and polymorphic constructs via [metaclasses](https://www.python.org/dev/peps/pep-3115/): they are synonyms of type constructors, allowing to dynamically create types and customize type construction (providing a functionality somehow close to what [C++ templates](https://www.cplusplus.com/doc/oldtutorial/templates/) would do).
+The python language allows some kind of functorial and polymorphic constructs via [metaclasses](https://www.python.org/dev/peps/pep-3115/): they are synonyms of type constructors, allowing to dynamically create types and customize type construction (providing a functionality similar to [C++ templates](https://www.cplusplus.com/doc/oldtutorial/templates/)).
 
-This library constructs a functional type theory inside python's runtime type system, by defining e.g. functor, monad, ... metaclasses and common class instances e.g. Float, Str, List, State, ... including a convenient 
-Tensor API obtained by applying a wrapper monad to the `torch.Tensor` type.
+This library constructs a functional type theory inside python's runtime type system, by defining constructor metaclasses 
+(e.g. Functor, Monad, ...), common type instances (e.g. Float, Str, List(A), State(S, A), ...) and a convenient 
+backend-agnostic Tensor API handling numpy, jax and torch tensors. 
 
 ```py
 >>> import fp
@@ -33,19 +47,19 @@ List Int : [5, 5, 1]
 Types are a prerequisite for [functorial](https://en.wikipedia.org/wiki/Functor_(functional_programming)) constructs, which have a vast diversity of applications in functional languages e.g. container data types, stateful programs, (a)synchronous I/O operations, log and error handling..
 
 Type polymorphism (emulated by python metaclasses) is a powerful way to generate sister classes automatically . Just like C++ templates would allow, one can append functionality to 
-existing code in a flexible and robust manner, without repeating code or creating tangled inheritance diagrams. 
+existing code in a flexible and robust manner, without repeating code or creating entangled inheritance diagrams. 
 
 ## Typed functions
 
-Arrow types
+Hom types
 ```py
-from fp import Arrow
+from fp import Hom
 
-@Arrow(Int, Str)
+@Hom(Int, Str)
 def bar(n):
     return '|' * n
 
-foo = Arrow(Str, Int)(len)
+foo = Hom(Str, Int)(len)
 ```
 Composition
 ```py
