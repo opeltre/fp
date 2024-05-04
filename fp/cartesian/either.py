@@ -91,6 +91,31 @@ class Either(Type, metaclass=Monad):
         """
         tgt = cls._tail_[0] 
         return tgt(x)
+    
+    @classmethod
+    def gather(cls, f: Callable, *fs: Callable) -> Callable:
+        """
+        Universal property of categorical sums.
+
+        Given a collection of arrows with the same target `Y`,
+        return an arrow from the sum of sources to `Y`.
+
+            (A -> Y, B -> Y, ...) -> (A | B | ...)  ->  Y
+
+        The initial arrow from `(A | B | ...)` has the input maps as 
+        as restrictions.
+        """
+        F = (f, *fs)
+        src = cls(*(fi.src for fi in F))
+        tgt = f.tgt
+
+        @Hom(src, tgt)
+        def gather_f(x):
+            """Map a sum type `(A | B | ...)` to a target `Y`."""
+            return F[x._i_](x.data)
+        gather_f.__name__ = "gather " + Either._get_name_(f, *fs)
+        return gather_f
+
 
     def __getitem__(E, i:int | slice):
         if isinstance(i, int):
