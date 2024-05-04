@@ -68,7 +68,6 @@ class Constructor(Kind):
     
     @property
     def kind(T):
-        print("Constructor kind")
         return "(*, ...) -> *"
 
     @Method 

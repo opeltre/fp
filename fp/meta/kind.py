@@ -77,8 +77,8 @@ class Kind(type):
             cut = doc.find("\n\n")
             head, tail = (doc[:cut], doc[cut:]) if cut >= 0 else (doc, "")
             methods = T.methods().items()
-            title = "Methods"
-            title = "\n\n" + title + "\n" + "-" * len(title) + "\n"
+            title = "Class Methods"
+            title = "\n\n" + title + "\n" + "-" * len(title) + "\n\n"
             if tail[:len(title)] == title or not len(methods):
                 return None
             Mdoc = title 

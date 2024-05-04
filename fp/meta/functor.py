@@ -44,7 +44,8 @@ class Functor(Constructor):
             return T.fmap(f)(Tx)
     
     @property
-    def kind(T):
+    def kind(T: type) -> str:
+        """String representation of functor signature."""
         return Kind._functor_kind_(T.arity, *T._kind_)
         
     @Method
