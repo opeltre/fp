@@ -75,6 +75,11 @@ class HomInstance(Arrow._top_):
         else:
             tail, head = self._pipe[0], self._pipe[-1]
             return name_one(head) + ' . (...) . ' + name_one(tail)
+    
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+        return self._pipe  == other._pipe
 
     @staticmethod
     def source_type(arrow, xs):
@@ -157,7 +162,7 @@ class Hom(Arrow, metaclass=HomFunctor):
     
     src = Type
     tgt = Type
-    
+        
     @classmethod
     def new(cls, A, B):
         TAB = super().new(A, B)
@@ -167,6 +172,12 @@ class Hom(Arrow, metaclass=HomFunctor):
         TAB.tgt = tgt
         TAB.arity = arity
         return TAB
+
+    @classmethod
+    def id(cls, A):
+        idA = cls(A, A)(())
+        idA.__name__ = "id"
+        return idA
 
     @classmethod
     def compose(cls, f, *fs):
