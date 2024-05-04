@@ -7,3 +7,5 @@ Manual
     install
     quickstart
     type
+    functors
+    tens
