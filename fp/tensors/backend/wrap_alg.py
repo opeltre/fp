@@ -5,13 +5,35 @@ import numpy as np
 from types import ModuleType
 from typing import Callable
 
-from fp.cartesian import Type, Hom, Prod
-from fp.instances import Lift, Wrap, Alg, Ring
+from fp.cartesian import Type, Hom, Prod, Either
+from fp.instances import Lift, Wrap, Alg, Ring, Stateful
 from fp.instances import struct, List, Str
 
 import os
 
 signature = lambda n : lambda A: Hom(tuple([A] * n), A)
+
+@struct
+class LiftWrap(Lift):
+    from_source = lambda x: x.data
+
+tensor_methods = [
+    # reshapes
+    LiftWrap("__add__", 2),
+    LiftWrap("__sub__", 2),
+    LiftWrap("__mul__", 2),
+    LiftWrap("__truediv__", 2),
+    LiftWrap("__neg__", 1),
+    # reshapes
+    LiftWrap("flatten", 1),
+    LiftWrap("reshape", lambda T: Hom((T, tuple), T), 0, flip=1),
+]
+
+class WrapRing(Ring, Wrap):
+
+    _lifted_methods_ = tensor_methods
+
+#====== Interfaces ======
 
 @struct
 class Interface:
@@ -22,106 +44,80 @@ class Interface:
     # aliases
     repeat : Str = "repeat"
     tile : Str = "tile"
+    
+    def __repr__(self):
+        return self.module.__name__
 
-tensor_methods = [
-    # reshapes
-    Lift("__add__", 2),
-    Lift("__sub__", 2),
-    Lift("__mul__", 2),
-    Lift("__truediv__", 2),
-    Lift("__neg__", 1),
-    # reshapes
-    Lift("__flatten__", 1),
-    Lift("reshape", lambda T: Hom((T, tuple), T), 0, flip=1),
-]
+    def __str__(self):
+        return self.module.__name__
 
-class WrapRing(Ring, Wrap):
+@struct
+class LiftInterface(LiftWrap):
+    
+    def raw(self, objtype:type) -> Callable:
+        method = getattr(objtype.Array, self.name)
+        return method
 
-    _lifted_methods_ = tensor_methods
+#====== Backend: Wrap an interface ======
 
-class EitherRing(Ring, Either):
-
-    _lifted_methods_ = tensor_methods
-
-class Backend(WrapRing):
+class Backend(Ring, Wrap):
     
     _api_ : Interface
-
+    _lifted_methods_ = [LiftInterface(**lift) for lift in tensor_methods]
+    
     @classmethod
-    def new(cls, A:type|Interface=None):
-        api = cls._api_ 
-        if A is None:
-            A = api.Array
-        Wrap_A = super().new(A)
-        Wrap_A._backend_ = cls
-        Wrap_A._module_ = api.module
+    def new(cls, api:Interface):
+        B = super(cls, cls).new(api.Array)
+        B._backend_ = api
+        return B
+
+    def _post_new_(B, api:Interface):
+        for k, v in api.items():
+            setattr(B, k, v)
+        super()._post_new_(api.Array)
+        B._module_ = api.module
         # backend-specific constructor 
-        Wrap_A.cast_data = api.asarray
+        B.cast_data = api.asarray
         # dtype casts
         for dtype in api.dtypes:
             alias = dtype.split(":")[-1]
             cast = getattr(api.module, alias)
             method = lambda x: x.__class__(cast(x.data))
-            setattr(Wrap_A, dtype, method)
-        return Wrap_A
-
-#====== Interfaces ======
-
-@struct
-class NumpyAPI(Interface):
-    
-    module = np 
-
-    Array = np.ndarray
-    asarray = np.asarray
-
-    dtypes = [
-        "float:float32",
-        "double:float64",
-        "int:int32",
-        "long:int64",
-        "cfloat",
-    ]
-
-print(NumpyAPI._values_)
-
-@struct
-class JaxAPI(Interface):
-
-    module = jax.numpy
-    Array = jax.lib.xla_extension.ArrayImpl
-    asarray = jax.numpy.asarray
-
-    dtypes = NumpyAPI().dtypes[:-1] + [
-        "cfloat:complex64",
-        "cdouble:complex128",
-    ]
-
-
-@struct
-class TorchAPI(Interface):
-    
-    module = torch 
-
-    Array = torch.Tensor
-    asarray = torch.as_tensor
-
-    # dtypes
-    dtypes = [
-        "float",
-        "double",
-        "int",
-        "long", 
-        "cfloat",
-    ]
-
-    repeat = "repeat_interleave"
-    tile = "repeat"
-
-
-class Backend(Stateful(Interface, default)):
+            setattr(B, dtype, method)
+        return B
     
     @classmethod
-    def read_env(cls) -> str:
-        env = "FP_BACKEND"
-        s0 = os.environ[env] if env in os.environ else "torch"
+    def _subclass_(cls, name, bases, dct):
+        B = super()._subclass_(name, bases, dct)
+        B._wrapped_ = bases[0]._wrapped_
+        type(B)._post_new_(B, bases[0]._backend_)
+        return B
+
+class EitherRing(Ring, Either):
+
+    _lifted_methods_ = tensor_methods
+
+class StatefulEither(Either):
+
+    class Object(Either.Object):
+        
+        state: type
+        _lifts_: list[str] = []
+
+    def _post_new_(E, *As):
+        super()._post_new_(*As)
+        if not hasattr(E, "state"):
+            E.state = E._tail_[0]
+        E.use(E.state)
+
+    @classmethod
+    def _subclass_(cls, name, bases, dct):
+        dct = dct | {"state": bases[0].state}
+        E = super()._subclass_(name, bases, dct)
+        return E
+
+    def use(E, state):
+        E.state = state
+        for name in E._lifts_:
+            setattr(E, name, getattr(E.state, name))
+    

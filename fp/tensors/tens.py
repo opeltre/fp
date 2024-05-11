@@ -1,16 +1,16 @@
 import torch
 
 from .backend.wrap_alg import WrapRing
-from .tensor import Tensor, TorchBackend
+from .tensor import Tensor, Backend
 from .typed_tensor import TypedTensor
 from .shape import Torus
 
 from fp.meta import HomFunctor, Functor, NFunctor
-from fp.cartesian import Hom
+from fp.cartesian import Type, Hom
 from fp.instances import Ring
 import fp.io as io
 
-class Tens(TorchBackend, Ring, metaclass=Functor):
+class Tens(Backend, Ring, metaclass=Functor):
     """
     Typed tensor spaces.
 
@@ -45,9 +45,10 @@ class Tens(TorchBackend, Ring, metaclass=Functor):
         return TA
      
     def _post_new_(Tens_A, A):
+        Backend._post_new_(Tens_A, Tensor._backend_)
+        Ring.__init__(Tens_A, Tens_A.__name__) 
         cls = Tens_A.__class__
         io.log((cls, "_post_new_", Tens_A, A), v=1)
-        super(cls, cls)._post_new_(Tens_A, Tens_A._wrapped_)
 
     def __init__(cls, A, *xs, **ks):
         ...
@@ -204,7 +205,7 @@ class Linear(Hom, Tens, metaclass=HomFunctor):
         msg = (str(m) for m in (LinAB.__name__, "_post_new_", A, B, *xs))
         io.log(" ".join(msg), v=1)
         cls = LinAB.__class__
-        TorchBackend._post_new_(LinAB, LinAB._wrapped_)
+        Backend._post_new_(LinAB, LinAB._backend_)
     
     # --- Class methods 
     

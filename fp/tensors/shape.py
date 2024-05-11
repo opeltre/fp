@@ -1,8 +1,10 @@
 import torch
+from fp import io
 from fp.meta import Functor
 from fp.cartesian import Type, Hom
 from fp.instances import Int, List, Ring
 from .tensor import Tensor
+from .backend import Backend
 
 class BaseShape(Tensor):
 
@@ -121,7 +123,7 @@ class BaseShape(Tensor):
         return emb_index
 
 
-class Torus(Ring, metaclass=Functor):
+class Torus(Backend, Ring, metaclass=Functor):
 
     class Object(BaseShape):
         ...
@@ -129,11 +131,12 @@ class Torus(Ring, metaclass=Functor):
     @classmethod
     def new(cls, A):
 
-        class Torus_A(BaseShape, metaclass=Ring):
-            ...
-
-        return Torus_A
-
+        name = cls._get_name_(A)
+        bases = (BaseShape,)
+        dct =  {"__name__": name}
+        TA = Tensor._subclass_(name, bases, dct)
+        io.log(("Torus new", TA, type(TA), type(TA) is cls), v=1)
+        return TA
             
         # new shape instance
         if isinstance(A, type(None)):
@@ -142,8 +145,7 @@ class Torus(Ring, metaclass=Functor):
             raise TypeError("Expecting integer arguments")
         return super().new(A, (cls.Object,), {})
     
-    @classmethod
-    def _post_new_(cls, SA, A):
+    def _post_new_(SA, A):
         dim = len(A)
         TA = torch.tensor(A)
         # attributes

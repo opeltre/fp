@@ -1,9 +1,3 @@
-from fp.instances import struct
-
-from .wrap_alg import Backend, Interface
-from ._pkgs import *
-
-
 @struct
 class NumpyAPI(Interface):
     
@@ -20,6 +14,7 @@ class NumpyAPI(Interface):
         "cfloat",
     ]
 
+print(NumpyAPI._values_)
 
 @struct
 class JaxAPI(Interface):
@@ -62,3 +57,5 @@ class Backend(Stateful(Interface, NumpyAPI())):
         env = "FP_BACKEND"
         s0 = os.environ[env] if env in os.environ else "torch"
 '''
+
+numpy = NumpyAPI()
