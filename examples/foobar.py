@@ -13,7 +13,7 @@ bar = Hom(Int, Str)(lambda n: "|" * n)
 foo.shows("foo")
 bar.shows("bar")
 
-# composition 
+# composition
 foobar = foo @ bar
 barfoo = bar @ foo
 
@@ -38,4 +38,3 @@ Pf.shows("Prod (foo, bar)")
 p.shows("x")
 Pf = Prod.fmap(foo, bar).show()
 Pf(p).shows("y")
-

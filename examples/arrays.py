@@ -1,6 +1,6 @@
 from fp.instances import *
 from fp.meta import Type, HomFunctor
-from fp.tensors import * 
+from fp.tensors import *
 from fp.tensors.typed_tensor import TypedTensor
 
 import fp.io as io

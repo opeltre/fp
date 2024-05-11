@@ -1,4 +1,4 @@
-#---------
+# ---------
 
 from fp import Tensor, Tens
 import torch
@@ -12,13 +12,14 @@ y = T.ones()
 
 # Linear bifunctor
 from fp import Linear
+
 f = Linear([5], [3])(torch.randn([3, 5]))
 g = Linear([3], [5])(f.data.T)
 
 # matrix composition
 fg = f @ g
 # matrix application
-x = Tensor([1., 1., 0.])
+x = Tensor([1.0, 1.0, 0.0])
 fg(x)
 
 # functoriality : cosheaf structure
@@ -29,13 +30,14 @@ Tb = Tba.tgt
 
 xa, xb = Ta.randn(), Tb.randn()
 print(repr(Tba))
-print('\n')
+print("\n")
 print(Tba(xa))
-print('\n')
+print("\n")
 print(Tab(xb))
 
 # Tensor products
 from fp import Otimes
+
 E = Tens([3, 2])
 F = Tens([6, 4])
 EF = Otimes(E, F)

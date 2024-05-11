@@ -6,7 +6,7 @@ foo = Hom(Str, Int)(len)
 
 bar.shows("bar"), foo.shows("foo")
 
-#--- Stateful string monad ---
+# --- Stateful string monad ---
 
 St = State(Str)
 print(repr(St))
@@ -20,19 +20,22 @@ FooBar.show()
 print("\n>>> FooBar.run('abcd')")
 FooBar.run("abcd").show()
 
-print("""
+print(
+    """
 >>> with FooBar.use("some initial state"):
-...     FooBar.run()""")
+...     FooBar.run()"""
+)
 
 with FooBar.use("some initial state"):
     FooBar.run().show()
 
 print("\n")
 
-#--- Monad subclasses ---
+# --- Monad subclasses ---
 
-class MyString(Stateful(Str, "Hello World!")):
-    ...
+
+class MyString(Stateful(Str, "Hello World!")): ...
+
 
 @Hom((Int, Str), Prod(Str, Int))
 def baz(n, s):
@@ -42,10 +45,11 @@ def baz(n, s):
     print(repr(s))
     if n >= len(s):
         return (s, -1)
-    if s[n] == ' ':
+    if s[n] == " ":
         return (s, -n)
-    s = s[:n] + '*' + s[n+1:]
+    s = s[:n] + "*" + s[n + 1 :]
     return (s, n + 1)
+
 
 @Hom(Int, MyString(Int))
 def loopbaz(n):
@@ -56,7 +60,9 @@ def loopbaz(n):
         return MyString.unit(n)
     return MyString(Int)(baz(n)).bind(loopbaz)
 
+
 resume = (Int.add(1) @ Int.neg).shows("resume")
+
 
 @Hom(Int, MyString(Int))
 def repeatbaz(n):
@@ -68,11 +74,12 @@ def repeatbaz(n):
     elif n > 1:
         return repeatbaz(n - 1).map(resume).bind(loopbaz)
 
+
 loopbaz.show()
 loopbaz(0).value.show()
 loopbaz(8).value.show()
 
-#--- state context manager
+# --- state context manager
 
 with MyString.use("Foo Bar Baz"):
     repeatbaz(2).show()
