@@ -1,139 +1,109 @@
 # fp
 
-Functional programming with [jax] and [torch] support. 
+A lightweight functional programming library with 
+[numpy], [jax] and [torch] support. 
 
+- 🗒️ [docs]
+- 📁 [repository]
+
+[docs]:https://readthedocs.io/funprogram
+[repository]:https://github.com/opeltre/fp
+[numpy]:https://numpy.org
 [jax]:https://jax.readthedocs.io/en/latest/
 [torch]:https://pytorch.org/docs
 
 ## Installation 
 
-**Note:** This project is still under active development, and
-a stable release should released soon (may 2024). 
+There are two ways that you can start using `fp`. 
+Note that this library is still under development, 
+but beta versions are updated as necessary on PyPI.
 
-In the meantime, we recommend that you try `fp` 
-within a poetry environment:
+### poetry environment
 
 ```bash
 git clone https://github.com/opeltre/fp
 cd fp && poetry install
 ```
 
-## Types in Python
+### pip install
 
-The python language allows some kind of functorial and polymorphic constructs via [metaclasses](https://www.python.org/dev/peps/pep-3115/): they are synonyms of type constructors, allowing to dynamically create types and customize type construction (providing a functionality similar to [C++ templates](https://www.cplusplus.com/doc/oldtutorial/templates/)).
-
-This library constructs a functional type theory inside python's runtime type system, by defining constructor metaclasses 
-(e.g. Functor, Monad, ...), common type instances (e.g. Float, Str, List(A), State(S, A), ...) and a convenient 
-backend-agnostic Tensor API handling numpy, jax and torch tensors. 
-
-```py
->>> import fp
->>> from fp import List, Str, Int
-
-#-- List type constructor 
->>> type(List)
-Functor : * -> *
->>> List(Str)
-Type : List Str
->>> x = List(Str)(["hello", "world", "!"])
-
-#-- List functor
->>> f = Str.len
->>> List.fmap(f)
-List Str -> List Int : fmap len
->>> List.fmap(f)(x)
-List Int : [5, 5, 1]
 ```
-Types are a prerequisite for [functorial](https://en.wikipedia.org/wiki/Functor_(functional_programming)) constructs, which have a vast diversity of applications in functional languages e.g. container data types, stateful programs, (a)synchronous I/O operations, log and error handling..
-
-Type polymorphism (emulated by python metaclasses) is a powerful way to generate sister classes automatically . Just like C++ templates would allow, one can append functionality to 
-existing code in a flexible and robust manner, without repeating code or creating entangled inheritance diagrams. 
-
-## Typed functions
-
-Hom types
-```py
-from fp import Hom
-
-@Hom(Int, Str)
-def bar(n):
-    return '|' * n
-
-foo = Hom(Str, Int)(len)
-```
-Composition
-```py
->>> foo @ bar
-Int -> Int : foo . bar
->>> (bar @ foo)('hello world!')
-Str : '||||||||||||'
+pip install funprogram
 ```
 
-Automatic curryfication
-```py
->>> Int.add
-Int -> Int  -> Int : add
->>> Int.add(2, 3)
-Int : 5
->>> Int.add(2)
-Int -> Int : add 2
->>> List.fmap(Int.add(2))([3, 6, 9])
-List Int : [5, 7, 11]
-```
+## Overview
 
-## Typed tensors
+The `fp` library relies on python [metaclasses] to emulate a static python type system of `Type` instances. 
 
-The (type unsafe) `torch.Tensor` class is wrapped inside the `fp.Tensor` class. This is taken care of by a custom `Wrap` monad lifting algebraic methods e.g. `+, -, *` to the wrapping class.
+[metaclasses]: https://www.python.org/dev/peps/pep-3115/ 
+
+### `fp.cartesian` module
+
+The Cartesian category structure of `Type` is defined in `fp.cartesian`. 
+
+The type `Hom(A, B)` declares typed functions or type _morphisms_, with input in `A` and output in `B`. Functions with multiple inputs can be declared by supplying a tuple of types `A = (A0, A1, ...)` as input.
 
 ```py
-from fp import Tensor
-import torch
+from fp import *
 
->>> x = Tensor.randn([3])
->>> x.data.dtype, x.data.device
-(torch.float32, device(type='cpu'))
-
-# No error raised
->>> y = Tensor.ones([4])
->>> Tensor.mul(x) @ Tensor.add(y)
-Tensor -> Tensor : mul [1.8948, -0.6545, -0.2041] . add [1., 1., 1., 1.]
+@Hom((Int, Str), Str)
+def foo(n, s):
+    return ("-" * n).join([s] * n)
 ```
-Specific tensor types are obtained by the `Tens` type constructor:
+
+In `fp`, typed functions are instances of the "top" type `Hom.Object` which takes care automatic currying returning the partial application of 
+the decorated callable when invoked with too few arguments. 
 
 ```py
-from fp import Tens
-
->>> Tx = Tens([3])
->>> Tx.ones()
-Tens 3 : [1., 1., 1.]
+>>> foo
+Int -> Str -> Str: foo
+>>> foo(2)
+Str -> Str: foo 2
+>>> foo(2)("Hello World!")
+Str: "Hello World!--Hello World! "
 ```
-Linear maps acting by `n x m` matrices subclass both `Tens([n, m])` and `Arrow(Tens([m]), Tens([n]))`:
+
+Typed functions (including curried ones) can be composed with the `@` operator:
 
 ```py
->>> from fp import Linear
-
->>> f = Linear([3], [4]).randn()
->>> f
-Linear 3 -> 4 : dense 4x3
->>> x = Tx.ones()
->>> f(x)
-Tens 4 : [-5.5333,  2.7625,  3.0484, -1.0863]
+>>> bar = Hom(Int, Str)(lambda n: '|' * n)
+>>> baz = Int.mul
+>>> foo(4) @ bar @ baz 
+Int -> Str: foo 4 . λ . mul 3
+>>> (foo(4) @ bar @ baz(3))(2)
+Str: "||||||----||||||----||||||----||||||"
 ```
 
-Given an index map `f : Shape(A) -> Shape(B)`, an algebra morphism `Tens(B) -> Tens(A)` by letting `xf[i] = x[f(i)]`.
-Hence `Tens` is a contravariant functor on domain shapes, 
-with linear adjunction of algebra morphism defining a symmetric covariant functor structure.  
+### `fp.instances` module
+
+Common `Type` and `Functor`  instances are defined in `fp.instances`.
+
+Algebraic subclasses  of `Type` are defined in `fp.instances.algebra`, 
+allowing transparent subclassing of numeric builtin types. The lifting and propagation of algebraic methods is also used by `Str` 
+and `List.Object`, by being instances of the `fp.instances.Monoid` type class.
 
 ```py
->>> Txy = Tens([3, 6])
-#-- Algebra embeddings 
->>> j0 = Txy.embed(0)
->>> j0 = Txy.cofmap(Txy.domain.res(0))
->>> j0 
-Linear 3 -> 3x6 : sparse 18x3 (nnz=18)
-#-- Partial integration maps
->>> p0 = Txy.proj(0)
->>> p0 = Txy.cofmap(Txy.domain.res(0)).t()
->>> p0
-Linear 3x6 -> 3 : sparse 3x18 (nnz=18)
+>>> from fp import Int, Float, Str, List
+>>> greet = Str.add("👋 Welcome")
+>>> greet("! " + foo(2)(bar(2)))
+"👋 Welcome! ||--||"
 ```
+The `List` functor creates types inheriting from `List.Objecŧ`, a subclass of list with a `map` method. The `map` method of any functorial type, e.g.
+`List(Str)`, is actually an alias for the `List.fmap` class method. Only the target needs to be explicited when called with an untyped function.
+
+```py
+>>> phone = List(Int)("0632301202")
+>>> phone.map(lambda n: 2 << n, tgt=Int)
+List Int : [2, 128, 16, 8, 16, 2, 4, 8, 2, 8]
+>>> List.fmap(bar)
+List Int -> List Str: map λ
+>>> List.fmap(bar)(phone)
+```
+
+See the [docs] for more information.
+
+### `fp.tensors` module
+
+Interfaces to Numpy, Jax, and Pytorch array types are defined in `fp.tensors.backend`.
+
+See [examples/arrays.py](examples.arrays.py) for instance. 
