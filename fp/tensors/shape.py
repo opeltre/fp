@@ -123,7 +123,7 @@ class BaseShape(Tensor):
 
 class Torus(Ring, metaclass=Functor):
 
-    class _top_(BaseShape):
+    class Object(BaseShape):
         ...
 
     @classmethod
@@ -140,7 +140,7 @@ class Torus(Ring, metaclass=Functor):
             A = ()
         if not all(isinstance(ni, (int, torch.LongTensor)) for ni in A):
             raise TypeError("Expecting integer arguments")
-        return super().new(A, (cls._top_,), {})
+        return super().new(A, (cls.Object,), {})
     
     @classmethod
     def _post_new_(cls, SA, A):

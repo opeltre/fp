@@ -2,76 +2,76 @@ import torch
 import jax
 import numpy as np
 
+from types import ModuleType
 from typing import Callable
 
 from fp.cartesian import Type, Hom, Prod
-from fp.instances import Wrap, Alg, Ring
+from fp.instances import Lift, Wrap, Alg, Ring
+from fp.instances import struct, List, Str
+
+import os
 
 signature = lambda n : lambda A: Hom(tuple([A] * n), A)
 
+@struct
+class Interface:
+    module : ModuleType
+    Array : type
+    asarray : Callable
+    dtypes : List(Str)
+    # aliases
+    repeat : Str = "repeat"
+    tile : Str = "tile"
+
+tensor_methods = [
+    # reshapes
+    Lift("__add__", 2),
+    Lift("__sub__", 2),
+    Lift("__mul__", 2),
+    Lift("__truediv__", 2),
+    Lift("__neg__", 1),
+    # reshapes
+    Lift("__flatten__", 1),
+    Lift("reshape", lambda T: Hom((T, tuple), T), 0, flip=1),
+]
+
 class WrapRing(Ring, Wrap):
 
-    _lifted_methods_ = [
-        # algebraic methods
-        ("__add__", signature(2) , ...),
-        ("__sub__", signature(2), ...),
-        ("__mul__", signature(2), ...),
-        ("__truediv__", signature(2), ...),
-        ("__neg__", signature(1), ...),
-        # reshapes 
-        ("flatten", lambda T: Hom(T, T), ...),
-        ("reshape", lambda T: Hom((T, tuple), T), 0),
-    ]
+    _lifted_methods_ = tensor_methods
 
+class EitherRing(Ring, Either):
+
+    _lifted_methods_ = tensor_methods
 
 class Backend(WrapRing):
-
-    Array : Type
-    asarray : Callable
-    dtypes : list[str]
-    # aliases
-    repeat : str = "repeat"
-    tile : str = "tile"
     
+    _api_ : Interface
+
     @classmethod
-    def new(cls, A=None):
+    def new(cls, A:type|Interface=None):
+        api = cls._api_ 
         if A is None:
-            A = cls.Array
+            A = api.Array
         Wrap_A = super().new(A)
         Wrap_A._backend_ = cls
-        Wrap_A._module_ = cls.module
+        Wrap_A._module_ = api.module
         # backend-specific constructor 
-        Wrap_A.cast_data = cls.asarray
+        Wrap_A.cast_data = api.asarray
         # dtype casts
-        for dtype in cls.dtypes:
+        for dtype in api.dtypes:
             alias = dtype.split(":")[-1]
-            cast = getattr(cls.module, alias)
+            cast = getattr(api.module, alias)
             method = lambda x: x.__class__(cast(x.data))
             setattr(Wrap_A, dtype, method)
         return Wrap_A
 
+#====== Interfaces ======
 
-class TorchBackend(Backend):
-    
-    module = torch 
-    # Array type
-    Array = torch.Tensor
-    asarray = torch.as_tensor
-    # dtypes
-    dtypes = [
-        "float",
-        "double",
-        "int",
-        "long", 
-        "cfloat",
-    ]
-    repeat = "repeat_interleave"
-    tile = "repeat"
-
-
-class NumpyBackend(Backend):
+@struct
+class NumpyAPI(Interface):
     
     module = np 
+
     Array = np.ndarray
     asarray = np.asarray
 
@@ -83,14 +83,45 @@ class NumpyBackend(Backend):
         "cfloat",
     ]
 
+print(NumpyAPI._values_)
 
-class JaxBackend(NumpyBackend):
+@struct
+class JaxAPI(Interface):
 
     module = jax.numpy
     Array = jax.lib.xla_extension.ArrayImpl
     asarray = jax.numpy.asarray
 
-    dtypes = NumpyBackend.dtypes[:-1] + [
+    dtypes = NumpyAPI().dtypes[:-1] + [
         "cfloat:complex64",
         "cdouble:complex128",
     ]
+
+
+@struct
+class TorchAPI(Interface):
+    
+    module = torch 
+
+    Array = torch.Tensor
+    asarray = torch.as_tensor
+
+    # dtypes
+    dtypes = [
+        "float",
+        "double",
+        "int",
+        "long", 
+        "cfloat",
+    ]
+
+    repeat = "repeat_interleave"
+    tile = "repeat"
+
+
+class Backend(Stateful(Interface, default)):
+    
+    @classmethod
+    def read_env(cls) -> str:
+        env = "FP_BACKEND"
+        s0 = os.environ[env] if env in os.environ else "torch"

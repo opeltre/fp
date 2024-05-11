@@ -97,7 +97,7 @@ class Linear(Hom, Tens, metaclass=HomFunctor):
     products respectively.
     """
 
-    class _top_:
+    class Object:
         
         def __new__(cls, matrix, name=None):
             self = super().__new__(cls, matrix, name)
@@ -175,7 +175,7 @@ class Linear(Hom, Tens, metaclass=HomFunctor):
     @classmethod
     def new(cls, A, B):
         src, tgt = Tens(A), Tens(B)
-        bases = cls._top_, Tens((*B, *A)), Hom(src, tgt)
+        bases = cls.Object, Tens((*B, *A)), Hom(src, tgt)
         name = cls._get_name_(A, B)
         LAB = Ring.__new__(cls, name, bases, {})
         Ring.__init__(LAB, name, bases, {})

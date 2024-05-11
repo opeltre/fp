@@ -165,7 +165,7 @@ class TensorBase:
         return xy
 
 
-class Numpy(NumpyBackend(np.ndarray), TensorBase):
+class Numpy(Backend(NumpyAPI), TensorBase):
 
     def is_floating_point(self):
         return self.data.is_floating_point()
@@ -176,10 +176,10 @@ class Numpy(NumpyBackend(np.ndarray), TensorBase):
     def norm(self, p="fro", dim=None):
         return self.data.norm(p, dim)
 
-class Jax(JaxBackend(JaxBackend.Array), TensorBase):
+class Jax(Backend(JaxAPI), TensorBase):
     ...
 
-class Torch(TorchBackend(torch.Tensor), TensorBase):
+class Torch(Backend(TorchAPI), TensorBase):
     
     @property
     def size(self):
