@@ -1,10 +1,9 @@
 from fp.meta import Type, Functor, Functor
-from fp.cartesian import Hom
+from fp.cartesian import Hom, Prod
 import fp.io as io
 
 from types import MethodType
 from typing import Callable, Iterable
-
 
 class WrappedType(Functor._instance_, metaclass=Type):
     """

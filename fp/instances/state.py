@@ -374,7 +374,7 @@ class Stateful(Monad):
     _defaults_ = StatefulMonad
 
     def __new__(cls, S, initial=None, dct=None):
-        if isinstance(S, Type):
+        if isinstance(S, (Type, type)):
             name = "Stateful(" + S.__name__ + ")"
             bases = ()
             dct = dict(

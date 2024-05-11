@@ -174,7 +174,13 @@ class Struct(Type, metaclass=Cofunctor):
     _top_ = StructObject
 
     @classmethod
-    def _pre_new_(cls, keys:tuple[str], values=(), name=None, bases=()):
+    def _pre_new_(cls, 
+                  keys: tuple[str, ...], 
+                  values: tuple[Value, ...] = (), 
+                  name: typing.Optional[str] = None, 
+                  bases: tuple[type, ...] = (), 
+                  dct: typing.Optional[dict] = None,
+        ):
         ###
         if type(keys) is str and type(name) is dict:
             return keys, values, name, bases
@@ -182,14 +188,19 @@ class Struct(Type, metaclass=Cofunctor):
         if isinstance(keys, (Var, str)):
             keys = ("k0", "k1")
             values = ("V0", "V1")
+        if isinstance(bases, tuple) and dct is not None:
+            return tuple(keys), tuple(values), None, bases, dct
+        elif isinstance(bases, tuple):
+            return tuple(keys), tuple(values), None, bases
         return tuple(keys), tuple(values)
 
     @classmethod
     def new(cls, 
-            keys:tuple[str], 
-            values:Type|tuple[Type|Value]=(),
+            keys: tuple[str], 
+            values: Type|tuple[Type|Value]=(),
             name : (str | None) = None,
-            bases : tuple = (),
+            bases : tuple[type, ...] = (),
+            dct : dict = {},
         ) -> Struct:
         """
         Return a new `Struct` type. 
@@ -197,7 +208,7 @@ class Struct(Type, metaclass=Cofunctor):
         if isinstance(values, Type):
             values = tuple([values] * len(keys))
         values = tuple((*v,) if type(v) is tuple else v for v in values)
-        dct = dict(
+        dct = dct | dict(
             __slots__ = keys,
             _keys_ = keys,
             _values_ = values
@@ -208,7 +219,7 @@ class Struct(Type, metaclass=Cofunctor):
             bases = (*bases, StructObject)
         return super(Type, cls).__new__(cls, name, bases, dct)
     
-    def _post_new_(S, keys, values, name = None, bases = ()):
+    def _post_new_(S, keys, values, name = None, bases = (), dct=None):
         for k, (V, *v) in zip(keys, values):
             Field.bind((S, k), (V, *v))
 
@@ -229,7 +240,7 @@ class Struct(Type, metaclass=Cofunctor):
         return tuple(keys), tuple(values)
 
     @classmethod
-    def _get_name_(cls, keys, values=(), name=None, bases=()):
+    def _get_name_(cls, keys, values=(), name=None, bases=(), dct=None):
         if name is not None: 
             return name
         return "Struct *"
@@ -286,6 +297,13 @@ def struct(C : type) -> Struct:
     if isinstance(C, Struct):
         return C
     keys, values = Struct._annotations_(C)
-    S = Struct(keys, values)
+    bases = (C,)
+    dct = dict(C.__dict__)
+    del dct["__dict__"]
+    for k in keys:
+        if k in dct:
+            del dct[k]
+    print(C.__name__, bases, dct)
+    S = Struct(keys, values, C.__name__, (), dct)
     S.__name__ = C.__name__
     return S
