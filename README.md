@@ -15,8 +15,8 @@ A lightweight functional programming library with
 ## Installation 
 
 There are two ways that you can start using `fp`. 
-Note that this library is still under development, 
-but beta versions are updated as necessary on PyPI.
+This library is still under development, 
+but beta versions will updated as necessary on PyPI.
 
 ### poetry environment
 
@@ -38,8 +38,6 @@ The `fp` library relies on python [metaclasses] to emulate a static python type 
 [metaclasses]: https://www.python.org/dev/peps/pep-3115/ 
 
 ### `fp.cartesian` module
-
-The Cartesian category structure of `Type` is defined in `fp.cartesian`. 
 
 The type `Hom(A, B)` declares typed functions or type _morphisms_, with input in `A` and output in `B`. Functions with multiple inputs can be declared by supplying a tuple of types `A = (A0, A1, ...)` as input.
 
@@ -76,11 +74,9 @@ Str: "||||||----||||||----||||||----||||||"
 
 ### `fp.instances` module
 
-Common `Type` and `Functor`  instances are defined in `fp.instances`.
-
 Algebraic subclasses  of `Type` are defined in `fp.instances.algebra`, 
 allowing transparent subclassing of numeric builtin types. The lifting and propagation of algebraic methods is also used by `Str` 
-and `List.Object`, by being instances of the `fp.instances.Monoid` type class.
+and `List.Object`, by being instances of the `Monoid` type class.
 
 ```py
 >>> from fp import Int, Float, Str, List
@@ -100,10 +96,41 @@ List Int -> List Str: map λ
 >>> List.fmap(bar)(phone)
 ```
 
-See the [docs] for more information.
+See the [docs] for more.
 
 ### `fp.tensors` module
 
-Interfaces to Numpy, Jax, and Pytorch array types are defined in `fp.tensors.backend`.
+For now, the `Tensor` class is an alias of `Torch`, while Arrays from other backends can be explictly created with `Jax` and `Numpy`. This part of the API is
+subject to change. 
 
-See [examples/arrays.py](examples.arrays.py) for instance. 
+```py
+>>> from fp.tensors import Torch, Jax, Numpy
+>>> from fp.tensors import backends
+>>> backends
+List Backend: [Numpy, Jax, Torch]
+>>> x, y, z = (B.range(3) * (10 ** i) for i, B in enumerate(backends))
+>>> x
+Numpy: [0 1 2]
+>>> y + x.jax() 
+Jax: [0 11  22]
+>>> z + (x + y.numpy()).torch()
+Torch: [0, 111, 222]
+```
+
+Typed tensors are created by supplying shape tuples to the  `Tens` functor. 
+With `Linear` and `Otimes`, typed tensors form a cartesian closed subcategory
+of types. 
+
+```py
+>>> from fp.tensors import Tens, Linear
+>>> E = Tens((2, 3))
+>>> F = Tens((4,))
+>>> v = E.range()
+Tens 2x3 : [[0, 1, 2],
+           [[3, 4, 5]]
+>>> f = Linear(E, F)(Tensor.randn(4, 6))
+>>> f(v).shape
+(4,)
+```
+
+See [examples/arrays.py](examples.arrays.py) and the [docs] for more details. 
