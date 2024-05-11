@@ -34,7 +34,6 @@ class Method:
         owner._methods[name] = self.signature
         self._name = "_" + name
         self.name = name
-        setattr(owner, self._name, register)
 
     def __init__(self, signature):
         self.signature = signature

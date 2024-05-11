@@ -3,11 +3,10 @@ from .string import Str
 from .list import List
 
 from .wrap import Wrap
-from .tensor import Tensor
-from .shape  import Torus
-from .shape  import Torus as Shape
-from .tens   import Tens, Linear, Otimes
-from .tensor_mod import TensorMod
+#from .tensor import Tensor
+#from .shape import Torus
+#from .shape import Torus as Shape
+#from .tens import Tens, Linear, Otimes
 
 from fp.meta import Arrow, Prod, Bool
 
@@ -17,12 +16,12 @@ __all__ = [
     "Str",
     "List",
     "Wrap",
-    "Tensor",
-    "Torus",
-    "Shape",
-    "Tens",
-    "Linear",
-    "Otimes",
+#    "Tensor",
+#    "Torus",
+#    "Shape",
+#    "Tens",
+#    "Linear",
+#    "Otimes",
     "Arrow",
     "Prod",
     "Bool",

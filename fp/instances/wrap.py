@@ -62,7 +62,7 @@ class Wrap(Functor):
 
     def __init__(Wrap_A, A):
         # --- Lift methods
-        cls = Wrap_A.functor
+        cls = Wrap_A._head
         for name, homtype in cls.lifts.items():
             if not name in Wrap_A.lifts:
                 f = homtype(A)(getattr(A, name))

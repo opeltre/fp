@@ -1,7 +1,7 @@
 from .kind import Kind
 
-
-from .functor import Functor, FunctorClass, Bifunctor, BifunctorClass, NFunctorClass
+from .constructor import ConstructorClass
+from .functor import Functor, FunctorClass, BifunctorClass, NFunctorClass
 
 from .arrow import ArrowClass, Arrow, Prod
 from .hom import Hom
@@ -11,9 +11,9 @@ from .alg import RingClass, AlgClass, Bool
 
 __all__ = [
     "Kind",
+    "ConstructorClass",
     "Functor",
     "FunctorClass",
-    "Bifunctor",
     "BifunctorClass",
     "NFunctorClass",
     "ArrowClass",

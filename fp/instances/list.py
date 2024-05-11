@@ -1,7 +1,7 @@
-from fp.meta import Type, Functor, Arrow, FunctorClass
+from fp.meta import Type, Functor, FunctorClass, Arrow 
 
 
-class Id(Functor):
+class Id(metaclass=FunctorClass):
 
     def __new__(cls, A):
         if isinstance(A, Type):
@@ -11,10 +11,6 @@ class Id(Functor):
             pass
 
         return IdA
-
-    def __init__(TA, A):
-        TA.functor.types[A] = TA
-        TA.functor.types[TA] = TA
 
     @classmethod
     def fmap(cls, f):
@@ -26,10 +22,10 @@ class Id(Functor):
         return A.__name__.capitalize()
 
 
-@FunctorClass.instance
-class List(Functor):
-
-    def __new__(cls, A):
+class List(Functor, metaclass=FunctorClass):
+    
+    @classmethod
+    def new(cls, A):
 
         class List_A(list, Type):
 
@@ -62,9 +58,9 @@ class List(Functor):
     def fmap(cls, f):
         """List map: (A -> B) -> List A -> List B"""
 
-        @Arrow(cls(f.src), cls(f.tgt))
+        #@Arrow(cls(f.src), cls(f.tgt))
         def mapf(xs):
-            return cls(f.tgt)([f(x) for x in xs])
+            return [f(x) for x in xs]
 
         mapf.__name__ = f"map {f.__name__}"
         return mapf

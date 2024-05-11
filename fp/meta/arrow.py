@@ -1,44 +1,37 @@
 from .type import Type, TypeClass
+from .method import Method
 from .functor import BifunctorClass, NFunctorClass
+
+from typing import Iterable
+
+import fp.io as io
 
 
 class Prod(metaclass=NFunctorClass):
-
-    def __new__(cls, *As):
+    
+    @classmethod
+    def new(cls, *As):
 
         class Prod_As(tuple, metaclass=TypeClass):
 
-            types = As
-
             def __new__(cls, *xs):
-                if len(xs) != len(cls.types):
+                if len(xs) != len(cls._tail):
                     raise TypeError(
                         f"Invalid number of terms {len(xs)} "
-                        + f"for {len(cls.types)}-ary product."
+                        + f"for {len(cls._tail)}-ary product."
                     )
-
-                def cast(A, x):
-                    return x if isinstance(x, A) else A.cast(x)
-
-                elems = [cast(A, x) for A, x in zip(cls.types, xs)]
+                elems = [io.cast(x, A) for A, x in zip(cls._tail, xs)]
                 return super().__new__(cls, elems)
 
             def __init__(self, *xs):
-                pass
+                ...
 
             def __repr__(self):
                 return "(" + ", ".join([str(x) for x in self]) + ")"
 
             @classmethod
             def cast(cls, *xs):
-                def cast_one(A, x):
-                    if isinstance(x, A):
-                        return x
-                    if "cast" in dir(A):
-                        return A.cast(x)
-                    return A(x)
-
-                ys = [cast_one(A, x) for A, x in zip(cls.types, xs)]
+                ys = [io.cast(x, A) for A, x in zip(cls._tail, xs)]
                 return cls(*ys)
 
         return Prod_As
@@ -64,6 +57,18 @@ class Prod(metaclass=NFunctorClass):
         names = [A.__name__ for A in As]
         return f"({', '.join(names)})"
 
+class Cat(BifunctorClass):
+    """
+    Categories.
+    """
+    @Method
+    def compose(C):
+        return (C('B', 'C'), C('A', 'B')), C('A', 'C')
+
+    @Method
+    def id(C):
+        return 'A', C('A', 'A')
+    
 
 class ArrowClass(BifunctorClass):
     """
@@ -81,51 +86,15 @@ class ArrowClass(BifunctorClass):
     Arrows of a concrete category moreover
     implement a `.__call__` method.
     """
+    @Method
+    def compose(Arr):
+        return (Arr('B', 'C'), Arr('A', 'B')), Arr('A', 'C')
 
-    def __new__(cls, name, bases, dct):
-        Arr = super().__new__(cls, name, bases, dct)
-        Arr.curry = cls.curry_method(Arr)
+    def __init__(Arr, name, bases, dct):
+        Arr.curry = Arr.curry_method(Arr)
         if not "__matmul__" in dir(Arr):
-            Arr.__matmul__ = cls.matmul_method(Arr)
-        return Arr
-
-    @staticmethod
-    def source_type(arrow, xs):
-        if "source_type" in dir(arrow.functor):
-            return arrow.functor.source_type(arrow, xs)
-        if len(xs) == arrow.arity:
-            return arrow.src
-        else:
-            ts = arrow.src.types[: len(xs)]
-            return Prod(*ts)
-
-    @staticmethod
-    def source_cast(Src, r, xs):
-        if r == 1 and isinstance(xs[0], Src):
-            return xs[0]
-        elif r > 1 and all(isinstance(x, S) for x, S in zip(xs, Src.types)):
-            return xs
-        elif "cast" in dir(Src):
-            return Src.cast(*xs)
-        raise TypeError(f"Could not cast input")
-
-    @staticmethod
-    def target_type(arrow, xs):
-        if "target_type" in dir(arrow.functor):
-            return arrow.functor.target_type(arrow, xs)
-        if len(xs) == arrow.arity:
-            return arrow.tgt
-        else:
-            ts = arrow.src.types[len(xs) :]
-            return arrow.functor(Prod(*ts), arrow.tgt)
-
-    @staticmethod
-    def target_cast(Tgt, y):
-        if isinstance(y, Tgt):
-            return y
-        elif "cast" in dir(Tgt):
-            return Tgt.cast(y)
-        raise TypeError(f"Could not cast output")
+            print("@", Arr)
+            Arr.__matmul__ = Arr.matmul_method(Arr)
 
     @staticmethod
     def target(arr, y):
@@ -146,7 +115,7 @@ class ArrowClass(BifunctorClass):
             Curried function applied to n-ary input xs for n < arity.
             """
             if len(xs) < f.arity:
-                ts = f.src.types[-(f.arity - len(xs)) :]
+                ts = f.src._tail[-(f.arity - len(xs)) :]
                 src = tuple(ts) if len(ts) > 1 else ts[0]
 
                 @Arr(src, f.tgt)
@@ -229,39 +198,146 @@ class ArrowClass(BifunctorClass):
         return _matmul_
 
 
+class ArrowType:
+
+    src: type
+    tgt: type
+    arity: int
+
+    def __init__(self, f: callable | Iterable[callable]):
+        """
+        Initialize from callable or pipe (iterable of callables).
+        """
+        if not callable(f):
+            raise TypeError(f"Input is not callable.")
+        self.call = f
+        if "__name__" in dir(f) and f.__name__ != "<lambda>":
+            self.__name__ = f.__name__
+        else:
+            self.__name__ = "\u03bb"
+
+    def __call__(arrow, *xs):
+        """
+        Function application with type checks and curryfication.
+        """
+        f = arrow.call
+        r = arrow.arity
+
+        # --- Input and output types
+        Src = arrow.source_type(arrow, xs)
+        Tgt = arrow.target_type(arrow, xs)
+
+        # --- Full application
+        if len(xs) == arrow.arity:
+            Tx = arrow.source_cast(Src, r, xs)
+            y = f(Tx) if len(xs) == 1 else f(*Tx)
+            Ty = arrow.target_cast(Tgt, y)
+            return Ty
+
+        # --- Curried section
+        if len(xs) < arrow.arity:
+            return arrow.curry(xs)
+
+    def __matmul__(self, other):
+        """Composition"""
+        # arrow
+        if "tgt" in dir(other):
+            if self.src == other.tgt:
+                comp = type(self).compose(self, other)
+                comp.__name__ = f"{self.__name__} . {other.__name__}"
+                return comp
+            raise TypeError(
+                f"Uncomposable pair"
+                + f"{(self.src, self.tgt)} @"
+                + f"{(other.src, other.tgt)}"
+            )
+        # apply to input
+        out = self(other)
+        return out
+
+    def curry(f, xs):
+        """
+        Curried function applied to n-ary input xs for n < arity.
+        """
+        if len(xs) < f.arity:
+            ts = f.src._tail[-(f.arity - len(xs)) :]
+            src = tuple(ts) if len(ts) > 1 else ts[0]
+
+            @f._head(src, f.tgt)
+            def curried(*ys):
+                return f(*xs, *ys)
+
+            curried.__name__ = f"{f.__name__} " + " ".join((str(x) for x in xs))
+            return curried
+
+        raise TypeError(
+            f"Cannot curry {Arr.arity} function on " + f"{len(xs)}-ary input"
+        )
+
+
+    @staticmethod
+    def source_type(arrow, xs):
+        if "source_type" in dir(arrow._head):
+            return arrow._head.source_type(arrow, xs)
+        if len(xs) == arrow.arity:
+            return arrow.src
+        else:
+            ts = arrow.src._tail[: len(xs)]
+            return Prod(*ts)
+
+    @staticmethod
+    def source_cast(Src, r, xs):
+        if r == 1 and isinstance(xs[0], Src):
+            return xs[0]
+        elif r > 1 and all(isinstance(x, S) for x, S in zip(xs, Src._tail)):
+            return xs
+        elif "cast" in dir(Src):
+            return Src.cast(*xs)
+        raise TypeError(f"Could not cast input")
+
+    @staticmethod
+    def target_type(arrow, xs):
+        if "target_type" in dir(arrow._head):
+            return arrow._head.target_type(arrow, xs)
+        if len(xs) == arrow.arity:
+            return arrow.tgt
+        else:
+            ts = arrow.src._tail[len(xs) :]
+            return arrow._head(Prod(*ts), arrow.tgt)
+
+    @staticmethod
+    def target_cast(Tgt, y):
+        if isinstance(y, Tgt):
+            return y
+        elif "cast" in dir(Tgt):
+            return Tgt.cast(y)
+        raise TypeError(f"Could not cast output")
+
+    def __repr__(self):
+        return self.__name__
+
+
 class Arrow(metaclass=ArrowClass):
 
-    def __new__(cls, A, B):
+    @classmethod
+    def new(cls, A, B):
+        
+        _src, _tgt, _arity = cls._parse_tail(A, B)
 
-        class TAB(Type):
+        class TAB(ArrowType):
 
-            functor = Arrow
-            types = (A, B)
-
-            if isinstance(A, type):
-                src, tgt, arity = (A, B, 1)
-            elif "__iter__" in dir(A):
-                As = Prod(*A)
-                src, tgt, arity = (As, B, len(As.types))
-            else:
-                raise TypeError(f"Source {A} is not a type nor an iterable of types")
-
-            def __init__(self, f):
-                if not callable(f):
-                    raise TypeError(f"Input is not callable.")
-                self.call = f
-                if "__name__" in dir(f) and f.__name__ != "<lambda>":
-                    self.__name__ = f.__name__
-                else:
-                    self.__name__ = "\u03bb"
-
-            def __repr__(self):
-                return self.__name__
+            src = _src
+            tgt = _tgt
+            arity = _arity 
 
         return TAB
+    
+    @classmethod
+    def fmap(cls, f):
+        return lambda phi: f @ phi
 
-    def __init__(self, A, B):
-        pass
+    def __init__(TAB, A, B):
+        ...
 
     @classmethod
     def compose(cls, f, g):
@@ -270,6 +346,7 @@ class Arrow(metaclass=ArrowClass):
 
     @classmethod
     def name(cls, A, B):
+        """Return __name__ attribute of arrow type."""
         if isinstance(A, type) and isinstance(B, type):
             return f"{A.__name__} -> {B.__name__}"
         elif isinstance(A, (tuple, list)):
@@ -279,3 +356,21 @@ class Arrow(metaclass=ArrowClass):
         elif "__name__" in dir(A) and "__name__" in dir(B):
             return f"{A.__name__} -> {B.__name__}"
         return f"A -> B"
+    
+    @classmethod
+    def _base(cls): 
+        return ArrowType
+
+    @classmethod
+    def _parse_tail(cls, A: type | Iterable[type], B: type):
+        """Check that `A: type | Iterable[type] and B: type`."""
+        if isinstance(A, type) and isinstance(B, type):
+            _src, _tgt, _arity = (A, B, 1)
+        elif "__iter__" in dir(A) and isinstance(B, type):
+            As = Prod(*A)
+            _src, _tgt, _arity = (As, B, len(As._tail))
+        elif isinstance(B, type):
+            raise TypeError(f"Source {A} is not a type nor an iterable of types")
+        else:
+            raise TypeError(f"Target {B} is not a type")
+        return _src, _tgt, _arity
