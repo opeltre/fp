@@ -1,15 +1,17 @@
 from .struct import struct
 from fp.cartesian import Type, Hom
 
+import typing
+
 @struct
 class Lift:
     name: str 
-    signature: int | Callable
+    signature: int | typing.Callable
     lift_args: type(...) | int | tuple = ...
     flip: int = 0 
     # override default lift for each functor
-    from_source : Callable = lambda x: x
-    to_target : Callable = lambda x: x
+    from_source : typing.Callable = lambda x: x
+    to_target : typing.Callable = lambda x: x
 
 @struct
 class WrapLift(Lift):

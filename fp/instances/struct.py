@@ -4,7 +4,7 @@ import typing
 from fp.meta import Cofunctor, Var
 from fp.cartesian import Type, Prod, Hom, Arrow
 from .list import List
-from .num import Str
+from .str import Str
 
 import fp.io as io
 from fp.io.show import showStruct

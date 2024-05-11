@@ -1,7 +1,8 @@
 from fp.meta import Type
 from .algebra import Eq, Operad, Monoid, Ring, Alg
-from .num import Bool, Int, Float, Str
-from .num import Str
+from .num import Bool, Int, Float
+from .lifts import Lift
+from .str import Str
 from .list import List
 from .struct import Key, Struct, struct
 from .wrap import Wrap
