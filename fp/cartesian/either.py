@@ -30,7 +30,7 @@ class Either(Type, metaclass=Monad):
         >>> List.fmap(Either.fmap(bar, foo))(x)
         List (str | int | ...) : [1 : 5, 0 : ||||||||||||, 1 : 6, 0 : ||||||||]
     """
-    class _top_:
+    class Object:
         
         def __init__(self, x):
             union = self._union_.__args__

@@ -150,7 +150,7 @@ class State(Hom, metaclass=HomFunctor):
     (the global class state of `Stateful(S, s0)` types). 
     """
 
-    class _top_(Monad._instance_, Hom._top_): 
+    class Object(Monad._instance_, Hom.Object): 
         """
         Stateful computation.
         """
@@ -177,7 +177,7 @@ class State(Hom, metaclass=HomFunctor):
         def run(self, s=None):
             if s is None:
                 s = self._initial_
-            return Hom._top_.__call__(self, s)
+            return Hom.Object.__call__(self, s)
 
         def exec(self, s=None):
             return self.run(s)[0]
@@ -307,7 +307,7 @@ class StatefulMonad(StateMonad):
     _state_ : Type = Var("S")
     _initial_ : Var("S")
 
-    class _top_(State._top_, Hom._top_):
+    class Object(State.Object, Hom.Object):
         
         arity = 1
         
@@ -356,7 +356,7 @@ class StatefulMonad(StateMonad):
     @classmethod
     def new(cls, A):
         name = cls._get_name_(A)
-        bases = (cls._top_,)
+        bases = (cls.Object,)
         dct = dict(
             _state_ = cls._state_,
             _value_ = A,

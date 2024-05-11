@@ -28,7 +28,7 @@ class Prod(Type, metaclass=Functor):
         (Int, Str) : (4, '||||||||')
     """
     
-    class _top_(tuple):
+    class Object(tuple):
         """
         Product base type: `tuple` alias.
         """
@@ -127,7 +127,7 @@ class WriterFunctor(Prod):
 
     _writer_ : Type
     
-    class _top_(Prod._top_):
+    class Object(Prod.Object):
 
         @property
         def data(self):

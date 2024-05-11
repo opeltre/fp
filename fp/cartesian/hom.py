@@ -9,7 +9,7 @@ import fp.io as io
 from typing import Literal
 
 
-class HomInstance(Arrow._top_):
+class HomInstance(Arrow.Object):
     """
     Base class for Hom(A, B) types.
     """
@@ -158,7 +158,7 @@ class Hom(Arrow, metaclass=HomFunctor):
         Str : '||||||||'
     """
     
-    _top_ = HomInstance
+    Object = HomInstance
     
     src = Type
     tgt = Type

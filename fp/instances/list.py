@@ -10,7 +10,7 @@ class List(Monoid, metaclass=Monad):
     src = Type
     tgt = Type
     
-    class _top_(list, Monad._instance_):
+    class Object(list, Monad._instance_):
          
         def __init__(self, xs):
             A = self._tail_[0]
@@ -36,7 +36,7 @@ class List(Monoid, metaclass=Monad):
 
     @classmethod
     def new(cls, A):
-        return Monoid.__new__(cls, 'List A', (cls._top_,), {})
+        return Monoid.__new__(cls, 'List A', (cls.Object,), {})
     
     @classmethod
     def fmap(cls, f: Hom("A", "B")) -> Hom(cls("A"), cls("B")):

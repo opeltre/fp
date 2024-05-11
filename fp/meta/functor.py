@@ -37,7 +37,7 @@ class Functor(Constructor):
             Bound `map` method, equivalent to `Functor.fmap(f)(x)`.
             """
             T = Tx._head_
-            if isinstance(f, T.src.Hom._top_):
+            if isinstance(f, T.src.Hom.Object):
                 return T.fmap(f)(Tx)
             src = x._tail_ if T.arity != 1 else Tx._tail_[0]
             f = T.src.Hom(src, tgt)(f)

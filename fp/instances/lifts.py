@@ -3,7 +3,7 @@ from fp.cartesian import Type, Hom
 
 @struct
 class Lift:
-    name: Str
+    name: str 
     signature: int | Callable
     lift_args: type(...) | int | tuple = ...
     flip: int = 0 
@@ -29,7 +29,7 @@ class Lifted:
         else:
             self.signature = signature
     
-    def method(self, obj: typing.Any) -> Type.Hom._top_ :
+    def method(self, obj: typing.Any) -> Type.Hom.Object :
         """
         Lift a method to the wrapped type. 
         """

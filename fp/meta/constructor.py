@@ -41,7 +41,7 @@ class Constructor(Kind):
         @classmethod
         def new(cls, *As: Any):
             try:
-                base = cls._top_
+                base = cls.Object
                 try:
                     name = cls._get_name_(*As)
                 except:
@@ -199,7 +199,7 @@ class Var(Type, metaclass=Constructor):
     
     _accessors_ = None
 
-    class _top_:
+    class Object:
         ...
     
     def _post_new_(A, name:str, *accessors:str):

@@ -1,8 +1,8 @@
 import unittest
 
-from fp.meta import TypeClass, Type, Functor, Hom
+from fp import Type, Type, Functor, Hom
 
-A = TypeClass("A", (), {})
+A = Type("A", (), {})
 f = Hom(A, A)(lambda x: x)
 
 
@@ -11,9 +11,9 @@ class TestFunctor(unittest.TestCase):
     def test_functor(self):
 
         class T(Functor):
-
-            def __new__(cls, A):
-                return TypeClass(f"T {A.__name__}", (A,), {})
+            
+            class Object(Type):
+                ...
 
             @classmethod
             def fmap(cls, f):

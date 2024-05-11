@@ -1,7 +1,6 @@
 import unittest
 
-from fp.instances import Str, Int, Wrap
-from fp.meta import Hom
+from fp import Str, Int, Wrap, Hom
 
 
 class TestWrap(unittest.TestCase):

@@ -171,7 +171,7 @@ class Struct(Type, metaclass=Cofunctor):
     src = Key
     tgt = Type 
     
-    _top_ = StructObject
+    Object = StructObject
 
     @classmethod
     def _pre_new_(cls, 

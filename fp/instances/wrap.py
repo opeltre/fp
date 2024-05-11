@@ -75,7 +75,7 @@ class Wrap(Type, metaclass=Functor):
                     ]
     """
 
-    _top_ = WrappedType
+    Object = WrappedType
     
     _lifted_methods_ = []
     
@@ -123,7 +123,7 @@ class Wrap(Type, metaclass=Functor):
         method: MethodType, 
         homtype: Type, 
         lift_args: Iterable[int] | type(...) = ...,
-    ) -> Type.Hom._top_ :
+    ) -> Type.Hom.Object :
         """
         Lift a method to the wrapped type. 
         """

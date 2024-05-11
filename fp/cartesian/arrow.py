@@ -9,7 +9,7 @@ class Arrow(Type, metaclass=ArrowFunctor):
     src = Type
     tgt = Type
 
-    class _top_(metaclass=Type):
+    class Object(metaclass=Type):
 
         src: Type
         tgt: Type
