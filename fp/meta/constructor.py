@@ -54,11 +54,15 @@ class Constructor(Kind):
                 raise RuntimeError(f"Method {cls.__name__}.new was not overriden.")
         
         @classmethod
-        def _subclass_(cls, *As):
+        def _subclass_(cls, name:str, bases:tuple, dct:dict):
             msg = str(cls.__name__) + " _subclass_: "
-            msg += " ".join(str(A) for A in As[:2])
+            msg += name + " " + str(bases)
             io.log(msg, v=1)
-            return Type.__new__(cls, *As)
+            T = Type.__new__(cls, name, bases, dct)
+            for base in bases:
+                if hasattr(base, "_post_new_"):
+                    type(base)._post_new_(T, *base._tail_)
+            return T
 
         def _post_new_(TA, *As):
             ...
