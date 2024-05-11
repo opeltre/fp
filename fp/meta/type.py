@@ -1,106 +1,75 @@
 from .kind import Kind
-from colorama import init, Style
+import fp.io as io
+import fp
 
-init()
+from typing import Any
 
-class TypeMeta(type, metaclass=Kind):
-    """ Base type class. """
-    
-    kind = "*" 
+class Type(type, metaclass=Kind):
+    """
+    Type Category.
 
-    def __new__(cls, name, bases, dct):
-        """ Create a new type. """
+    All types within `fp` are instances of `Type`, 
+    while type classes subclass `Type`.
+
+    Example:
+    --------
+    .. code::
+
+        >>> isinstance(Int, Type) and isinstance(List(Int), Type)
+        True
+        >>> issubclass(List, Type)
+        True
+        >>> issubclass(Ring, Type)
+        True
+    """
+
+    def __new__(cls, name, bases=(), dct={}, head=None, tail=None):
+        """Create a new type expression."""
         T = super().__new__(cls, name, bases, dct)
-        T.__str__  = cls.str_method(T.__str__)
-        T.__repr__ = cls.repr_method(T.__repr__)
-        if not "cast" in dir(T):
-            T.cast = cls.cast_method(T)
-        if not "show" in dir(T):
-            def show(self):
-                print(self.__repr__())
-                return self
-            T.show = show
+        # expression tree for pattern matching 
+        T._head_ = name if isinstance(head, type(None)) else head
+        T._tail_ = tail
+        # pretty print type annotations
+        T.__str__ = io.str_method(T.__str__)
+        T.__repr__ = io.repr_method(T.__repr__)
+        
+        # seamless printing helpers
+        def shows(x:Any, m:str) -> Any:
+            """
+            Print a value x and set its name, returning x.
+            """
+            x.__name__ = m
+            print(">>> " + m, repr(x), sep="\n") 
+            return x
+
+        def show(x: Any) -> Any:
+            """
+            Print x, prefixed by its name if any, and return x.
+            """
+            if hasattr(x, '__name__'):
+                print(">>> " + x.__name__)
+            print(repr(x))
+            return x
+
+        T.shows = shows
+        T.show = show
         return T
     
-    @staticmethod
-    def repr_method(rep):
-        def _rep_(x):
-            tx = f"{type(x)} : "
-            indent = len(tx)
-            rx = rep(x)
-            tx = Style.DIM + tx + Style.NORMAL
-            if rx[:len(tx)] == tx:
-                return rx
-            else:
-                return tx + rx.replace("\n", "\n" + " " * indent)
-        return _rep_
-
-    @staticmethod
-    def str_method(show):
-        return lambda x: show(x)
-    
-    @staticmethod
-    def cast_method(T):
-
-        def _cast_(x):
-            if isinstance(x, T): 
-                return x
-            try: 
-                Tx = T(x) 
-                return _cast_(Tx)
-            except:
-                raise TypeError(f"Could not cast {type(x)} to type {T}.")
-
-        return _cast_
+    def __init__(self, *xs, **ys):
+        ...
 
     def __repr__(self):
-        """ Show type name. """
+        """Show type name."""
         return f"{self.__name__}"
 
+    def __pow__(self, other):
+        return self.__class__.Hom(other, self)
 
-#--- Type variables ---
+    def __rshift__(self, other):
+        return self.__class__.Hom(self, other)
 
-class TypeVar(TypeMeta):
+    def __mul__(self, other):
+        return self.__class__.Prod(self, other)
 
-    def __new__(cls, name, bases=()):
-        A = super().__new__(cls, name, bases, {})
-        A.variables = [name]
-
-        def match(B): 
-            if 'functor' not in dir(A):
-                return {name: B}
-            if 'functor' not in dir(B): 
-                return None
-            if A.functor == B.functor and len(A.types) == len(B.types):
-                out = {}
-                for Ai, Bi in zip(A.types, B.types):
-                    if isinstance(Ai, TypeVar):
-                        mi = Ai.match(Bi)
-                        if mi == None: return None
-                        out |= mi
-                    elif Ai != Bi:
-                        return None
-                return out
-            return None
-
-        def substitute(matches):
-            if 'functor' not in dir(A): 
-                return matches[A.__name__]
-            types = []
-            for Ai in A.types: 
-                types.append(Ai.substitute(matches) if isinstance(Ai, TypeVar) else Ai)
-            return A.functor(*types)
-        
-        A.match = match
-        A.substitute = substitute
-        return A
-    
-    def __init__(self, name, bases=()):
-        pass
-
-
-#--- Instances ---
-
-class Type(metaclass=TypeMeta):
-    pass
-
+    def __or__(self, other):
+        return self.__class__.Sum(self, other)

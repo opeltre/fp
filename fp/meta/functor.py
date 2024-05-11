@@ -1,106 +1,138 @@
-import abc 
+from __future__ import annotations
 
+from .method import Method
 from .kind import Kind
-from .type import TypeVar
+from .constructor import Constructor, Var
+from .type import Type
 
-class FunctorMeta(abc.ABCMeta, metaclass=Kind):
-    """ Functor type class. """
+import fp.io as io
+
+class Category(Kind):
     
-    kind    = "* -> *" 
-    arity   = 1
+    @Method
+    def Hom(T):
+        return (T, T), Type
 
-    lifts = {}
+
+Args = tuple[int] | type(...)
+
+class Functor(Constructor):
+    """
+    Covariant functors.
+    """
     
-    def __new__(cls, name, bases, dct):
-        """ Create a functorial type constructor T: a -> T a. """
-        T = super().__new__(cls, name, bases, dct)
-        T.types = {}
-        T.__new__ = cls.new_method(T.__new__)
-        return T
+    src: Category
+    tgt: Category
 
-    @staticmethod
-    def new_method(new):
-        """ Type constructor T: A -> T A with lookup for known input A. """
-        def _new_ (cls, *As):
-            """ Look for T A in T.types or return a new type T A. """
-            #--- Check abstract methods 
-            if len(cls.__abstractmethods__):
-                raise TypeError(
-                    f"Abstract methods missing in type {cls}")
-            #--- Check arity 
-            if cls.arity != 'n' and cls.arity - len(As) != 0:
-                raise TypeError(
-                    f"Wrong kind : could not apply {cls.arity}-ary " +\
-                    f"functor {cls} to input {As}")
-            As = tuple(cls.parse_type(A) for A in As)
-            #--- Return type if it exists 
-            if As in cls.types:
-                return cls.types[As]
-            #--- Create and index new type otherwise 
-            TA = new(cls, *As)
-            cls.types[As] = TA 
-            TA.functor  = cls
-            TA.types    = As 
-            if 'name' in dir(cls):
-                TA.__name__ = cls.name(*As)
-            else:
-                TA.__name__ = cls.__name__ + ' ' + ' '.join([str(A) for A in As])
-            cls.__init__(TA, *As)
-            #--- Return type variable if one type is a parameter
-            var = any(isinstance(A, TypeVar) for A in As)
-            return TA if not var else TypeVar(TA.__name__, (TA,))
-        return _new_
+    arity : int = 1
+    _kind_ : tuple[Args, Args] = ..., ()
 
-    @classmethod
-    def parse_type(cls, A):
-        if isinstance(A, list): 
-            return tuple(A)
-        if isinstance(A, str):
-            return TypeVar(A)
-        else:
-            return A
+    class _instance_:
+        """
+        Base class for types of the form `Functor(*As)`. 
+        """
 
-    def eq_method(TA, TB):
-        """ Compare functorial types """
-        if not ("functor" in dir(TB) and "types" in dir(TB)):
-            return False
-        return TA.functor == TB.functor and TA.types == TB.types
-
-
-class BifunctorMeta(FunctorMeta):
+        def map(Tx, f, tgt=None):
+            """
+            Bound `map` method, equivalent to `Functor.fmap(f)(x)`.
+            """
+            T = Tx._head_
+            if isinstance(f, T.src.Hom.Object):
+                return T.fmap(f)(Tx)
+            src = x._tail_ if T.arity != 1 else Tx._tail_[0]
+            f = T.src.Hom(src, tgt)(f)
+            return T.fmap(f)(Tx)
     
-    kind  = "(*, *) -> *"
-    arity = 2 
-
-    
-class NFunctorMeta(FunctorMeta):
-    
-    kind  = "(*, ...) -> *"
-    arity = 'n'
-
-
-#--- Instances ---
-
-class Functor(metaclass=FunctorMeta):
-    """ Functor type class. """
-
-    def __init__(self, *xs):
-        pass
+    @property
+    def kind(T: type) -> str:
+        """String representation of functor signature."""
+        return Kind._functor_kind_(T.arity, *T._kind_)
         
-    @classmethod
-    @abc.abstractmethod
-    def fmap(cls, f):
-        ...
-     
-    @classmethod
-    def name(cls, A):
-        return (f"{cls.__name__} {A.__name__}" 
-                if '__name__' in dir(A) else
-                f"{cls.__name__} {A}")
-        
+    @Method
+    def fmap(T):
+        """
+        Map a source arrow `A -> B` to a target arrow `T(A) -> T(B)`.
+        """
+        src = T.src if hasattr(T, "src") else Type
+        tgt = T.tgt if hasattr(T, "tgt") else Type
+        if T.arity == 1:
+            return src.Hom('A', 'B'), tgt.Hom(T('A'), T('B'))
+        elif T.arity is ...:
+            source = src.Hom("A", "B"), Var("...")
+            target = tgt.Hom(T("A", Var("...").src), T("B", Var("...").tgt))
+            return source, target
 
-class Bifunctor(metaclass=BifunctorMeta):
 
-    @classmethod
-    def name(cls, A, B):
-        return f"{cls.__name__} ({A.__name__}, {B.__name__})"
+class Cofunctor(Constructor):
+    """
+    Contravariant functors.
+    """
+    
+    src: Category
+    tgt: Category
+    
+    arity = 1
+    _kind_ = (), ...
+    
+    @property
+    def kind(T):
+        return Kind._functor_kind_(T.arity, *T._kind_)
+
+    @Method
+    def cofmap(T): 
+        src = T.src if hasattr(T, "src") else Type
+        tgt = T.tgt if hasattr(T, "tgt") else Type
+        if T.arity == 1:
+            return src.Hom('A', 'B'), tgt.Hom(T('B'), T('A'))
+        elif T.arity is ...:
+            source = src.Hom("A", "B"), Var("...")
+            target = tgt.Hom(T("B", Var("...").tgt), T("A", Var("...").src))
+            return source, target
+
+        return T.src.Hom('X', 'Y'), T.tgt.Hom(T('Y'), T('X'))
+
+class Bifunctor(Functor):
+    """
+    Functors with both contravariant and covariant arguments.
+    """
+
+    arity = 2
+    _kind_ = (1,), (0,)
+
+    @Method
+    def fmap(T):
+        return T.src.Hom('A', 'B'), T.tgt.Hom(T('X', 'A'), T('X', 'B'))
+
+    @Method
+    def cofmap(T):
+        return T.src.Hom('X', 'Y'), T.tgt.Hom(T('Y', 'A'), T('X', 'A'))
+
+
+class ArrowFunctor(Bifunctor):
+    """
+    Bifunctors with a composition law.
+    """
+
+    @Method
+    def compose(T):
+        return (T('A', 'B'), T('B', 'C')), T('A', 'C')
+
+
+class HomFunctor(ArrowFunctor):
+    """
+    Bifunctors with a composition law and an evaluation map.
+    """
+
+    @Method
+    def eval(T):
+        return ('A', T('A', 'B')), 'B'
+
+
+class NFunctor(Functor):
+    """
+    Functors with arbitrary signatures.
+    """
+
+    kind = "(*, ...) -> *"
+    arity = ...
+    _kind_ = ..., ()

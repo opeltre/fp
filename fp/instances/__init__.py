@@ -1,12 +1,27 @@
-from .num    import Int, Float
-from .string import Str
-from .list   import List
+from fp.meta import Type
+from .algebra import Eq, Operad, Monoid, Ring, Alg
+from .num import Bool, Int, Float
+from .lifts import Lift
+from .str import Str
+from .list import List
+from .struct import Key, Struct, struct
+from .wrap import Wrap
+from .state import State, StateMonad, Stateful
 
-from .wrap   import Wrap
-from .tensor import Tensor
-from .shape  import Torus
-from .shape  import Torus as Shape
-from .tens   import Tens, Linear, Otimes
-from .tensor_mod import TensorMod
-
-from fp.meta import Arrow, Prod, Bool
+__all__ = [
+    "Monoid",
+    "Ring",
+    "Alg",
+    "Bool",
+    "Int", 
+    "Float",
+    "List",
+    "Key",
+    "Struct", 
+    "struct",
+    "Str",
+    "Wrap",
+    "State",
+    "StateMonad",
+    "Stateful",
+]

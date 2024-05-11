@@ -1,6 +1,7 @@
 import unittest as test
 
-from fp import List, Arrow, Str, Int
+from fp import List, Hom, Str, Int
+
 
 class TestList(test.TestCase):
 
@@ -12,9 +13,9 @@ class TestList(test.TestCase):
         self.assertTrue(isinstance(x, List(Str)))
 
     def test_fmap(self):
-        foo = Arrow(Str, Int)(len)
+        foo = Hom(Str, Int)(len)
         Lfoo = List.fmap(foo)
-        self.assertTrue(isinstance(Lfoo, Arrow(List(Str), List(Int))))
+        self.assertTrue(isinstance(Lfoo, Hom(List(Str), List(Int))))
         x = ["apples", "lemons", "peaches"]
         y = Lfoo(x)
         self.assertTrue(isinstance(Lfoo(x), List(Int)))
