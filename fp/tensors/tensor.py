@@ -1,5 +1,6 @@
-from .backend import Backend, NumpyAPI, TorchAPI, JaxAPI
+from .backend import Backend, NumpyAPI, TorchAPI, JaxAPI, has_jax, has_torch, has_jax, has_torch
 from .tensor_base import TensorBase
+from fp.instances import List
 
 
 class Numpy(Backend(NumpyAPI()), TensorBase):
@@ -61,7 +62,16 @@ class Torch(Backend(TorchAPI()), TensorBase):
 class Tensor(Torch):
     ...
 
-# hack avoiding circular imports
+### hack avoiding circular imports (for cast methods)
 TensorBase.Numpy = Numpy
 TensorBase.Jax = Jax
 TensorBase.Torch = Torch
+###
+
+# export available backends
+backends = List(Backend)([Numpy])
+if has_jax: 
+    backends = backends + [Jax]
+if has_torch: 
+    backends = backends + [Torch]
+
