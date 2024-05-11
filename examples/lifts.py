@@ -14,7 +14,7 @@ class Lift:
     """
 
     name: Str
-    signature: Either(int, FunctionType)
+    signature: Either(int, Callable)
     lift_args: Either(type(...), int, tuple) = ...
     flip: int = 0
     # override default lift for each functor
@@ -25,9 +25,11 @@ class Lift:
         """
         Parse method signature specified on `objtype`.
         """
-        from_int = Hom(int, FunctionType)(lambda n: Hom(tuple([objtype] * n), objtype))
-        gather = Either.gather(from_int, Hom.id(FunctionType))
-        return gather(self.signature)(objtype)
+        if callable(self.signature.data):
+            return self.signature.data(objtype)
+        elif type(self.signature.data) is int:
+            n = self.signature.data
+            return Hom(tuple([objtype] * n), objtype)
 
     def method(self, objtype: type) -> Hom.Object:
         """
@@ -63,6 +65,14 @@ class Lift:
 
         return lifted
 
+@struct
+class LiftInterface(Lift):
+    
+    def raw(self, objtype:type) -> Callable:
+        print("LiftInterface RAW")
+        method = getattr(objtype.Array, self.name)
+        return method
+        
 
 @struct
 class LiftEither(Lift):
