@@ -256,7 +256,12 @@ class Struct(Type, metaclass=Cofunctor):
         keys, values = cls._annotations_(dct)
         Sgn |= {k: v for k, v in zip(keys, values)}
         keys, values = tuple(Sgn.keys()), tuple(Sgn.values())
-        S = cls.new(keys, values, name, bases)
+        for k in keys:
+            try:
+                del dct[k]
+            except: 
+                ...
+        S = cls.new(keys, values, name, bases, dct)
         S.__name__ = name
         S._post_new_(keys, values)
         return S
@@ -303,7 +308,6 @@ def struct(C : type) -> Struct:
     for k in keys:
         if k in dct:
             del dct[k]
-    print(C.__name__, bases, dct)
     S = Struct(keys, values, C.__name__, (), dct)
     S.__name__ = C.__name__
     return S

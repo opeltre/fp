@@ -5,7 +5,7 @@ import fp.io as io
 from types import MethodType
 from typing import Callable, Iterable
 
-class WrappedType(Functor._instance_, metaclass=Type):
+class WrapObject(Functor._instance_, metaclass=Type):
     """
     Base type for wrapped values.
     """
@@ -40,11 +40,6 @@ class WrappedType(Functor._instance_, metaclass=Type):
         cls = super(child, child)
         msg = str(cls._head_) + " __init_subclass__: " + child.__name__
         io.log(msg, v=1)
-        try:
-            type(child)._post_new_(child, cls._wrapped_)
-        except:
-            ...
-
 
 
 class Wrap(Type, metaclass=Functor):
@@ -75,13 +70,14 @@ class Wrap(Type, metaclass=Functor):
                     ]
     """
 
-    Object = WrappedType
+    Object = WrapObject
     
+    # lifts
     _lifted_methods_ = []
     
     @classmethod
     def new(cls, A):
-        Wrap_A = super().new(cls, A)
+        Wrap_A = super().new(A)
         Wrap_A._wrapped_ = A
         return Wrap_A
     
@@ -94,15 +90,12 @@ class Wrap(Type, metaclass=Functor):
 
     def _post_new_(Wrap_A, A):
         # --- Lift methods
-        Wrap_A.lifts = {}
         cls = Wrap_A.__class__
-        for name, signature, lift_args in cls._lifted_methods_:
-            homtype = signature(Wrap_A)
-            io.log(f"lifting {name}: {homtype}", v=2)
-            f = getattr(A, name)
-            Wf = cls.lift(f, homtype, lift_args)
-            setattr(Wrap_A, name, Wf)
-            Wrap_A.lifts[name] = Wf
+        for lift in Wrap_A._lifted_methods_:
+            homtype = lift.homtype(Wrap_A)
+            io.log(f"lifting {lift.name}: {type(lift)} {homtype}", v=2)
+            Wf = lift.method(Wrap_A)
+            setattr(Wrap_A, lift.name, Wf)
         return Wrap_A
 
     def __init__(Wrap_A, *As):

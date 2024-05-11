@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from .arrow import Arrow
 from fp.meta import Type, Var, HomFunctor, ArrowFunctor
+
+import types
 from typing import Iterable, Callable
 
 import fp.io as io
@@ -9,7 +11,7 @@ import fp.io as io
 from typing import Literal
 
 
-class HomInstance(Arrow.Object):
+class HomObject(Arrow.Object):
     """
     Base class for Hom(A, B) types.
     """
@@ -158,7 +160,7 @@ class Hom(Arrow, metaclass=HomFunctor):
         Str : '||||||||'
     """
     
-    Object = HomInstance
+    Object = HomObject
     
     src = Type
     tgt = Type

@@ -44,6 +44,14 @@ class Either(Type, metaclass=Monad):
             prefix = Fore.YELLOW + f"{self._i_} : " + Fore.RESET
             data = str(self.data).replace("\n", "\n" + " " * len(prefix))
             return prefix + data
+
+        @classmethod
+        def cast(E, x):
+            for i, Ti in enumerate(E._tail_):
+                try:
+                    return E(io.cast(x, Ti))
+                except:
+                    pass
              
     @classmethod
     def new(cls, *As):
@@ -115,7 +123,6 @@ class Either(Type, metaclass=Monad):
             return F[x._i_](x.data)
         gather_f.__name__ = "gather " + Either._get_name_(f, *fs)
         return gather_f
-
 
     def __getitem__(E, i:int | slice):
         if isinstance(i, int):
