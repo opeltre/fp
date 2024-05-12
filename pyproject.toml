@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "funprogram"
-version = "0.9.0"
+version = "0.9.1"
 description = "A functional programming framework for python."
 authors = ["Olivier Peltre <opeltre@gmail.com>"]
 license = "MIT"
@@ -34,5 +34,5 @@ cmd = "pip install 'jax[cpu]'"
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 packages=[
-    {include = "fp", from = "fp", to="funprogram"}
+    {include = "fp"}
 ]
