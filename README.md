@@ -6,7 +6,7 @@ A lightweight functional programming library with
 - 🗒️ [docs]
 - 📁 [repository]
 
-[docs]:https://readthedocs.io/funprogram
+[docs]:https://https://funprogram.readthedocs.io/en/latest/
 [repository]:https://github.com/opeltre/fp
 [numpy]:https://numpy.org
 [jax]:https://jax.readthedocs.io/en/latest/

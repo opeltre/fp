@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "fp"
-version = "0.2.0"
+version = "0.9.0"
 description = "A functional programming framework for python."
 authors = ["Olivier Peltre <opeltre@gmail.com>"]
 license = "MIT"
