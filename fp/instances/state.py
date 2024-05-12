@@ -199,7 +199,7 @@ class State(Hom, metaclass=HomFunctor):
 
         def then(self, f, tgt=None):
             if tgt is None: 
-                tgt = f.tgt
+                tgt = f.tgt[1]
             pipe = (*self._pipe, lambda pair: f(*pair))
             out = self._monad_(tgt)(pipe, self._initial_)
             out.__name__ = self.__name__ + " ; " + f.__name__
@@ -229,7 +229,7 @@ class State(Hom, metaclass=HomFunctor):
             puts_f = lambda s, a: (f(s), a)
             puts_f.__name__ = "put " + f.__name__
             return self.then(puts_f, tgt=self._value_)
-
+        
     @classmethod
     def new(cls, S, A=...):
         if A is ...:

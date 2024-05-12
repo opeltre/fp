@@ -75,28 +75,72 @@ Str: "||||||----||||||----||||||----||||||"
 ### `fp.instances` module
 
 Algebraic subclasses  of `Type` are defined in `fp.instances.algebra`, 
-allowing transparent subclassing of numeric builtin types. The lifting and propagation of algebraic methods is also used by `Str` 
-and `List.Object`, by being instances of the `Monoid` type class.
+allowing transparent subclassing of numeric builtin types. The lifting and propagation of algebraic methods defined there is also used by `Str` 
+and `List.Object`, by being declared instances of the `Monoid` type class.
 
 ```py
 >>> from fp import Int, Float, Str, List
 >>> greet = Str.add("👋 Welcome")
->>> greet("! " + foo(2)(bar(2)))
-"👋 Welcome! ||--||"
+>>> greet 
+Str -> Str: add 👋 Welcome
+>>> greet("! " + foo(2)(bar(3)))
+"👋 Welcome! |||--|||"
 ```
+
 The `List` functor creates types inheriting from `List.Objecŧ`, a subclass of list with a `map` method. The `map` method of any functorial type, e.g.
 `List(Str)`, is actually an alias for the `List.fmap` class method. Only the target needs to be explicited when called with an untyped function.
 
 ```py
->>> phone = List(Int)("0632301202")
+>>> phone = List(Int)("0632501202")
 >>> phone.map(lambda n: 2 << n, tgt=Int)
-List Int : [2, 128, 16, 8, 16, 2, 4, 8, 2, 8]
+List Int : [1, 64, 8, 4, 32, 1, 2, 4, 1, 4]
 >>> List.fmap(bar)
 List Int -> List Str: map λ
 >>> List.fmap(bar)(phone)
+List Str : ['', '||||||', '|||', '||', '|||||', '', '|', '||', '', '||']
 ```
 
-See the [docs] for more.
+Other features include a `State` monad with which one might indeed write 
+fun programs. 
+
+```py
+# State(Int, Str) ~= Int -> (Int, Str)
+
+@State(Int, Str)
+def barbaz(n):
+    """Update an integer and return a string."""
+    q, r = divmod(n, 2)
+    if q == 0:
+        return q, "|" if r else "*"
+    return q, "|<" if r else "*<"
+
+@Hom(Str, State(Int, Str))
+def foobarbaz(acc):
+    """Do `barbaz` while the accumulator says to continue."""
+    # run with io.VERBOSITY = 1 to see intermediate steps
+    io.log(acc, v=1)
+    if len(acc) and acc[-1] == "<":
+        # accumulate output
+        accbarbaz = barbaz.map(Str.add(acc[:-1]))
+        # bind foobarbaz
+        return accbarbaz >> foobarbaz
+    else: 
+        # return accumulator
+        return State(Int).unit(acc)
+
+>>> foobarbaz.run(257)
+(Int, Str): (0, '|*******|')
+>>> foobarbaz(260)
+Str: '**|*****|'
+```
+Other monads have found plenty of applications 
+in abstracting IO contexts, error handling, data streams and asynchronous 
+threads.
+
+See the [docs] or the [source][instances] for an exhaustive list of 
+the currently implemented types, functors, monads, etc.
+
+[instances]: https://github.com/opeltre/fp/blob/master/fp/instances/__init__.py
 
 ### `fp.tensors` module
 
@@ -118,8 +162,10 @@ Torch: [0, 111, 222]
 ```
 
 Typed tensors are created by supplying shape tuples to the  `Tens` functor. 
-With `Linear` and `Otimes`, typed tensors form a cartesian closed subcategory
-of types. 
+With `Linear` and `Otimes`, typed tensors form a [closed monoidal] 
+subcategory of `Type`.
+
+[closed monoidal]: https://en.wikipedia.org/wiki/Closed_monoidal_category
 
 ```py
 >>> from fp.tensors import Tens, Linear
@@ -133,4 +179,15 @@ Tens 2x3 : [[0, 1, 2],
 (4,)
 ```
 
-See [examples/arrays.py](examples.arrays.py) and the [docs] for more details. 
+See [examples/arrays.py](examples.arrays.py) and the [docs] for more details.
+
+## Contributing
+
+If you use `fp` and experience bugs or inconsistencies, 
+please report an issue on the 
+[github](htts://github.com/opeltre/fp/issues) page.
+When debugging `fp` code, setting the following should be useful:
+
+```py
+fp.io.VERBOSITY = 3
+```

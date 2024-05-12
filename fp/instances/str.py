@@ -1,6 +1,7 @@
 from .algebra import Monoid
 from .num import Int
 from fp.cartesian import Hom
+from fp import io
 
 
 class Str(str, metaclass=Monoid):
