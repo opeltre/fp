@@ -1,0 +1,31 @@
+@import 'theme.css';
+
+em .pre {
+    font: normal .9rem mono;
+}
+
+h2 {
+    font-size: 1.2rem;
+}
+
+.toctree-wrapper ul li.toctree-l1 {
+    list-style-type: "⋅ ";
+}
+.toctree-wrapper ul li li a {
+    color: #9ac;
+}
+.toctree-wrapper ul li li.toctree-l2 {
+    list-style-type: "→ ";
+    list-style-type: "- ";
+}
+
+a, a:visited {
+    color: #58b;
+}
+a.icon-home {
+    color: #8ad;
+}
+.wy-side-nav-search {
+    background-color: #57a;
+}
+   

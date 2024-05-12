@@ -5,6 +5,7 @@ fp.egg-info
 docs/_build
 docs/source
 docs/_*
+!docs/_static
 poetry.lock
 ascii.jl
 .draft
