@@ -35,7 +35,23 @@ pip install funprogram
 
 The `fp` library relies on python [metaclasses] to emulate a static python type system of `Type` instances. 
 
+Its motivation is to provide a strict yet flexible interface 
+to a polymorphic type system, implementing most the 
+abstractions of a [cartesian closed] category. 
+Being familiar with category theory is not a prerequisite for using `fp`. 
+The package and documentation are also intended as a user-friendy 
+and didactic tools for getting used with functional programming concepts. 
+
+[cartesian closed]: https://en.wikipedia.org/wiki/Cartesian_closed_category
+
 [metaclasses]: https://www.python.org/dev/peps/pep-3115/ 
+
+Type polymorphism was a necessary feature for the 
+downstream message-passing library [topos] that I started developing 
+during my PhD. 
+Overcoming the mysterious difficulties of metaclass construction was a hard hard enough task for this latter project to reach a definitive state, but development may resume as a new stable version of the `fp` package is released. 
+
+[topos]: https://github.com/opeltre/topos 
 
 ### `fp.cartesian` module
 
@@ -49,7 +65,7 @@ def foo(n, s):
     return ("-" * n).join([s] * n)
 ```
 
-In `fp`, typed functions are instances of the "top" type `Hom.Object` which takes care automatic currying returning the partial application of 
+In `fp`, typed functions are instances of the "top" type `Hom.Object` which takes care automatic currying, i.e. returning the partial application of 
 the decorated callable when invoked with too few arguments. 
 
 ```py
@@ -101,10 +117,10 @@ List Str : ['', '||||||', '|||', '||', '|||||', '', '|', '||', '', '||']
 ```
 
 Other features include a `State` monad with which one might indeed write 
-fun programs. 
+fun programs 💻🐒!
 
 ```py
-# State(Int, Str) ~= Int -> (Int, Str)
+# `State(Int, Str)` subclasses `Int -> (Int, Str)`
 
 @State(Int, Str)
 def barbaz(n):
@@ -113,6 +129,8 @@ def barbaz(n):
     if q == 0:
         return q, "|" if r else "*"
     return q, "|<" if r else "*<"
+
+# The `State(Int)` monad binds `a -> State(Int, b)` functions
 
 @Hom(Str, State(Int, Str))
 def foobarbaz(acc):
@@ -138,7 +156,7 @@ in abstracting IO contexts, error handling, data streams and asynchronous
 threads.
 
 See the [docs] or the [source][instances] for an exhaustive list of 
-the currently implemented types, functors, monads, etc.
+the currently implemented types, functors, monads, etc. 
 
 [instances]: https://github.com/opeltre/fp/blob/master/fp/instances/__init__.py
 
@@ -181,7 +199,7 @@ Tens 2x3 : [[0, 1, 2],
 
 See [examples/arrays.py](examples.arrays.py) and the [docs] for more details.
 
-## Contributing
+## Contributing and troubleshooting
 
 If you use `fp` and experience bugs or inconsistencies, 
 please report an issue on the 
