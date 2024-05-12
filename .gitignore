@@ -6,3 +6,5 @@ docs/_build
 docs/source
 docs/_*
 poetry.lock
+ascii.jl
+.draft
