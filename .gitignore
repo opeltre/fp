@@ -8,3 +8,4 @@ docs/_*
 poetry.lock
 ascii.jl
 .draft
+dist

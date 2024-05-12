@@ -1,9 +1,0 @@
-name: Build and run examples
-
-jobs:
-  build:
-    uses: ./.github/workflows/build.yaml
-    with:
-      jax: "true"
-      torch: "true"
-

@@ -6,6 +6,10 @@ authors = ["Olivier Peltre <opeltre@gmail.com>"]
 license = "MIT"
 readme = "README.md"
 
+[project.urls]
+Homepage = "https://github.com/opeltre/fp"
+Documentation = "https://funprogram.readthedocs.io/en/latest"
+
 [tool.poetry.dependencies]
 python = "^3.11"
 poethepoet = "*"
