@@ -41,3 +41,6 @@ html_css_files = [
     'css/custom.css',
 ]
 html_style = "css/custom.css"
+
+def setup(app):
+    app.add_css_file('css/custom.css')
