@@ -49,7 +49,7 @@ and didactic tools for getting used with functional programming concepts.
 Type polymorphism was a necessary feature for the 
 downstream message-passing library [topos] that I started developing 
 during my PhD. 
-Overcoming the mysterious difficulties of metaclass construction was a hard hard enough task for this latter project to reach a definitive state, but development may resume as a new stable version of the `fp` package is released. 
+Overcoming the mysterious difficulties of metaclass construction was a hard enough task for this latter project to ever really reach a definitive state, but development might perhaps resume as stable versions of the `fp` package are released. 
 
 [topos]: https://github.com/opeltre/topos 
 
