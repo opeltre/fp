@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "funprogram"
-version = "0.9.2"
+version = "0.9.2.1"
 description = "A functional programming framework for python."
 authors = ["Olivier Peltre <opeltre@gmail.com>"]
 license = "MIT"

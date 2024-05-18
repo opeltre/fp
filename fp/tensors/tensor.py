@@ -1,4 +1,4 @@
-from .backend import Backend, NumpyAPI, TorchAPI, JaxAPI, has_jax, has_torch, has_jax, has_torch
+from .backend import Backend, NumpyAPI, TorchAPI, JaxAPI, has_jax, has_torch, jax, torch
 from .tensor_base import TensorBase
 from fp.instances import List
 
@@ -14,15 +14,32 @@ class Numpy(Backend(NumpyAPI()), TensorBase):
     def norm(self, p="fro", dim=None):
         return self.data.norm(p, dim)
 
+
+from jax.tree_util import register_pytree_node_class
+
+
+@register_pytree_node_class
 class Jax(Backend(JaxAPI()), TensorBase):
-    ...
+
+    @classmethod
+    def cast(cls, x):
+        if isinstance(x, jax.Array):
+            return cls(x)
+
+    def tree_flatten(self):
+        return ((self.data,), None)
+
+    @classmethod
+    def tree_unflatten(cls, aux_data, children):
+        return cls(*children)
+
 
 class Torch(Backend(TorchAPI()), TensorBase):
-    
+
     @property
     def size(self):
         return self.data.numel()
-    
+
     @classmethod
     def sparse(cls, shape, indices, values=None):
         ij = (
@@ -43,8 +60,8 @@ class Torch(Backend(TorchAPI()), TensorBase):
     def norm(self, p="fro", dim=None):
         return self.data.norm(p, dim)
 
-    def tile(self, repeats: tuple[int,...]):
-        return self.__class__(self.data.repeat(repeats)) 
+    def tile(self, repeats: tuple[int, ...]):
+        return self.__class__(self.data.repeat(repeats))
 
     # ---
 
@@ -59,8 +76,9 @@ class Torch(Backend(TorchAPI()), TensorBase):
     def __repr__(self):
         return str(self)
 
-class Tensor(Torch):
-    ...
+
+class Tensor(Torch): ...
+
 
 ### hack avoiding circular imports (for cast methods)
 TensorBase.Numpy = Numpy
@@ -70,8 +88,7 @@ TensorBase.Torch = Torch
 
 # export available backends
 backends = List(Backend)([Numpy])
-if has_jax: 
+if has_jax:
     backends = backends + [Jax]
-if has_torch: 
+if has_torch:
     backends = backends + [Torch]
-
