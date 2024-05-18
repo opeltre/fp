@@ -19,8 +19,8 @@ class HomObject(Arrow.Object):
     src: Type
     tgt: Type
     arity: int
-     
-    def __init__(self, pipe: Callable | tuple[Callable]): 
+
+    def __init__(self, pipe: Callable | tuple[Callable]):
         # wrap callables in the monoidal tuple type
         if isinstance(pipe, tuple):
             self._pipe = pipe
@@ -28,12 +28,12 @@ class HomObject(Arrow.Object):
             self._pipe = (pipe,)
         elif callable(pipe) and not isinstance(type(pipe), Type.Hom):
             self._pipe = (lambda xs: pipe(*xs),)
-        # set __name__  
+        # set __name__
         if callable(pipe):
-            self.__name__ = (pipe.__name__ if pipe.__name__ != "<lambda>" else "λ")
-    
+            self.__name__ = pipe.__name__ if pipe.__name__ != "<lambda>" else "λ"
+
     def __call__(self, *xs) -> tgt:
-        
+
         def pipe(x):
             for f in self._pipe:
                 x = f(x)
@@ -53,35 +53,38 @@ class HomObject(Arrow.Object):
         # --- Curried section
         if len(xs) < self.arity:
             return self._head_.curry(self, xs)
-        
+
         else:
             raise io.TypeError("input", xs, self.src)
 
-    def __lshift__(self, x:src) -> tgt:
+    def __lshift__(self, x: src) -> tgt:
         return self(x)
-    
+
     def __rshift__(self, other):
         return self._head_.compose(self, other)
-    
+
     def __str__(self):
-        if hasattr(self, '__name__'):
+        if hasattr(self, "__name__"):
             return self.__name__
         return "λ"
 
     def __repr__(self):
-        if hasattr(self, '__name__'):
+        if hasattr(self, "__name__"):
             return self.__name__
-        name_one = lambda f: f.__name__ if f.__name__ != '<lambda>' else "λ"
+        name_one = lambda f: f.__name__ if f.__name__ != "<lambda>" else "λ"
         if len(self._pipe) < 4:
-            return ' . '.join(name_one(f) for f in self._pipe[::-1])
+            return " . ".join(name_one(f) for f in self._pipe[::-1])
         else:
             tail, head = self._pipe[0], self._pipe[-1]
-            return name_one(head) + ' . (...) . ' + name_one(tail)
-    
+            return name_one(head) + " . (...) . " + name_one(tail)
+
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
             return False
-        return self._pipe  == other._pipe
+        return self._pipe == other._pipe
+
+    def __hash__(self):
+        return hash(self._pipe)
 
     @staticmethod
     def source_type(arrow, xs):
@@ -102,7 +105,7 @@ class HomObject(Arrow.Object):
     def source_cast(Src, r, xs):
         if r == 1 and isinstance(xs[0], Src):
             return xs[0]
-        elif r == 1: 
+        elif r == 1:
             return io.cast(xs[0], Src) if not isinstance(Src, Var) else xs[0]
         elif r > 1 and all(isinstance(x, S) for x, S in zip(xs, Src._tail_)):
             return xs
@@ -114,6 +117,7 @@ class HomObject(Arrow.Object):
         """
         Target type inference.
         """
+
         def subst(ty):
             return ty.substitute(match) if isinstance(ty, Var) else ty
 
@@ -129,7 +133,7 @@ class HomObject(Arrow.Object):
                 return arrow.tgt.substitute(match)
         else:
             # curried type
-            As = tuple(subst(A) for A in arrow.src._tail_[len(xs):])
+            As = tuple(subst(A) for A in arrow.src._tail_[len(xs) :])
             return arrow._head_(Type.Prod(*As), subst(arrow.tgt))
 
     @staticmethod
@@ -138,18 +142,19 @@ class HomObject(Arrow.Object):
             return io.cast(y, Tgt)
         return y
 
+
 class Hom(Arrow, metaclass=HomFunctor):
     """
     Hom functor: maps type pairs to their callable types.
 
-    The type `Hom(A, B)` describes callables with input in `A` 
-    and output in `B`, it can be used as a decorator to type 
+    The type `Hom(A, B)` describes callables with input in `A`
+    and output in `B`, it can be used as a decorator to type
     a function definition.
 
     Example:
     --------
     .. code::
-        
+
         >>> @Hom(Int, Str):
         ... def bar(n):
         ...     return n * "|"
@@ -159,12 +164,12 @@ class Hom(Arrow, metaclass=HomFunctor):
         >>> bar(8)
         Str : '||||||||'
     """
-    
+
     Object = HomObject
-    
+
     src = Type
     tgt = Type
-        
+
     @classmethod
     def new(cls, A, B):
         TAB = super().new(A, B)
@@ -184,20 +189,20 @@ class Hom(Arrow, metaclass=HomFunctor):
     @classmethod
     def compose(cls, f, *fs):
         """
-        Pipe a collection of functions. 
+        Pipe a collection of functions.
 
-        The usual composition of two functions `f @ g` is 
-        obtained as `Hom.compose(g, f)`. 
+        The usual composition of two functions `f @ g` is
+        obtained as `Hom.compose(g, f)`.
         Applied on an input `x`, this returned pipe satisfies:
 
         .. code::
-            
+
             >>> Hom.compose(f, *fs)(x) == Hom.compose(*fs)(f(x))
             True
 
-        **Note:**  
-        Composition is made associative by storing the sequence 
-        of functions in a flat tuple. This also avoids nesting 
+        **Note:**
+        Composition is made associative by storing the sequence
+        of functions in a flat tuple. This also avoids nesting
         function closures.
         """
         src = f.src
@@ -208,12 +213,12 @@ class Hom(Arrow, metaclass=HomFunctor):
         return pipe
 
     @classmethod
-    def eval(cls, x:A, f: callable[A, B]) -> B:
+    def eval(cls, x: A, f: callable[A, B]) -> B:
         """
         Evaluate `f` on input `x`.
         """
         return f(x)
-    
+
     @classmethod
     def curry(cls, f, xs):
         """
@@ -230,7 +235,7 @@ class Hom(Arrow, metaclass=HomFunctor):
             Int: 5
             >>> Int.add(2):
             Int -> Int: add 2
-            >>> Int.add(2)(3) 
+            >>> Int.add(2)(3)
             Int: 3
         """
         if len(xs) < f.arity:
@@ -250,11 +255,11 @@ class Hom(Arrow, metaclass=HomFunctor):
 
     @classmethod
     def _get_name_(cls, A, B):
-        
+
         def name_one(T):
-            if hasattr(T, '_head_') and isinstance(T._head_, ArrowFunctor):
+            if hasattr(T, "_head_") and isinstance(T._head_, ArrowFunctor):
                 return "(" + T.__name__ + ")"
-            elif hasattr(T, '__name__'):
+            elif hasattr(T, "__name__"):
                 return T.__name__
             else:
                 return str(T)
@@ -265,15 +270,15 @@ class Hom(Arrow, metaclass=HomFunctor):
                 source = "(" + ", ".join(names) + ")"
             else:
                 source = " -> ".join(names)
-            return source + ' -> ' + B.__name__
-        return name_one(A) + ' -> ' + B.__name__ 
-    
+            return source + " -> " + B.__name__
+        return name_one(A) + " -> " + B.__name__
+
     @classmethod
     def _composed_name_(cls, *fs):
-        name = lambda f: f.__name__ if hasattr(f, '__name__') else str(f)
+        name = lambda f: f.__name__ if hasattr(f, "__name__") else str(f)
         if len(fs) <= 4:
             return " . ".join(name(f) for f in fs[::-1])
-        else: 
+        else:
             return "(" + name(fs[0]) + " . ... . " + str(name[-1]) + ")"
 
     @classmethod

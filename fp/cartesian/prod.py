@@ -4,7 +4,7 @@ import fp.io as io
 
 
 class Prod(Type, metaclass=Functor):
-    
+
     arity = ...
     _kind_ = ..., ()
 
@@ -27,11 +27,12 @@ class Prod(Type, metaclass=Functor):
         >>> Pf(x)
         (Int, Str) : (4, '||||||||')
     """
-    
+
     class Object(tuple):
         """
         Product base type: `tuple` alias.
         """
+
         def __new__(P, *xs):
             if len(xs) != len(P._tail_):
                 raise TypeError(f"Got {len(xs)} terms in product type {P.__name__}")
@@ -39,7 +40,7 @@ class Prod(Type, metaclass=Functor):
             return super().__new__(P, xs)
 
         def __init__(prod, *xs): ...
-        
+
         def __str__(self):
             return "(" + ", ".join(str(x) for x in self) + ")"
 
@@ -47,14 +48,22 @@ class Prod(Type, metaclass=Functor):
             return "(" + ", ".join(str(x) for x in self) + ")"
 
         @classmethod
+        def proj(self, idx):
+            @Type.Hom(self, self._tail_[idx])
+            def p(x):
+                return x[idx]
+
+            p.__name__ += f"[{idx}]"
+            return p
+
+        @classmethod
         def cast(P, xs):
             if not isinstance(xs, P):
                 return P(*(io.cast(x, A) for A, x in zip(P._tail_, xs)))
-    
-    def __init__(P, *As):
-        ...
-    
-    def __getitem__(P, i:int | slice):
+
+    def __init__(P, *As): ...
+
+    def __getitem__(P, i: int | slice):
         if isinstance(i, int):
             return P._tail_[i]
         return P.__class__(*P._tail_[i])
@@ -64,7 +73,7 @@ class Prod(Type, metaclass=Functor):
         """
         Map a collection of functions to their joint action.
 
-        Given maps `f : X -> A`, `g : Y -> B`, ... return the product map 
+        Given maps `f : X -> A`, `g : Y -> B`, ... return the product map
 
             (f, g, ...) : (X, Y, ...) -> (A, B, ...)
         """
@@ -78,7 +87,7 @@ class Prod(Type, metaclass=Functor):
 
         map_f.__name__ = cls._fmap_name_(*fs)
         return map_f
-    
+
     @classmethod
     def _fmap_name_(cls, *fs):
         return "(" + ", ".join((f.__name__ for f in fs)) + ")"
@@ -93,7 +102,7 @@ class Prod(Type, metaclass=Functor):
 
             (X -> A, X -> B, ...) -> X -> (A, B, ...)
 
-        The terminal arrow to `(A, B, ...)` has the input maps as 
+        The terminal arrow to `(A, B, ...)` has the input maps as
         projections.
         """
         src = f.src
@@ -117,69 +126,6 @@ class Prod(Type, metaclass=Functor):
             return cls(*xs)
         return io.cast(xs, cls)
 
+
 """ Monoidal Unit """
 Prod.Unit = Prod()
-
-class WriterFunctor(Prod):
-    """
-    Base class for `Writer` functors. 
-    """
-
-    _writer_ : Type
-    
-    class Object(Prod.Object):
-
-        @property
-        def data(self):
-            return self[1]
-
-        @classmethod
-        def cast(cls, data):
-            print("Writer cast", data)
-            return super().cast(data)
-
-    @classmethod
-    def new(cls, *As):
-        return super().new(cls._writer_, *As)
-    
-    def _post_new_(WA, *As):
-        WA._head_ = Prod
-        WA._tail_ = (WA._writer_, *As)
-
-    @classmethod
-    def fmap(cls, *fs):
-        id_W = Type.Hom.id(cls._writer_)
-        Wf = Prod.fmap(id_W, *fs)
-        return Wf
-    
-    @classmethod
-    def _get_name_(cls, *As):
-        return super()._get_name_(cls._writer_, *As)
-    
-class Writer(Functor):
-    """
-    Constructor of `Writer` functors. 
-
-    Given a writing type `W`, the functor `Writer W` maps any 
-    type `A` to the pair type `(W, A)`.
-
-    When `W` is a monoid, the functor `Writer W` is also a monad:
-
-        unit : A -> (W, A)
-             | a -> (1, a)
-
-        join : (W, (W, A)) -> (W, A)
-             | (v, (w, a)) -> (v `op` w, a)
-
-    A particular example is `Str`, which is useful for writing logs 
-    or error messages. 
-    """
-
-    _default_ = WriterFunctor
-
-    def __new__(cls, W :type, bases=(), dct=None):
-        if not len(bases):
-            bases = (cls._default_,)
-        dct = dict(_writer_ = W)
-        Writer_W = super().__new__(cls, f'({W}, ...)', bases, dct)
-        return Writer_W
