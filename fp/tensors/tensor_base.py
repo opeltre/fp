@@ -7,16 +7,17 @@ from fp.cartesian import Type, Hom
 
 from .backend.wrap_alg import Backend
 
+
 class TensorBase:
-    
-    _backend_ : Backend
-    _module_ : ModuleType
+
+    _backend_: Backend
+    _module_: ModuleType
 
     # --- Tensor attributes ---
-    
+
     def dim(self):
         return self.data.dim()
-    
+
     @property
     def shape(self):
         return self.data.shape
@@ -28,25 +29,25 @@ class TensorBase:
     @property
     def device(self):
         return self.data.device
-    
+
     @property
     def size(self):
         return self.data.size
 
-    # --- access --- 
+    # --- access ---
 
     def __getitem__(self, idx):
         return Tensor(self.data[idx])
 
     def __len__(self):
         return int(torch.tensor(self.data.shape).prod())
-    
+
     def __iter__(self):
         return self.data.__iter__()
-    
-    def reshape(self, *shape:int | tuple[int]):
+
+    def reshape(self, *shape: int | tuple[int]):
         return self.__class__(self.data.reshape(shape))
-    
+
     # --- reductions ---
 
     def prod(self, *xs, **ks):
@@ -56,6 +57,8 @@ class TensorBase:
         return self.__class__(self.data.sum())
 
     # --- backend switch ---
+    #
+    # TODO: source of circular imports, move definitions around
 
     def numpy(self):
         Numpy = self.__class__.Numpy
@@ -76,7 +79,7 @@ class TensorBase:
         """
         Repeat (interleave) elements of the input array.
 
-        Behaviour of `numpy.repeat`, see `tile` for the torch version of 
+        Behaviour of `numpy.repeat`, see `tile` for the torch version of
         `repeat`.
         """
         cls = self.__class__
@@ -84,14 +87,14 @@ class TensorBase:
         repeat = getattr(self._module_, self._backend_.repeat)
         return cls(repeat(self.data, repeats))
 
-    def tile(self, ntiles: tuple[int,...]):
+    def tile(self, ntiles: tuple[int, ...]):
         """
         Tile input array across given dimension-wise repetitions.
         """
         repeat = getattr(self._module_, self._backend_.tile)
         return self.__class__(repeat(self.data, ntiles))
 
-    # --- tensor product --- 
+    # --- tensor product ---
 
     def __or__(self, other):
         return self.otimes(other)
@@ -105,7 +108,7 @@ class TensorBase:
         return self.__add__(other)
 
     # --- constructors ---
-    
+
     @classmethod
     def asarray(cls, data: typing.Any) -> cls:
         return cls(cls._module_.asarray(data))
@@ -147,7 +150,7 @@ class TensorBase:
         obtained by `Tensor.otimes(x.flatten(), y.flatten())`.
 
         **Example**
-        ..code:: 
+        ..code::
 
             >>> ints = Numpy.range(4) + 1
             >>> table = ints | ints
@@ -164,4 +167,3 @@ class TensorBase:
         Y = y.tile(x.size)
         xy = cls.reshape((X * Y), (*self.shape, *other.shape))
         return xy
-

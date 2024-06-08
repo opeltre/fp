@@ -1,6 +1,6 @@
 # ---------
 
-from fp import Tensor, Tens
+from fp.tensors import Tensor, Tens
 import torch
 
 # Tensor : permissive tensors
