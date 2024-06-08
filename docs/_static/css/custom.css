@@ -28,4 +28,12 @@ a.icon-home {
 .wy-side-nav-search {
     background-color: #57a;
 }
-   
+
+.rst-content h3 {
+    font-size: 1.0em;
+    margin-bottom: 8px;
+}
+
+.rst-content h2 {
+    border-bottom: 1px solid #999;
+}
