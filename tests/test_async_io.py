@@ -45,3 +45,12 @@ class TestAsyncIO:
     def test_map(self):
         mul3 = Int.mul(3)
         assert self.io.map(mul3).run() == 126
+
+    def test_bind(self):
+        
+        @Hom(Int, IO(Int))
+        def sub2(n):
+            return IO.unit(n - 2)
+        
+        assert self.io.bind(sub2).run() == 40
+        assert IO.bind(self.io, sub2).run() == 40

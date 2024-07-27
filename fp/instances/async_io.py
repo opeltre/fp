@@ -13,6 +13,11 @@ class Coroutine(Hom.Object):
     """
 
 
+async def _sleep(seconds: int | float) -> Type.Unit:
+    await asyncio.sleep(seconds)
+    return Type.Unit()
+
+
 class AsyncIO(Type, metaclass=Monad):
     """
     Asynchronous future, promised values.
@@ -80,6 +85,6 @@ class AsyncIO(Type, metaclass=Monad):
 
     @classmethod
     def sleep(cls, seconds: int | float) -> cls(Type.Unit):
-        sleep_secs = functools.partial(asyncio.sleep, seconds)
+        sleep_secs = functools.partial(_sleep, seconds)
         sleep_secs.__name__ = f"sleep {seconds}"
         return cls(Type.Unit)(sleep_secs)
