@@ -8,3 +8,5 @@ Manual
     type
     functors
     tens
+    natural
+    monads
