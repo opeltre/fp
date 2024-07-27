@@ -45,7 +45,7 @@ class HomObject(Arrow.Object):
         # --- Full application
         if len(xs) == self.arity:
             Tx = self.source_cast(Src, self.arity, xs)
-            y = pipe(Tx) if len(xs) == 1 else pipe(Tx)
+            y = pipe(Tx)
             Ty = self.target_cast(Tgt, y)
             return Ty
 
@@ -53,8 +53,8 @@ class HomObject(Arrow.Object):
         if len(xs) < self.arity:
             return self._head_.partial(self, *xs)
 
-        else:
-            raise io.TypeError("input", xs, self.src)
+        print(self.arity, len(xs))
+        raise io.TypeError("input", xs, self.src)
 
     def __lshift__(self, x: src) -> tgt:
         return self(x)
@@ -282,7 +282,9 @@ class Hom(Arrow, metaclass=HomFunctor):
         Parse N-ary source types.
         """
         tgt = B
-        if isinstance(A, type):
+        if isinstance(A, Type.Prod):
+            src, arity = A, len(A._tail_)
+        elif isinstance(A, type):
             # A -> B
             src, arity = A, 1
         elif isinstance(A, tuple):

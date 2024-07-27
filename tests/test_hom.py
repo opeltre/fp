@@ -55,3 +55,11 @@ class TestHom:
         pow2 = power(2)
         assert (pow2.src, pow2.tgt) == (A, A)
         assert pow2(6) == power(2, 6)
+
+    def test_prod_in_pipe(self):
+        add = Hom((A, A), A)(lambda x, y: x + y)
+        eucdiv = Hom((A, A), Type.Prod(A, A))(divmod)
+        assert add.arity == 2 and eucdiv.arity == 2
+        assert len(eucdiv(12, 5)) == 2
+        assert (add @ eucdiv).arity == 2
+        assert (add @ eucdiv)(12, 5) == A(4)
