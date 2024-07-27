@@ -1,14 +1,13 @@
 from __future__ import annotations
 
-from .arrow import Arrow
-from fp.meta import Type, Var, HomFunctor, ArrowFunctor
+import functools
 
 import types
-from typing import Iterable, Callable
+from typing import Iterable, Callable, Literal
 
-import fp.io as io
-
-from typing import Literal
+from fp import io
+from fp.meta import Type, Var, HomFunctor, ArrowFunctor
+from .arrow import Arrow
 
 
 class HomObject(Arrow.Object):
@@ -50,9 +49,9 @@ class HomObject(Arrow.Object):
             Ty = self.target_cast(Tgt, y)
             return Ty
 
-        # --- Curried section
+        # --- Partial section
         if len(xs) < self.arity:
-            return self._head_.curry(self, xs)
+            return self._head_.partial(self, *xs)
 
         else:
             raise io.TypeError("input", xs, self.src)
@@ -220,13 +219,12 @@ class Hom(Arrow, metaclass=HomFunctor):
         return f(x)
 
     @classmethod
-    def curry(cls, f, xs):
+    def partial(cls, f, *xs):
         """
-        Curried function applied to n-ary input `xs` for n < arity.
+        Partial function applied to n-ary input `xs` for n < arity.
 
-        Example:
-        --------
-
+        Example
+        -------
         .. code::
 
             >>> Int.add
@@ -242,15 +240,12 @@ class Hom(Arrow, metaclass=HomFunctor):
             ts = f.src._tail_[-(f.arity - len(xs)) :]
             src = tuple(ts) if len(ts) > 1 else ts[0]
 
-            @cls(src, f.tgt)
-            def curried(*ys):
-                return f(*xs, *ys)
-
-            curried.__name__ = f"{f.__name__} " + " ".join((str(x) for x in xs))
-            return curried
+            f_xs = functools.partial(f, *xs)
+            f_xs.__name__ = f"{f.__name__} " + " ".join((str(x) for x in xs))
+            return cls(src, f.tgt)(f_xs)
 
         raise TypeError(
-            f"Cannot curry {Arr.arity} function on " + f"{len(xs)}-ary input"
+            f"Cannot partially call {Arr.arity} function on " + f"{len(xs)}-ary input"
         )
 
     @classmethod

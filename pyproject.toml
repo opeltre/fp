@@ -17,6 +17,7 @@ poethepoet = "*"
 colorama = "^0.4.6"
 numpy = "^1.26"
 jax = { version = "^0.4", optional = true }
+pytest = "^8.3.2"
 
 [tool.poetry.extras]
 jax = ["jax"]
