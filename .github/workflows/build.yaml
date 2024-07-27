@@ -39,26 +39,30 @@ jobs:
             ~/.cache/pip
           key: ${{ runner.os }}-${{ hashFiles('**/pyproject.toml') }} 
 
-      - name: Build fp
+      - name: Build fp 📦
         run: |
           cd ${{ github.workspace }} && source .github/build.sh
           build "jax:torch"
 
-      - name: Run foobar 
+      - name: Run linter 🧪 
+        run: source .github/build.sh && run_linter
+
+      - name: Run foobar 🍫 
         run: |
           #poetry run fp-tests
           poetry run python examples/foobar.py
       
-      - name: Run structs 
+      - name: Run structs 🕺
+
         run: poetry run python examples/structs.py
 
-      - name: Run arrays
+      - name: Run arrays 🔢 
         run: |
           poetry poe torchinstall
           poetry poe jaxinstall
           poetry run python examples/arrays.py
 
-      - name: Run tests
+      - name: Run tests ⚗️ 
         run: | 
           poetry run pytest -s
 

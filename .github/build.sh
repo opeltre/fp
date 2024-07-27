@@ -26,8 +26,6 @@ function build() {
     python -m pip install --upgrade pip
     python -m pip install pytest poetry poethepoet
     python -m pip install flake8-future-annotations
-    # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-    flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     echo "..."
     echo "> Build the fp backage"
     poetry install
@@ -42,4 +40,9 @@ function build() {
         poetry poe jaxinstall
         echo "..."
     fi
+}
+
+function run_linter() {
+    # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+    flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 }
