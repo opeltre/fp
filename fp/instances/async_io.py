@@ -1,36 +1,46 @@
 from __future__ import annotations
 import asyncio
 import functools
-from typing import Awaitable
+from typing import Awaitable, TypeAlias
 
 from fp.meta import Type, Monad
 from fp.cartesian import Type, Hom
-
-
-class Coroutine(Hom.Object):
-    """
-    Base class for coroutines.
-    """
+from fp.instances import Str
+import fp.io as io
 
 
 async def _sleep(seconds: int | float) -> Type.Unit:
+    """Sleep and return ()."""
     await asyncio.sleep(seconds)
     return Type.Unit()
 
 
 class AsyncIO(Type, metaclass=Monad):
     """
-    Asynchronous future, promised values.
+    Asynchronous promises for type values.
 
     The awaitable type `AsyncIO(A)` represents asynchronous processes
     yielding an output value of type `A`. The output value can be
     awaited for with the `run` method.
 
         * `run : AsyncIO(A) -> A`
+
+    Example
+    -------
+        >>> from fp.instances import AsyncIO as IO
+        >>> @AsyncIO(Int)
+        ... async def answer():
+        ...     await AsyncIO.sleep(1)
+        ...     return 42
+        ...
+        >>> answer.map(Int.add(5)).run()
+        >>> 47
     """
 
     src = Type
     tgt = Type
+
+    Get: TypeAlias = Str
 
     class Object(Monad._instance_):
 
@@ -70,8 +80,11 @@ class AsyncIO(Type, metaclass=Monad):
         IOA.tgt = A
         return IOA
 
+    # --- Monad methods ---
+
     @classmethod
     def unit(cls, x):
+
         async def return_x():
             return x
 
@@ -82,6 +95,31 @@ class AsyncIO(Type, metaclass=Monad):
     def bind(cls, io_x, io_f):
         tgt = io_f.tgt
         return tgt((*io_x._pipe, io_f))
+
+    # --- IO methods ---
+
+    @classmethod
+    def get(cls) -> cls(Str):
+
+        @cls(Str)
+        async def getLine():
+            return Str(io.inputs._input())
+
+        return getLine
+
+    @classmethod
+    def gets(cls, f: Callable, tgt: type | None = None) -> cls.Object:
+
+        if tgt is None:
+            tgt = f.tgt
+        else:
+            f = Hom(Str, tgt)(f)
+
+        async def gets_f():
+            return io.cast(f(io.inputs._input()), tgt)
+
+        gets_f.__name__ = f"gets {f.__name__}"
+        return cls(tgt)(gets_f)
 
     @classmethod
     def sleep(cls, seconds: int | float) -> cls(Type.Unit):

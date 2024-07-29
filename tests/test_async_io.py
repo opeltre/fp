@@ -1,11 +1,13 @@
-import pytest
 import asyncio
+import pytest
+from time import time
 
+import fp
 from fp.meta import Type
 from fp.cartesian import Hom
-from fp.instances.num import Int
+from fp.instances import Int, Str
 from fp.instances.async_io import AsyncIO as IO
-from time import time
+import fp.io.inputs 
 
 async def answer():
     return Int(42)
@@ -54,3 +56,16 @@ class TestAsyncIO:
         
         assert self.io.bind(sub2).run() == 40
         assert IO.bind(self.io, sub2).run() == 40
+
+
+    def test_get(self, monkeypatch): 
+        monkeypatch.setattr(fp.io.inputs, "_input", lambda : "hello world!")
+        assert IO.get().run() == "hello world!"
+
+    def test_gets(self, monkeypatch):
+        monkeypatch.setattr(fp.io.inputs, "_input", lambda : "hello world!")
+        assert IO.gets(Str.len).run() == 12
+
+
+
+
