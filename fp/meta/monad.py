@@ -52,7 +52,9 @@ class Monad(Monoidal):
     class _defaults_(Functor._defaults_):
 
         @classmethod
-        def join(cls, mma): ...
+        def join(cls, mma):
+            MA = mma._tail_[0]
+            return mma.bind(Type.Hom.id(MA))
 
         @classmethod
         def fmap(cls, f):
