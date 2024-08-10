@@ -43,7 +43,7 @@ class HomObject(Arrow.Object):
         Tgt = self.target_type(self, xs, match)
 
         # --- Full application
-        if len(xs) == self.arity:
+        if len(xs) == self.arity or (self.arity == 0 and len(xs) == 1):
             Tx = self.source_cast(Src, self.arity, xs)
             y = pipe(Tx)
             Ty = self.target_cast(Tgt, y)
@@ -52,6 +52,11 @@ class HomObject(Arrow.Object):
         # --- Partial section
         if len(xs) < self.arity:
             return self._head_.partial(self, *xs)
+
+        if self.arity == 0 and len(xs) == 1:
+            x = xs[0]
+            if x == Type.Unit() or x is None:
+                return self()
 
         print(self.arity, len(xs))
         raise io.TypeError("input", xs, self.src)
@@ -104,10 +109,12 @@ class HomObject(Arrow.Object):
     def source_cast(Src, r, xs):
         if r == 1 and isinstance(xs[0], Src):
             return xs[0]
-        elif r == 1:
+        if r == 1:
             return io.cast(xs[0], Src) if not isinstance(Src, Var) else xs[0]
-        elif r > 1 and all(isinstance(x, S) for x, S in zip(xs, Src._tail_)):
+        if r > 1 and all(isinstance(x, S) for x, S in zip(xs, Src._tail_)):
             return xs
+        if r == 0 and xs[0] == Type.Unit() or xs[0] is None:
+            return Type.Unit()
         else:
             return io.cast(xs, Src) if not isinstance(Src, Var) else xs
 
