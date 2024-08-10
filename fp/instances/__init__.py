@@ -7,21 +7,23 @@ from .list import List
 from .struct import Key, Struct, struct
 from .wrap import Wrap
 from .state import State, StateMonad, Stateful
+from .async_io import AsyncIO
 
 __all__ = [
     "Monoid",
     "Ring",
     "Alg",
     "Bool",
-    "Int", 
+    "Int",
     "Float",
     "List",
     "Key",
-    "Struct", 
+    "Struct",
     "struct",
     "Str",
     "Wrap",
     "State",
     "StateMonad",
     "Stateful",
+    "AsyncIO",
 ]

@@ -57,7 +57,6 @@ class TestAsyncIO:
         assert self.io.bind(sub2).run() == 40
         assert IO.bind(self.io, sub2).run() == 40
 
-
     def test_get(self, monkeypatch): 
         monkeypatch.setattr(fp.io.inputs, "_input", lambda : "hello world!")
         assert IO.get().run() == "hello world!"
@@ -65,7 +64,3 @@ class TestAsyncIO:
     def test_gets(self, monkeypatch):
         monkeypatch.setattr(fp.io.inputs, "_input", lambda : "hello world!")
         assert IO.gets(Str.len).run() == 12
-
-
-
-

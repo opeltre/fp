@@ -1,7 +1,7 @@
 from __future__ import annotations
 import asyncio
 import functools
-from typing import Awaitable, TypeAlias
+from typing import Awaitable, Iterable, TypeAlias
 
 from fp.meta import Type, Monad
 from fp.cartesian import Type, Hom
@@ -64,6 +64,10 @@ class AsyncIO(Type, metaclass=Monad):
         def run(self):
             return asyncio.run(self.__await__())
 
+        async def __call__(self):
+            out = await self
+            return out
+
         def __str__(self):
             return " | ".join(str(f) for f in self._pipe)
 
@@ -78,12 +82,13 @@ class AsyncIO(Type, metaclass=Monad):
         IOA = super().new(cls, A)
         IOA.src = Type.Unit
         IOA.tgt = A
+        IOA._type_ = A
         return IOA
 
     # --- Monad methods ---
 
     @classmethod
-    def unit(cls, x):
+    def unit(cls, x) -> cls.Object:
 
         async def return_x():
             return x
@@ -92,9 +97,9 @@ class AsyncIO(Type, metaclass=Monad):
         return cls(type(x))(return_x)
 
     @classmethod
-    def bind(cls, io_x, io_f):
-        tgt = io_f.tgt
-        return tgt((*io_x._pipe, io_f))
+    def bind(cls, io, io_fn):
+        tgt = io_fn.tgt
+        return tgt((*io._pipe, io_fn))
 
     # --- IO methods ---
 
@@ -108,6 +113,48 @@ class AsyncIO(Type, metaclass=Monad):
         return getLine
 
     @classmethod
+    def wait(
+        cls, ios: Iterable[cls.Object], timeout=None, return_when="ALL_COMPLETED"
+    ) -> cls.Object:
+        """Wait for asynchronous processes to execute."""
+        tgt = Type.Prod(*(io._type_ | None for io in ios))
+
+        @cls(tgt)
+        async def wait():
+            tasks = []
+            for io in ios:
+                tasks.append(asyncio.create_task(io()))
+
+            done, pending = await asyncio.wait(
+                tasks,
+                timeout=timeout,
+                return_when=return_when,
+            )
+            for task in pending:
+                task.cancel()
+
+            out = []
+            for task in tasks:
+                if task.done():
+                    val = task.result()
+                    out.append(val)
+                else:
+                    out.append(None)
+            return out
+
+        return wait
+
+    @classmethod
+    def clear(cls, n: int) -> cls.Object:
+
+        @cls(Type.Unit).named(f"clear {n}")
+        async def clear_n():
+            for i in range(n):
+                print("\033[F\033[K")
+
+        return clear_n
+
+    @classmethod
     def gets(cls, f: Callable, tgt: type | None = None) -> cls.Object:
 
         if tgt is None:
@@ -116,7 +163,8 @@ class AsyncIO(Type, metaclass=Monad):
             f = Hom(Str, tgt)(f)
 
         async def gets_f():
-            return io.cast(f(io.inputs._input()), tgt)
+            string = await cls.get()
+            return f(string)
 
         gets_f.__name__ = f"gets {f.__name__}"
         return cls(tgt)(gets_f)
