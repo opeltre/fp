@@ -154,7 +154,7 @@ class State(Hom, metaclass=HomFunctor):
     (the global class state of `Stateful(S, s0)` types).
     """
 
-    class Object(Monad._instance_, Hom.Object):
+    class Object(Monad.TopType, Hom.Object):
         """
         Stateful computation.
         """

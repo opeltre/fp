@@ -1,4 +1,5 @@
 poetry.lock
+.coverage
 __pycache__
 **/__pycache__
 fp.egg-info
@@ -7,6 +8,7 @@ docs/_build
 docs/source
 docs/_*
 !docs/_static
+docs/*.jl
 ascii.jl
 .draft
 dist

@@ -100,7 +100,7 @@ class Monad(Monoidal):
                     tgt=Hom(cls(B), cls(C)),
                 )
 
-    class _instance_(Functor._instance_):
+    class TopType(Functor.TopType):
 
         @property
         def _monad_(ma):

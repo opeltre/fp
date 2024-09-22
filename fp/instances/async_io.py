@@ -42,7 +42,7 @@ class AsyncIO(Type, metaclass=Monad):
 
     Get: TypeAlias = Str
 
-    class Object(Monad._instance_):
+    class Object(Monad.TopType):
 
         _type_: Type
 

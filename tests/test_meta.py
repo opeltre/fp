@@ -13,7 +13,7 @@ class TestFunctor:
         src = Type
         tgt = Type 
 
-        class Object(tuple[str, Any], Functor._instance_):
+        class Object(tuple[str, Any], Functor.TopType):
             ...
 
         @classmethod
@@ -62,7 +62,7 @@ class TestMonad(TestFunctor):
     class T(TestFunctor.T, metaclass=Monad):
         """A writer monad F(A) = (str, A)"""
 
-        class Object(TestFunctor.T.Object, Monad._instance_):
+        class Object(TestFunctor.T.Object, Monad.TopType):
             ...
         
         @classmethod

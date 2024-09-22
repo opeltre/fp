@@ -5,10 +5,12 @@ import fp.io as io
 from types import MethodType
 from typing import Callable, Iterable
 
-class WrapObject(Functor._instance_, metaclass=Type):
+
+class WrapObject(Functor.TopType, metaclass=Type):
     """
     Base type for wrapped values.
     """
+
     _wrapped_: Type
 
     def __init__(self, data):
@@ -26,7 +28,7 @@ class WrapObject(Functor._instance_, metaclass=Type):
 
     def __repr__(self):
         return self._wrapped_.__str__(self.data)
-    
+
     @classmethod
     def cast(cls, data):
         if isinstance(data, cls):
@@ -46,21 +48,21 @@ class Wrap(Type, metaclass=Functor):
     """
     Type wrapper lifting selected methods to the container type.
 
-    The class method `lift` will iterate over the class attribute 
+    The class method `lift` will iterate over the class attribute
     `_lifted_methods_` to assign lifted methods on the wrapped type.
-    
+
     Attributes:
     -----------
-        _lifted_methods_ (`list`): 
+        _lifted_methods_ (`list`):
             A list of of triples `(name, signature, lift_args)` where
                 * name (`str`): name of the method to be lifted,
                 * signature (`Callable[type, Type]`) yielding lifted method type `signature(cls)`,
                 * lift_args (`int | tuple[int] | type(...)`) index of arguments to be unwrapped.
-            
+
             **Example**
 
             .. code::
-            
+
                 class StrWrapper(Wrap):
 
                     _lifted_methods_ = [
@@ -71,16 +73,16 @@ class Wrap(Type, metaclass=Functor):
     """
 
     Object = WrapObject
-    
+
     # lifts
     _lifted_methods_ = []
-    
+
     @classmethod
     def new(cls, A):
         Wrap_A = super().new(A)
         Wrap_A._wrapped_ = A
         return Wrap_A
-    
+
     @classmethod
     def _subclass_(cls, *As):
         msg = str(cls) + " _subclass_: "
@@ -98,27 +100,26 @@ class Wrap(Type, metaclass=Functor):
             setattr(Wrap_A, lift.name, Wf)
         return Wrap_A
 
-    def __init__(Wrap_A, *As):
-        ...
+    def __init__(Wrap_A, *As): ...
 
     @classmethod
     def join(cls, wwx):
         A = wwx._tail_[0]._tail_[0]
         return cls(A)(x.data.data)
-    
+
     @classmethod
-    def unit(cls, x): 
+    def unit(cls, x):
         return cls(type(x))(x)
-    
+
     @classmethod
     def lift(
-        cls, 
-        method: MethodType, 
-        homtype: Type, 
+        cls,
+        method: MethodType,
+        homtype: Type,
         lift_args: Iterable[int] | type(...) = ...,
-    ) -> Type.Hom.Object :
+    ) -> Type.Hom.Object:
         """
-        Lift a method to the wrapped type. 
+        Lift a method to the wrapped type.
         """
         if isinstance(lift_args, int):
             lift_args = (lift_args,)
@@ -128,13 +129,13 @@ class Wrap(Type, metaclass=Functor):
         @homtype
         def lifted_method(*xs):
             """
-            Lifted method. 
+            Lifted method.
             """
             xs = list(xs)
             for i in lift_args:
                 xs[i] = xs[i].data
             return io.cast(method(*xs), homtype.tgt)
-        
+
         lifted_method.__name__ = method.__name__
         return lifted_method
 
@@ -143,6 +144,7 @@ class Wrap(Type, metaclass=Functor):
         @Hom(f.src, f.tgt)
         def wrap_f(x):
             return f(x.data)
+
         wrap_f.__name__ = "Wrap " + f.__name__
         return wrap_f
 
