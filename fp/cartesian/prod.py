@@ -50,8 +50,8 @@ class Prod(Type, metaclass=Functor):
         @classmethod
         def proj(self, idx):
             @Type.Hom(self, self._tail_[idx])
-            def p(x):
-                return x[idx]
+            def p(*xs):
+                return xs[idx]
 
             p.__name__ += f"[{idx}]"
             return p
