@@ -4,13 +4,14 @@ from fp.cartesian import Type, Hom, Either
 import typing
 from types import FunctionType
 
+
 @struct
 class Lift:
     """
     Declarative definition of method lifts.
     """
 
-    name: str 
+    name: str
     signature: Either(int, typing.Callable)
     lift_args: Either(type(...), int, tuple) = ...
     flip: int = 0
@@ -69,8 +70,9 @@ class Lift:
 @struct
 class WrapLift(Lift):
     from_source = lambda x: x.data
-    
-@struct 
+
+
+@struct
 class ProdLift(Lift):
     from_source = lambda x: x[0]
 
@@ -85,19 +87,20 @@ class HomLift(Hom):
             else:
                 return self
 
+
 class LiftedMethod:
 
-    def __init__(self, lift: Lift): 
-        self.lift = lift 
+    def __init__(self, lift: Lift):
+        self.lift = lift
         if isinstance(lift.signature, int):
             r = lift.signature
             self.signature = lambda T: Hom(tuple([T] * r), T)
         else:
             self.signature = signature
-    
-    def method(self, obj: typing.Any) -> Type.Hom.Object :
+
+    def method(self, obj: typing.Any) -> Type.Hom.Object:
         """
-        Lift a method to the wrapped type. 
+        Lift a method to the wrapped type.
         """
         lift_args = self.lift.lift_args
         homtype = self.lift.signature(type(obj))
@@ -109,13 +112,13 @@ class LiftedMethod:
         @homtype
         def lifted_method(*xs):
             """
-            Lifted method. 
+            Lifted method.
             """
             xs = list(xs)
             for i in lift_args:
                 xs[i] = xs[i].data
             return io.cast(method(*xs), homtype.tgt)
-        
+
     def __set_name__(self, name, objtype):
         self.lifted = getattr(objtype._lifted_, self.name)
         try:
@@ -127,14 +130,13 @@ class LiftedMethod:
         # unused
         self.target_name = name
 
-    def __get__(self, obj, objtype =None):
+    def __get__(self, obj, objtype=None):
         if obj is not None:
             return self.typed(obj)
-        else: 
+        else:
             return self.typed
 
-    def __set__(self , obj, val):
-        ...
+    def __set__(self, obj, val): ...
 
     def __getattr__(self, attr):
         try:

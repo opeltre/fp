@@ -2,6 +2,7 @@ import re
 import fp.io as io
 from fp.cartesian import Type, Hom
 
+
 class Eq(Type):
 
     def __init__(T, name, bases, dct):
@@ -13,9 +14,10 @@ class Eq(Type):
             eq.__name__ = "eq"
             T.eq = Type.Hom((T, T), cls.Bool)(eq)
 
+
 class Operad(Type):
 
-    _operators_ : list[tuple[str, int]]
+    _operators_: list[tuple[str, int]]
 
     def __init__(T, name="A", bases=(), dct={}):
         super().__init__(name, bases, dct)
@@ -25,7 +27,7 @@ class Operad(Type):
             op = cls.lift_op(T, getattr(T, op_name), arity=r)
             setattr(T, op_name, op)
             # alias operators: 'add', ...
-            alias = re.match(r'__(\w*)__', op_name).groups()
+            alias = re.match(r"__(\w*)__", op_name).groups()
             op.__name__ = alias[0] if len(alias) else op_name
             src = T if r == 1 else tuple([T] * r)
             setattr(T, op.__name__, Hom(src, T)(op))
@@ -58,21 +60,17 @@ class Operad(Type):
 
 class Monoid(Operad):
     """Monoid type class."""
-    
-    _operators_ = [('__add__', 2)]
+
+    _operators_ = [("__add__", 2)]
 
 
 # --- Numerical type classes ---
 
+
 class Ring(Monoid):
     """Ring type class."""
-    
-    _operators_ = [
-        ('__add__', 2),
-        ('__sub__', 2),
-        ('__mul__', 2),
-        ('__neg__', 1)
-    ]
+
+    _operators_ = [("__add__", 2), ("__sub__", 2), ("__mul__", 2), ("__neg__", 1)]
 
     def __init__(T, name="R", bases=(), dct={}):
         super().__init__(name, bases, dct)
@@ -121,4 +119,3 @@ class Alg(Ring):
         div = Type.Hom((T, T), T)(T.__truediv__)
         div.__name__ = "div"
         T.div = div
-
