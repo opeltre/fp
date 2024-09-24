@@ -39,7 +39,7 @@ class TestHom:
         assert barfoo(B("cha")) == B("|||")
         assert foobar(A(32)) == A(32)
     
-    def test_nary_signature(self):
+    def test_binary_signature(self):
 
         @Hom((A, A), A)
         def power(x, y):
@@ -47,6 +47,17 @@ class TestHom:
 
         assert power.src is Type.Prod(A, A)
         assert power.tgt is A
+    
+    def test_binary_call_untyped(self):
+        add = Hom((A, A), A)(int.__add__)
+        assert add(4, 1) == 5
+
+    def test_binary_call_typed(self): 
+        add = Hom((A, A), A)(int.__add__)
+        x_y = add.src(2, 3)
+        print(type(x_y), isinstance(x_y, add.src))
+        print(add.target_type(add, x_y))
+        assert add(x_y) == 5
 
     def test_partial(self): 
         power = Hom((A, A), A)(

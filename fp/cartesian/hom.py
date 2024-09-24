@@ -43,7 +43,11 @@ class HomObject(Arrow.Object):
         Tgt = self.target_type(self, xs, match)
 
         # --- Full application
-        if len(xs) == self.arity or (self.arity == 0 and len(xs) == 1):
+        if (
+            len(xs) == self.arity
+            or (len(xs) == 1 and isinstance(xs[0], self.src))
+            or (self.arity == 0 and len(xs) == 1)
+        ):
             Tx = self.source_cast(Src, self.arity, xs)
             y = pipe(Tx)
             Ty = self.target_cast(Tgt, y)
@@ -91,30 +95,54 @@ class HomObject(Arrow.Object):
         return hash(self._pipe)
 
     @staticmethod
-    def source_type(arrow, xs):
+    def source_type(arrow, xs) -> tuple[type, bool | dict]:
+        """Infer input type for downstream cast."""
+        Prod = Type.Prod
         if "source_type" in dir(arrow._head_):
+            # TODO: is this necessary?
             Src = arrow._head_.source_type(arrow, xs)
-        if len(xs) == arrow.arity:
+
+        elif len(xs) == arrow.arity:
+            # n-ary call on n-fold input
             Src = arrow.src
+        elif len(xs) == 1 and isinstance(xs[0], arrow.src):
+            # n-ary call on Prod instance
+            Src = arrow.src
+
         else:
+            # partial call
             ts = arrow.src._tail_[: len(xs)]
             Src = Type.Prod(*ts)
+
         if not isinstance(Src, Var):
+            # concrete type, True
             return Src, True
         else:
+            # parametric type, match: dict
             Tx = Type.Prod(type(x) for x in xs) if len(xs) > 1 else type(xs[0])
             return Src, Src.match(Tx)
 
     @staticmethod
     def source_cast(Src, r, xs):
+        """Cast input(s) to Src type."""
         if r == 1 and isinstance(xs[0], Src):
+            # unary call (typed)
             return xs[0]
         if r == 1:
+            # unary call (untyped)
             return io.cast(xs[0], Src) if not isinstance(Src, Var) else xs[0]
+
+        if r > 1 and len(xs) == 1 and isinstance(xs[0], Src):
+            # n-ary call (on single Prod instance)
+            return xs[0]
         if r > 1 and all(isinstance(x, S) for x, S in zip(xs, Src._tail_)):
+            # n-ary call (on n typed inputs)
             return xs
+
         if r == 0 and xs[0] == Type.Unit() or xs[0] is None:
+            # constant
             return Type.Unit()
+
         else:
             return io.cast(xs, Src) if not isinstance(Src, Var) else xs
 
@@ -129,7 +157,7 @@ class HomObject(Arrow.Object):
 
         if "target_type" in dir(arrow._head_):
             return arrow._head_.target_type(arrow, xs)
-        if len(xs) == arrow.arity:
+        if len(xs) == arrow.arity or (len(xs) == 1 and isinstance(xs[0], arrow.src)):
             # full application type
             if match is True or not isinstance(arrow.tgt, Var):
                 # concrete type
