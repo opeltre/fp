@@ -1,5 +1,6 @@
 from .exceptions import CompositionError, TypeError
 
+
 class asserts:
 
     def subclass(A, B):

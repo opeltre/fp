@@ -25,4 +25,3 @@ else:
     torch = False
 
 jnp = has_jax and jax.numpy
-

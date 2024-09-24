@@ -10,6 +10,7 @@ from fp.cartesian import Type, Hom
 from fp.instances import Ring
 import fp.io as io
 
+
 class Tens(Backend, Ring, metaclass=Functor):
     """
     Typed tensor spaces.
@@ -17,7 +18,7 @@ class Tens(Backend, Ring, metaclass=Functor):
     The `Tens` functor maps shapes to their associated tensor type.
 
     **Example:**
-    .. code:: 
+    .. code::
 
         >>> E = Tens((3, 2))
         >>> E.range()
@@ -33,25 +34,26 @@ class Tens(Backend, Ring, metaclass=Functor):
             shape = A
             domain = Torus(A)
 
-
         name = cls._get_name_(A)
         Tens_A.__name__ = name
-        bases = (Tens_A, TypedTensor,)
+        bases = (
+            Tens_A,
+            TypedTensor,
+        )
         dct = dict(Tens_A.__dict__)
         dct["shape"] = tuple(A)
         dct["domain"] = Torus(A)
         TA = Ring.__new__(cls, name, bases, dct)
         io.log(("Tens new", TA, type(TA), type(TA) is cls), v=1)
         return TA
-     
+
     def _post_new_(Tens_A, A):
         Backend._post_new_(Tens_A, Tensor._backend_)
-        Ring.__init__(Tens_A, Tens_A.__name__) 
+        Ring.__init__(Tens_A, Tens_A.__name__)
         cls = Tens_A.__class__
         io.log((cls, "_post_new_", Tens_A, A), v=1)
 
-    def __init__(cls, A, *xs, **ks):
-        ...
+    def __init__(cls, A, *xs, **ks): ...
 
     @classmethod
     def _get_name_(cls, shape):
@@ -87,7 +89,7 @@ class Linear(Hom, Tens, metaclass=HomFunctor):
 
     The arguments `A` and `B` can either be given as tensor shapes
     or as associated tensor types e.g.
-        
+
     .. code::
 
         A, B = Tens((2, 3)), Tens((4))
@@ -99,7 +101,7 @@ class Linear(Hom, Tens, metaclass=HomFunctor):
     """
 
     class Object:
-        
+
         def __new__(cls, matrix, name=None):
             self = super().__new__(cls, matrix, name)
             return self
@@ -170,8 +172,8 @@ class Linear(Hom, Tens, metaclass=HomFunctor):
 
         def __repr__(self):
             return self.__name__
-    
-    # --- Type creation 
+
+    # --- Type creation
 
     @classmethod
     def new(cls, A, B):
@@ -181,7 +183,7 @@ class Linear(Hom, Tens, metaclass=HomFunctor):
         LAB = Ring.__new__(cls, name, bases, {})
         Ring.__init__(LAB, name, bases, {})
         return LAB
-    
+
     @classmethod
     def _get_name_(cls, A, B):
         name_one = lambda C: "x".join(str(n) for n in C)
@@ -199,16 +201,17 @@ class Linear(Hom, Tens, metaclass=HomFunctor):
                 return C.shape
             elif isinstance(C, list):
                 return tuple(C)
+
         return parse_one(A), parse_one(B)
-    
+
     def _post_new_(LinAB, A, B, *xs):
         msg = (str(m) for m in (LinAB.__name__, "_post_new_", A, B, *xs))
         io.log(" ".join(msg), v=1)
         cls = LinAB.__class__
         Backend._post_new_(LinAB, LinAB._backend_)
-    
-    # --- Class methods 
-    
+
+    # --- Class methods
+
     @classmethod
     def compose(cls, f, *gs):
         if not len(gs):
@@ -227,7 +230,7 @@ class Linear(Hom, Tens, metaclass=HomFunctor):
     @classmethod
     def eval(cls, x, f):
         return f @ x
-    
+
     @classmethod
     def source_type(cls, f, xs):
         assert (len(xs)) == 1

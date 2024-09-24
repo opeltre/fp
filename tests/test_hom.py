@@ -7,8 +7,9 @@ from fp.cartesian import Hom
 A = Type("A", (int,), {})
 B = Type("B", (str,), {})
 
+
 class TestHom:
-    
+
     foo = Hom(B, A)(lambda y: len(y))
     bar = Hom(A, B)(lambda x: "|" * x)
 
@@ -38,31 +39,29 @@ class TestHom:
         barfoo = self.bar @ self.foo
         assert barfoo(B("cha")) == B("|||")
         assert foobar(A(32)) == A(32)
-    
+
     def test_binary_signature(self):
 
         @Hom((A, A), A)
         def power(x, y):
-            return x ** y
+            return x**y
 
         assert power.src is Type.Prod(A, A)
         assert power.tgt is A
-    
+
     def test_binary_call_untyped(self):
         add = Hom((A, A), A)(int.__add__)
         assert add(4, 1) == 5
 
-    def test_binary_call_typed(self): 
+    def test_binary_call_typed(self):
         add = Hom((A, A), A)(int.__add__)
         x_y = add.src(2, 3)
         print(type(x_y), isinstance(x_y, add.src))
         print(add.target_type(add, x_y))
         assert add(x_y) == 5
 
-    def test_partial(self): 
-        power = Hom((A, A), A)(
-            lambda x, y: x ** y
-        )
+    def test_partial(self):
+        power = Hom((A, A), A)(lambda x, y: x**y)
         pow2 = power(2)
         assert (pow2.src, pow2.tgt) == (A, A)
         assert pow2(6) == power(2, 6)

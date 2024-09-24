@@ -6,6 +6,7 @@ from fp.instances import Int, List, Ring
 from .tensor import Tensor
 from .backend import Backend
 
+
 class BaseShape(Tensor):
 
     d = 1
@@ -125,26 +126,25 @@ class BaseShape(Tensor):
 
 class Torus(Backend, Ring, metaclass=Functor):
 
-    class Object(BaseShape):
-        ...
+    class Object(BaseShape): ...
 
     @classmethod
     def new(cls, A):
 
         name = cls._get_name_(A)
         bases = (BaseShape,)
-        dct =  {"__name__": name}
+        dct = {"__name__": name}
         TA = Tensor._subclass_(name, bases, dct)
         io.log(("Torus new", TA, type(TA), type(TA) is cls), v=1)
         return TA
-            
+
         # new shape instance
         if isinstance(A, type(None)):
             A = ()
         if not all(isinstance(ni, (int, torch.LongTensor)) for ni in A):
             raise TypeError("Expecting integer arguments")
         return super().new(A, (cls.Object,), {})
-    
+
     def _post_new_(SA, A):
         dim = len(A)
         TA = torch.tensor(A)
@@ -160,13 +160,13 @@ class Torus(Backend, Ring, metaclass=Functor):
         for ni in A:
             size *= ni
         SA.size = size
-    
+
         flat = Torus((SA.size,)) if SA.dim > 1 else SA
         SA.index = Hom(SA, flat)(SA.index)
         SA.coords = Hom(flat, SA)(SA.coords)
         return SA
-        '''
-        '''
+        """
+        """
 
     def __init__(self, ns):
         pass
