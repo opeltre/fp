@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "funprogram"
-version = "0.9.2"
+version = "0.9.2.1"
 description = "A functional programming framework for python."
 authors = ["Olivier Peltre <opeltre@gmail.com>"]
 license = "MIT"
@@ -20,6 +20,10 @@ jax = { version = "^0.4", optional = true }
 
 [tool.poetry.extras]
 jax = ["jax"]
+
+[tool.poetry.group.dev.dependencies]
+pytest-cov = "^5.0.0"
+pytest = "^8.3.2"
 
 [tool.poetry.scripts]
 #fp-tests = 'echo test'

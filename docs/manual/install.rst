@@ -7,20 +7,26 @@ a stable release should released soon (may 2024).
 Latest
 ------
 
-To install with pip::
+To install the latest release with pip::
     
-    git clone https://github.com/opeltre/fp
-    cd fp && pip install -e .
+    pip install funprogram
 
 To use `fp` within a poetry environment::
 
     git clone htts://github.com/opeltre/fp
     cd fp && poetry install
 
+See the project `README`_ for more details on installation options. 
+
+.. _README: https://github.com/opeltre/fp
+
 Stable 
 ------
 (Coming soon)
 
+Beta
+----
+* `v0.9.2`: `pip install funprogram==0.9.2`
 
 Outdated
 --------

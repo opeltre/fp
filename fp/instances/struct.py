@@ -1,5 +1,5 @@
 from __future__ import annotations
-import typing 
+import typing
 
 from fp.meta import Cofunctor, Var
 from fp.cartesian import Type, Prod, Hom, Arrow
@@ -9,33 +9,35 @@ from .str import Str
 import fp.io as io
 from fp.io.show import showStruct
 
+
 class Key(List(Str)):
-    
+
     Hom = Arrow
 
 
 class Field:
     """
     Manage `Struct` access and updates.
-    
+
         # getter
         Struct.field : Struct -> V
-        # setter 
+        # setter
         Struct.field.put : V -> Struct -> Struct
         # pure update
         Struct.field.set : V -> Struct -> Struct
-        
+
         # field value
         obj.field : V
     """
+
     def __init__(self, slot_descriptor, V, v=None):
         self.slot_descriptor = slot_descriptor
         self._value_ = V
         if v is not None:
             self._default_ = v
-    
+
     @classmethod
-    def bind(cls, src:tuple[Type, str], tgt: Type | Value):
+    def bind(cls, src: tuple[Type, str], tgt: Type | Value):
         """
         Bind a named accessor to the source `Struct` type.
         """
@@ -68,14 +70,12 @@ class Field:
         return out
 
 
-
-
 class StructObject(metaclass=Type):
     """
     Base class for `Struct` objects.
-    
-    The empty struct is the pullback of any child instance by 
-    the universal inclusion `() -> D` for any domain `D : tuple[keys]`. 
+
+    The empty struct is the pullback of any child instance by
+    the universal inclusion `() -> D` for any domain `D : tuple[keys]`.
     """
 
     __slots__ = ()
@@ -93,26 +93,26 @@ class StructObject(metaclass=Type):
             try:
                 y = ys[name]
                 setattr(self, name, io.cast(y, Tx))
-            except: 
+            except:
                 if len(val):
-                    y, = val
+                    (y,) = val
                     setattr(self, name, io.cast(y, Tx))
                 else:
                     struct = self.__class__
                     raise io.KeyError(
                         f"Missing key {name} creating a {struct} instance."
                     )
-    
+
     def __len__(self):
         return len(self.__slots__)
-    
+
     def __iter__(self):
         for k in self.__slots__:
             yield k
-    
+
     def keys(self):
         return self.__slots__
-    
+
     def items(self):
         for k in self:
             yield k, getattr(self, k)
@@ -130,7 +130,7 @@ class StructObject(metaclass=Type):
 
     def __repr__(self):
         return showStruct(self)
-    
+
     def pull(self, keys):
         if isinstance(keys, tuple):
             xs = (getattr(self, k) for k in keys)
@@ -148,14 +148,12 @@ class StructObject(metaclass=Type):
                 if type(f) is tuple:
                     f, tgt = f
                 else:
-                    tgt = hasattr(f, 'tgt') and f.tgt
+                    tgt = hasattr(f, "tgt") and f.tgt
                 y = f(x)
                 ys.append(y)
                 targets.append(tgt or type(y))
                 defaults.append(deft if tgt is src else ())
-        fields = (
-            (k, Ty, *y) for k, Ty, y in zip(self.__slots__, targets, defaults)
-        )
+        fields = ((k, Ty, *y) for k, Ty, y in zip(self.__slots__, targets, defaults))
         return self._head_(*fields)(*ys)
 
     def apply(self, **fs):
@@ -163,24 +161,27 @@ class StructObject(metaclass=Type):
             x = getattr(self, key)
             setattr(self, key, f(x))
 
+
 # alias for pointed types (T, val:T)
 Value = tuple[Type, typing.Any]
 
+
 class Struct(Type, metaclass=Cofunctor):
-    
+
     src = Key
-    tgt = Type 
-    
+    tgt = Type
+
     Object = StructObject
 
     @classmethod
-    def _pre_new_(cls, 
-                  keys: tuple[str, ...], 
-                  values: tuple[Value, ...] = (), 
-                  name: typing.Optional[str] = None, 
-                  bases: tuple[type, ...] = (), 
-                  dct: typing.Optional[dict] = None,
-        ):
+    def _pre_new_(
+        cls,
+        keys: tuple[str, ...],
+        values: tuple[Value, ...] = (),
+        name: typing.Optional[str] = None,
+        bases: tuple[type, ...] = (),
+        dct: typing.Optional[dict] = None,
+    ):
         ###
         if type(keys) is str and type(name) is dict:
             return keys, values, name, bases
@@ -195,42 +196,38 @@ class Struct(Type, metaclass=Cofunctor):
         return tuple(keys), tuple(values)
 
     @classmethod
-    def new(cls, 
-            keys: tuple[str], 
-            values: Type|tuple[Type|Value]=(),
-            name : (str | None) = None,
-            bases : tuple[type, ...] = (),
-            dct : dict = {},
-        ) -> Struct:
+    def new(
+        cls,
+        keys: tuple[str],
+        values: Type | tuple[Type | Value] = (),
+        name: str | None = None,
+        bases: tuple[type, ...] = (),
+        dct: dict = {},
+    ) -> Struct:
         """
-        Return a new `Struct` type. 
+        Return a new `Struct` type.
         """
         if isinstance(values, Type):
             values = tuple([values] * len(keys))
         values = tuple((*v,) if type(v) is tuple else v for v in values)
-        dct = dct | dict(
-            __slots__ = keys,
-            _keys_ = keys,
-            _values_ = values
-        )
+        dct = dct | dict(__slots__=keys, _keys_=keys, _values_=values)
         if name is None:
             name = cls._get_name_(keys, values, name, bases)
         if StructObject not in bases:
             bases = (*bases, StructObject)
         return super(Type, cls).__new__(cls, name, bases, dct)
-    
-    def _post_new_(S, keys, values, name = None, bases = (), dct=None):
+
+    def _post_new_(S, keys, values, name=None, bases=(), dct=None):
         for k, (V, *v) in zip(keys, values):
             Field.bind((S, k), (V, *v))
 
     @classmethod
     def _annotations_(cls, C):
         # context-specific getter (subclass, decorator)
-        get = (C.__getitem__ if isinstance(C, dict)
-               else lambda k: getattr(C, k))
+        get = C.__getitem__ if isinstance(C, dict) else lambda k: getattr(C, k)
         # accumulate fieldnames, types, and default values
         keys, values = [], []
-        for k, Tk in get('__annotations__').items():
+        for k, Tk in get("__annotations__").items():
             keys.append(k)
             try:
                 vk = (Tk, get(k))
@@ -241,11 +238,11 @@ class Struct(Type, metaclass=Cofunctor):
 
     @classmethod
     def _get_name_(cls, keys, values=(), name=None, bases=(), dct=None):
-        if name is not None: 
+        if name is not None:
             return name
         return "Struct *"
-    
-    @classmethod 
+
+    @classmethod
     def _subclass_(cls, name, bases, dct):
         Sgn = {}
         for b in bases[::-1]:
@@ -259,15 +256,15 @@ class Struct(Type, metaclass=Cofunctor):
         for k in keys:
             try:
                 del dct[k]
-            except: 
+            except:
                 ...
         S = cls.new(keys, values, name, bases, dct)
         S.__name__ = name
         S._post_new_(keys, values)
         return S
-    
+
     def __iter__(S):
-        for k in S._keys_: 
+        for k in S._keys_:
             yield k
 
     def items(S):
@@ -292,10 +289,10 @@ class Struct(Type, metaclass=Cofunctor):
             return values
 
     @classmethod
-    def cofmap(cls, f):
-        ...
+    def cofmap(cls, f): ...
 
-def struct(C : type) -> Struct:
+
+def struct(C: type) -> Struct:
     """
     Decorator definition of `Struct` types (dataclass-like).
     """

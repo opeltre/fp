@@ -7,8 +7,9 @@ from .type import Type
 
 import fp.io as io
 
+
 class Category(Kind):
-    
+
     @Method
     def Hom(T):
         return (T, T), Type
@@ -16,20 +17,21 @@ class Category(Kind):
 
 Args = tuple[int] | type(...)
 
+
 class Functor(Constructor):
     """
     Covariant functors.
     """
-    
+
     src: Category
     tgt: Category
 
-    arity : int = 1
-    _kind_ : tuple[Args, Args] = ..., ()
+    arity: int = 1
+    _kind_: tuple[Args, Args] = ..., ()
 
-    class _instance_:
+    class TopType:
         """
-        Base class for types of the form `Functor(*As)`. 
+        Base class for types of the form `Functor(*As)`.
         """
 
         def map(Tx, f, tgt=None):
@@ -42,12 +44,12 @@ class Functor(Constructor):
             src = x._tail_ if T.arity != 1 else Tx._tail_[0]
             f = T.src.Hom(src, tgt)(f)
             return T.fmap(f)(Tx)
-    
+
     @property
     def kind(T: type) -> str:
         """String representation of functor signature."""
         return Kind._functor_kind_(T.arity, *T._kind_)
-        
+
     @Method
     def fmap(T):
         """
@@ -56,7 +58,7 @@ class Functor(Constructor):
         src = T.src if hasattr(T, "src") else Type
         tgt = T.tgt if hasattr(T, "tgt") else Type
         if T.arity == 1:
-            return src.Hom('A', 'B'), tgt.Hom(T('A'), T('B'))
+            return src.Hom("A", "B"), tgt.Hom(T("A"), T("B"))
         elif T.arity is ...:
             source = src.Hom("A", "B"), Var("...")
             target = tgt.Hom(T("A", Var("...").src), T("B", Var("...").tgt))
@@ -67,29 +69,30 @@ class Cofunctor(Constructor):
     """
     Contravariant functors.
     """
-    
+
     src: Category
     tgt: Category
-    
+
     arity = 1
     _kind_ = (), ...
-    
+
     @property
     def kind(T):
         return Kind._functor_kind_(T.arity, *T._kind_)
 
     @Method
-    def cofmap(T): 
+    def cofmap(T):
         src = T.src if hasattr(T, "src") else Type
         tgt = T.tgt if hasattr(T, "tgt") else Type
         if T.arity == 1:
-            return src.Hom('A', 'B'), tgt.Hom(T('B'), T('A'))
+            return src.Hom("A", "B"), tgt.Hom(T("B"), T("A"))
         elif T.arity is ...:
             source = src.Hom("A", "B"), Var("...")
             target = tgt.Hom(T("B", Var("...").tgt), T("A", Var("...").src))
             return source, target
 
-        return T.src.Hom('X', 'Y'), T.tgt.Hom(T('Y'), T('X'))
+        return T.src.Hom("X", "Y"), T.tgt.Hom(T("Y"), T("X"))
+
 
 class Bifunctor(Functor):
     """
@@ -101,11 +104,11 @@ class Bifunctor(Functor):
 
     @Method
     def fmap(T):
-        return T.src.Hom('A', 'B'), T.tgt.Hom(T('X', 'A'), T('X', 'B'))
+        return T.src.Hom("A", "B"), T.tgt.Hom(T("X", "A"), T("X", "B"))
 
     @Method
     def cofmap(T):
-        return T.src.Hom('X', 'Y'), T.tgt.Hom(T('Y', 'A'), T('X', 'A'))
+        return T.src.Hom("X", "Y"), T.tgt.Hom(T("Y", "A"), T("X", "A"))
 
 
 class ArrowFunctor(Bifunctor):
@@ -115,7 +118,7 @@ class ArrowFunctor(Bifunctor):
 
     @Method
     def compose(T):
-        return (T('A', 'B'), T('B', 'C')), T('A', 'C')
+        return (T("A", "B"), T("B", "C")), T("A", "C")
 
 
 class HomFunctor(ArrowFunctor):
@@ -125,7 +128,7 @@ class HomFunctor(ArrowFunctor):
 
     @Method
     def eval(T):
-        return ('A', T('A', 'B')), 'B'
+        return ("A", T("A", "B")), "B"
 
 
 class NFunctor(Functor):

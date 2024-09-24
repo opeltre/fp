@@ -14,21 +14,25 @@ A lightweight functional programming library with
 
 ## Installation 
 
-There are two ways that you can start using `fp`. 
-This library is still under development, 
-but beta versions will updated as necessary on PyPI.
+This library is still under development. 
+You can install the latest 0.9.2 beta release from PyPI or clone 
+the project and build `fp` with poetry. 
 
-### poetry environment
-
-```bash
-git clone https://github.com/opeltre/fp
-cd fp && poetry install
-```
-
-### pip install
+### Install from PyPI
 
 ```
 pip install funprogram
+```
+
+### Install with poetry
+
+You can use [poetry](https://python-poetry.org/) to build wheels 
+from a specific commit. To install the poetry environment and try 
+using `fp`, you can do:
+```bash
+$ git clone https://github.com/opeltre/fp
+$ cd fp && poetry lock && poetry install
+$ poetry run python -i examples/barbaz.py
 ```
 
 ## Overview
@@ -103,8 +107,17 @@ Str -> Str: add 👋 Welcome
 "👋 Welcome! |||--|||"
 ```
 
-The `List` functor creates types inheriting from `List.Objecŧ`, a subclass of list with a `map` method. The `map` method of any functorial type, e.g.
-`List(Str)`, is actually an alias for the `List.fmap` class method. Only the target needs to be explicited when called with an untyped function.
+The `List` functor creates parameterized types inheriting from `List.Object`, 
+a subclass of the builtin `list`, enriched with a `map` method. 
+The `map` method of a functorial type `List(A)` 
+is an alias for the `List.fmap` class method, of signature:
+
+```py
+>>> List.fmap
+(A -> B) -> List A -> List B
+```
+The target type `B` only needs to be explicited when `List(A).map` is called with
+an untyped function argument. 
 
 ```py
 >>> phone = List(Int)("0632501202")
@@ -128,7 +141,7 @@ def barbaz(n):
     q, r = divmod(n, 2)
     if q == 0:
         return q, "|" if r else "*"
-    return q, "|<" if r else "*<"
+    return q, "|:" if r else "*:"
 
 # The `State(Int)` monad binds `a -> State(Int, b)` functions
 
@@ -137,8 +150,10 @@ def foobarbaz(acc):
     """Do `barbaz` while the accumulator says to continue."""
     # run with io.VERBOSITY = 1 to see intermediate steps
     io.log(acc, v=1)
-    if len(acc) and acc[-1] == "<":
-        # accumulate output
+    if not len(acc) or acc[-1] != ":":
+        # return accumulator 
+    else:
+        # accumulate barbaz recursively
         accbarbaz = barbaz.map(Str.add(acc[:-1]))
         # bind foobarbaz
         return accbarbaz >> foobarbaz
@@ -146,9 +161,9 @@ def foobarbaz(acc):
         # return accumulator
         return State(Int).unit(acc)
 
->>> foobarbaz.run(257)
+>>> foobarbaz(":").run(257)
 (Int, Str): (0, '|*******|')
->>> foobarbaz(260)
+>>> foobarbaz(":")(260)
 Str: '**|*****|'
 ```
 Other monads have found plenty of applications 

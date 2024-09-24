@@ -30,8 +30,9 @@ class Either(Type, metaclass=Monad):
         >>> List.fmap(Either.fmap(bar, foo))(x)
         List (str | int | ...) : [1 : 5, 0 : ||||||||||||, 1 : 6, 0 : ||||||||]
     """
+
     class Object:
-        
+
         def __init__(self, x):
             union = self._union_.__args__
             for i, A in enumerate(union):
@@ -52,14 +53,14 @@ class Either(Type, metaclass=Monad):
                     return E(io.cast(x, Ti))
                 except:
                     pass
-             
+
     @classmethod
     def new(cls, *As):
         """
         Type union.
         """
         return super().new(typing.Union[*As])
-    
+
     def _post_new_(EA, *As):
         EA._union_ = typing.Union[*As]
         return EA
@@ -70,7 +71,7 @@ class Either(Type, metaclass=Monad):
         Apply a mapping on each case.
         """
         if fs[-1] is ...:
-            fs = (*fs[:-1], lambda x:x)
+            fs = (*fs[:-1], lambda x: x)
             src = Either(*(f.src for f in fs[:-1]), ...)
             tgt = Either(*(f.tgt for f in fs[:-1]), ...)
             name = Either._get_name_(*fs, "...")
@@ -87,7 +88,7 @@ class Either(Type, metaclass=Monad):
         either_f.__name__ = name
 
         return either_f
-    
+
     @classmethod
     def unit(cls, x: Var("A")) -> cls(Var("A"), ...):
         return cls("A", ...)(x)
@@ -97,9 +98,9 @@ class Either(Type, metaclass=Monad):
         """
         Access unwrapped either value.
         """
-        tgt = cls._tail_[0] 
+        tgt = cls._tail_[0]
         return tgt(x)
-    
+
     @classmethod
     def gather(cls, f: Callable, *fs: Callable) -> Callable:
         """
@@ -110,7 +111,7 @@ class Either(Type, metaclass=Monad):
 
             (A -> Y, B -> Y, ...) -> (A | B | ...)  ->  Y
 
-        The initial arrow from `(A | B | ...)` has the input maps as 
+        The initial arrow from `(A | B | ...)` has the input maps as
         as restrictions.
         """
         F = (f, *fs)
@@ -121,22 +122,25 @@ class Either(Type, metaclass=Monad):
         def gather_f(x):
             """Map a sum type `(A | B | ...)` to a target `Y`."""
             return F[x._i_](x.data)
+
         gather_f.__name__ = "gather " + Either._get_name_(f, *fs)
         return gather_f
 
-    def __getitem__(E, i:int | slice):
+    def __getitem__(E, i: int | slice):
         if isinstance(i, int):
             return E._tail_[i]
         return E.__class__(*E._tail_[i])
 
     @classmethod
     def _get_name_(cls, *As):
-        name = lambda A: (A.__name__ if hasattr(A, '__name__') else str(A))
+        name = lambda A: (A.__name__ if hasattr(A, "__name__") else str(A))
         return "(" + " | ".join(name(A) for A in As) + ")"
 
+
 class Bottom:
-    
+
     def __new__(cls, *xs):
         raise io.CastError(cls, xs)
+
 
 Either.Unit = Type("∅ ", (Bottom,), {})

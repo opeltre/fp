@@ -4,9 +4,10 @@ import fp.meta
 import fp.instances
 from .log import log
 
+
 def document(Cls):
-    if inspect.isclass(Cls) and hasattr(Cls, '_doc_'):
-        try: 
+    if inspect.isclass(Cls) and hasattr(Cls, "_doc_"):
+        try:
             Cls._doc_()
             return None
         except:

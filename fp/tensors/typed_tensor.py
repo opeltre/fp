@@ -4,10 +4,11 @@ from .tensor import Tensor, TensorBase
 from .shape import Torus
 from fp.instances import Ring
 
+
 class TypedTensor(Tensor, metaclass=Ring):
-    
+
     shape: Tensor
-    domain : Torus 
+    domain: Torus
 
     def __init__(self, data):
         super().__init__(data)

@@ -2,7 +2,8 @@ import fp.io as io
 from fp.cartesian import Type, Hom
 from .algebra import Ring, Alg, Monoid
 
-#----- Instances ------
+# ----- Instances ------
+
 
 class Bool(int, metaclass=Ring):
     """Boolean values."""
@@ -23,7 +24,7 @@ class Bool(int, metaclass=Ring):
 
     def __bool__(self):
         return super().__eq__(1)
-    
+
     def __str__(self):
         return "1" if self else "0"
 

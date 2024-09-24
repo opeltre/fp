@@ -1,7 +1,8 @@
-import colorama 
+import colorama
 from colorama import Fore, Style
 
 VERBOSITY = 0
+
 
 def log(text, v=0, prefix=None):
     if v <= VERBOSITY:
@@ -11,15 +12,16 @@ def log(text, v=0, prefix=None):
             text = " ".join(str(t) for t in text)
         print(color(prefix, v), color(text))
 
+
 def color(text, c=None):
 
     COLORS = [
-        'WHITE', 
-        'YELLOW',
-        'GREEN', 
-        'CYAN',
-        'MAGENTA',
-        'RED',
+        "WHITE",
+        "YELLOW",
+        "GREEN",
+        "CYAN",
+        "MAGENTA",
+        "RED",
     ]
 
     if c is None:

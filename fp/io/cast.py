@@ -1,6 +1,7 @@
 from typing import Any
 from .exceptions import CastError
 
+
 def cast(x: Any, A: type):
 
     # safe mode

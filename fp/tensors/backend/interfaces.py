@@ -2,12 +2,13 @@ from fp.instances import struct
 
 from .wrap_alg import Backend, Interface
 from ._pkgs import *
+from types import ModuleType
 
 
 @struct
 class NumpyAPI(Interface):
-    
-    module = np 
+
+    module = np
 
     Array = np.ndarray
     asarray = np.asarray
@@ -36,8 +37,8 @@ class JaxAPI(Interface):
 
 @struct
 class TorchAPI(Interface):
-    
-    module = torch 
+
+    module = torch
 
     Array = torch.Tensor
     asarray = torch.as_tensor
@@ -47,18 +48,19 @@ class TorchAPI(Interface):
         "float",
         "double",
         "int",
-        "long", 
+        "long",
         "cfloat",
     ]
 
     repeat = "repeat_interleave"
     tile = "repeat"
 
-'''
+
+"""
 class Backend(Stateful(Interface, NumpyAPI())):
     
     @classmethod
     def read_env(cls) -> str:
         env = "FP_BACKEND"
         s0 = os.environ[env] if env in os.environ else "torch"
-'''
+"""

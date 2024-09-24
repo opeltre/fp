@@ -2,24 +2,74 @@ The `Type` Category
 ===================
 
 Although deep knowledge of category theory is 
-not required to use fp, 
-one should know that the Wikipedia is a very qualitative and valuable resource
-on both the mathematical and programming aspects of category theory, 
-users are encouraged to search there for additional context and information.
+not required to use `fp` library, understanding its basic vocabulary and concepts 
+should be very valuable. 
+We also hope that this Python library will encourage
+unfamiliar users to learn how functional languages 
+represent polymorphic types and programs, 
+stateful or asynchronous computations, 
+I/O and error-handling... without 
+the hustles of moving to a foreign language and losing the rich Python ecosystem.
 
-The attributes defining a category are:
-    * a class of *objects* (e.g. the class of sets, vector spaces, types, ...)
-    * a class of *arrows* or *morphisms* (e.g. functions, linear maps, typed programs, ...)
+Introduction
+------------
+
+This manual will sequentially introduce all the relevant concepts that are embodied by 
+some (meta)class in the `fp` library. Let us also mention that the
+Wikipedia is also a very valuable resource 
+on both the mathematical and programming aspects of `category theory <categories>`_. 
+
+Let us start with our very first mathematical definition, 
+     
+    Category: 
+        A category **C** is defined by
+
+        * a class of *objects* denoted :math:`{\rm Obj}({\bf C})`
+          (e.g. the class of sets, vector spaces, types...)
+        * a set of arrows or *morphisms* :math:`{\rm Hom}_{\bf C}(A, B)` 
+          (e.g. functions, linear maps, typed programs...) whose
+          elements are denoted by :math:`f : A \to B`, for every objects :math:`A, B`, 
+        * a *composed morphism* :math:`g \circ f : A \to C`
+          for every pair of composable morphisms :math:`f : A \to  B` 
+          and :math:`g : B \to C`
+        * an *identity morphism* :math:`1_A : A \to A` for
+          every object :math:`A`, which fixes any composable morphism by left and right compositions 
+          respectively.
+
+        The composition is furthermore demanded to satisfy 
+        :math:`h \circ (g \circ f) = (h \circ g) \circ f` 
+        for every triplet of composable morphisms, composition 
+        is said to be *associative*.
 
 `Categories`_ and `functors`_ were introduced in the 1950s 
 by mathematicians Eilenberg and Steenrod to classify topological spaces by their homology groups.
 Somehow surprisingly, category theory has also found profound applications in computer science and 
-logic since (see for instance the `Curry-Howard`_ correspondence). 
-
+logic since (see for instance the `Curry-Howard`_ correspondence).
 
 .. _Categories: https://wikipedia.org/category_(mathematics)
 .. _functors: https://en.wikipedia.org/wiki/Functor_(functional_programming)
 .. _Curry-Howard: https://en.wikipedia.org/wiki/Curry%E2%80%93Howard_correspondence
+
+
+Example
+^^^^^^^
+.. container:: example
+
+    .. rubric:: Types
+
+    The `Type` category is described by: 
+    
+    * the class of objects :math:`{\rm Obj}({\tt Type})` described by 
+      `isinstance(..., Type)`,
+    * type of programs (functions) `Hom(A, B)` for any pair of input/output types 
+      `A` and `B`, 
+    * a composed program `g @ f` for every composable pair `f : Hom(A, B)` 
+      and `g : Hom(B, C)`,
+    * an identity function `Hom.id(A) : Hom(A, A)` for every type `A`.
+
+    Note that within the library, `fp.Hom` is an alias to `fp.Type.Hom`.
+
+
 
 Type Objects
 ------------

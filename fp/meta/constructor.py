@@ -9,22 +9,23 @@ import functools
 from typing import Callable, Any
 
 import fp.io as io
-import fp.utils 
+import fp.utils
 
 from colorama import Fore
+
 
 class Constructor(Kind):
     """
     Type constructors.
 
     Instances define a classmethod `T.new(*As)`
-    returning the type value `T(*As) = T A1 ... An`. 
+    returning the type value `T(*As) = T A1 ... An`.
     """
 
     arity = ...
-    
-    class _defaults_ : 
-        
+
+    class _defaults_:
+
         kind = "(*, ...) -> *"
 
         @classmethod
@@ -32,8 +33,8 @@ class Constructor(Kind):
             """
             Parse input variables to a type constructor.
 
-            Defaults to the identity, override to extend support for arguments 
-            (e.g. support unhashable inputs, enforce equality of equivalent inputs, 
+            Defaults to the identity, override to extend support for arguments
+            (e.g. support unhashable inputs, enforce equality of equivalent inputs,
             ...).
             """
             return As
@@ -52,9 +53,9 @@ class Constructor(Kind):
             except Exception as e:
                 print(e)
                 raise RuntimeError(f"Method {cls.__name__}.new was not overriden.")
-        
+
         @classmethod
-        def _subclass_(cls, name:str, bases:tuple, dct:dict):
+        def _subclass_(cls, name: str, bases: tuple, dct: dict):
             msg = str(cls.__name__) + " _subclass_: "
             msg += name + " " + str(bases)
             io.log(msg, v=1)
@@ -64,17 +65,15 @@ class Constructor(Kind):
                     type(base)._post_new_(T, *base._tail_)
             return T
 
-        def _post_new_(TA, *As):
-            ...
+        def _post_new_(TA, *As): ...
 
-        def __init__(TA, *As):
-            ...
-    
+        def __init__(TA, *As): ...
+
     @property
     def kind(T):
         return "(*, ...) -> *"
 
-    @Method 
+    @Method
     def new(T: Constructor):
         return Type.Hom("...", Type)
 
@@ -86,7 +85,7 @@ class Constructor(Kind):
         # wrap T.__new__
         T.__new__ = cls._cache_new_(Constructor._new_)
         return T
-    
+
     def _eval_signature_(T, method) -> Type:
         try:
             sgn = method.signature(T)
@@ -98,27 +97,28 @@ class Constructor(Kind):
         except:
             return super()._eval_signature_(method)
 
-    def _get_name_(T , *As: Any) -> str:
+    def _get_name_(T, *As: Any) -> str:
         """
         String representation of output type.
         """
-        get_name = lambda A: A.__name__ if hasattr(A, '__name__') else str(A)
+        get_name = lambda A: A.__name__ if hasattr(A, "__name__") else str(A)
         if len(As) > 1:
-            tail = '(' + ', '.join(get_name(A) for A in As) + ')'
-        elif len(As) == 1: 
+            tail = "(" + ", ".join(get_name(A) for A in As) + ")"
+        elif len(As) == 1:
             tail = get_name(As[0])
-        else: 
-            tail = ''
-        return T.__name__ + ' ' + tail
-    
+        else:
+            tail = ""
+        return T.__name__ + " " + tail
+
     @classmethod
-    def _cache_new_(cls, new : Callable) -> Callable:
+    def _cache_new_(cls, new: Callable) -> Callable:
         """
         Cached `Constructor.__new__`, compatible with subclass definitions.
         """
         new_ = functools.cache(new)
+
         def cached_new(cls, *xs, **ys):
-            try: 
+            try:
                 # T(*As)
                 xs = cls._pre_new_(*xs)
                 return new_(cls, *xs, **ys)
@@ -129,7 +129,7 @@ class Constructor(Kind):
         return cached_new
 
     @staticmethod
-    def _new_(T:Constructor, *As: Any) -> Type:
+    def _new_(T: Constructor, *As: Any) -> Type:
         """
         Wrapper around T.new constructor to be referenced as T.__new__.
         """
@@ -147,9 +147,9 @@ class Constructor(Kind):
                 else:
                     TA = T.var()(*As)
             else:
-                # concrete action 
+                # concrete action
                 TA = T.new(*As)
-            # post new 
+            # post new
             TA.__name__ = T._get_name_(*As)
             TA._head_ = T
             TA._tail_ = As
@@ -168,18 +168,18 @@ class Constructor(Kind):
             return TA
         except:
             raise io.ConstructorError("new", T, As)
-        
+
     def var(T) -> Constructor:
         """
         Return constructor instance acting on type variables.
         """
+
         class VarT(T, Var, metaclass=T.__class__):
-            
+
             src = Type
             tgt = Var
-            
-            def _post_new_(A, *xs, **ys):
-                ...
+
+            def _post_new_(A, *xs, **ys): ...
 
         def _check_methods_(self, T, bases, dct):
             """
@@ -195,17 +195,17 @@ class Constructor(Kind):
 
 # --- Type variables ---
 
+
 class Var(Type, metaclass=Constructor):
-    
+
     _accessors_ = None
 
-    class Object:
-        ...
-    
-    def _post_new_(A, name:str, *accessors:str):
+    class Object: ...
+
+    def _post_new_(A, name: str, *accessors: str):
         A._tail_ = None
         A._accessors_ = accessors
-    
+
     def __getattr__(A, k):
         Ak = Var.__new__(Var, A.__name__, k)
         return Ak
@@ -224,7 +224,7 @@ class Var(Type, metaclass=Constructor):
             name = A._head_.__name__
             out[name] = B._head_
 
-        # --- tail of expression --- 
+        # --- tail of expression ---
 
         nA, nB = len(A._tail_), len(B._tail_)
         n = 1 + nB - nA
@@ -239,9 +239,9 @@ class Var(Type, metaclass=Constructor):
         elif dots == A._tail_[0] and n >= 0:
             ndots = [dots] * n
             tail = (*ndots, *A._tail_[1:])
-        else: 
+        else:
             return None
-        
+
         # Recursive matching on leaves
         dots, dotsname = [], "..."
         for Ai, Bi in zip(tail, B._tail_):
@@ -261,7 +261,7 @@ class Var(Type, metaclass=Constructor):
             dotsname += "."
         out[dotsname] = tuple(dots)
         return out
-    
+
     def substitute(A, matches: dict[str, Type]) -> Type:
         """
         Concrete type obtained by substitution of matches.
@@ -272,14 +272,12 @@ class Var(Type, metaclass=Constructor):
             if not A._accessors_ and isinstance(SA, Type):
                 return SA
             if A._accessors_ and isinstance(SA, Type):
-                for attr in A._accessors_: 
+                for attr in A._accessors_:
                     SA = getattr(SA, attr)
                 return SA
             elif isinstance(SA, tuple):
                 return tuple(A.substitute({name: Si}) for Si in SA)
-        head = (
-            A._head_ if not isinstance(A._head_, Var) else matches[A._head_.__name__]
-        )
+        head = A._head_ if not isinstance(A._head_, Var) else matches[A._head_.__name__]
         tail = []
         for Ai in A._tail_:
             if isinstance(Ai, Var):
@@ -291,9 +289,9 @@ class Var(Type, metaclass=Constructor):
             else:
                 tail.append(Ai)
         return head(*tail)
-    
+
     @classmethod
-    def _get_name_(cls, name:str, *accessors:str) -> str:
+    def _get_name_(cls, name: str, *accessors: str) -> str:
         name = name if isinstance(name, str) else str(name)
         for a in accessors:
             name += ":" + a
@@ -311,14 +309,14 @@ class Var(Type, metaclass=Constructor):
         return A
 
     @classmethod
-    def _read_vars_(cls, As:tuple[type,...]):
+    def _read_vars_(cls, As: tuple[type, ...]):
         return tuple(cls._read_var_(A) for A in As)
-    
+
     @classmethod
     def cast(cls, x):
         return x
 
+
 class Ellipsis(Var):
 
-    def substitute(A, matches):
-        ...
+    def substitute(A, matches): ...

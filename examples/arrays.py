@@ -23,3 +23,10 @@ z = idx.torch().shows("z")
 # --- linear maps
 
 LinEF = Linear(E, F)
+
+
+#--- jax.jit compilation
+
+import jax
+add = jax.jit(lambda x, y: x + y)
+add(x.jax(), y)
