@@ -61,8 +61,6 @@ class TestHom:
     def test_binary_call_typed(self):
         add = Hom((A, A), A)(int.__add__)
         x_y = add.src(2, 3)
-        print(type(x_y), isinstance(x_y, add.src))
-        print(add.target_type(add, x_y))
         assert add(x_y) == 5
 
     def test_partial(self):
@@ -82,3 +80,4 @@ class TestHom:
     def test_prod_target(self):
         f = Hom((int, int), (int, int))(divmod)
         assert f.tgt is Type.Prod(int, int)
+        assert f(7, 2) == (3, 1)

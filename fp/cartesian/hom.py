@@ -294,14 +294,17 @@ class Hom(Arrow, metaclass=HomFunctor):
             else:
                 return str(T)
 
-        if isinstance(A, tuple):
-            names = tuple(name_one(T) for T in A)
-            if "..." in names:
-                source = "(" + ", ".join(names) + ")"
-            else:
-                source = " -> ".join(names)
-            return source + " -> " + B.__name__
-        return name_one(A) + " -> " + B.__name__
+        def name_arg(C):
+            if isinstance(C, tuple):
+                names = tuple(name_one(T) for T in C)
+                if "..." in names:
+                    name = "(" + ", ".join(names) + ")"
+                else:
+                    name = " -> ".join(names)
+                return name
+            return name_one(C)
+
+        return name_arg(A) + " -> " + name_arg(B)
 
     @classmethod
     def _composed_name_(cls, *fs):
