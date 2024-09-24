@@ -7,6 +7,11 @@ from fp.cartesian import Hom
 A = Type("A", (int,), {})
 B = Type("B", (str,), {})
 
+HomObject = Hom.Object
+
+
+class TestHomObject: ...
+
 
 class TestHom:
 
@@ -73,3 +78,7 @@ class TestHom:
         assert len(eucdiv(12, 5)) == 2
         assert (add @ eucdiv).arity == 2
         assert (add @ eucdiv)(12, 5) == A(4)
+
+    def test_prod_target(self):
+        f = Hom((int, int), (int, int))(divmod)
+        assert f.tgt is Type.Prod(int, int)

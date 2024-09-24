@@ -316,7 +316,11 @@ class Hom(Arrow, metaclass=HomFunctor):
         """
         Parse N-ary source types.
         """
-        tgt = B
+        if type(B) is tuple:
+            tgt = Type.Prod(*B)
+        else:
+            tgt = B
+
         if isinstance(A, Type.Prod):
             src, arity = A, len(A._tail_)
         elif isinstance(A, type):
