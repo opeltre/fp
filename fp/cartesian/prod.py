@@ -81,7 +81,7 @@ class Prod(Type, metaclass=Functor):
         tgt = cls(*(f.tgt for f in fs))
 
         @Type.Hom(src, tgt)
-        def map_f(xs):
+        def map_f(*xs):
             ys = tuple(f(x) for x, f in zip(xs, fs))
             return ys
 
