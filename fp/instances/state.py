@@ -8,15 +8,14 @@ import fp.io as io
 
 Point = Type.Unit()
 
+# TODO: too pathways for gets, put, puts, etc.
+
 
 class StateMonad(Type, metaclass=Monad):
-    """
-    State monad.
+    """State monad.
 
     The monad `State S` maps any type `A` to the stateful computation
     type `State S A`.
-
-
     """
 
     _state_: Type = Var("S")
@@ -119,8 +118,7 @@ class StateMonad(Type, metaclass=Monad):
 
 
 class State(Hom, metaclass=HomFunctor):
-    """
-    State bifunctor and monad.
+    """State bifunctor and monad.
 
     The type `State(S, A)` describes stateful computations yielding a return
     value of type `A` while acting on the state type `S`. The isomorphism::
@@ -394,3 +392,7 @@ class Stateful(Monad):
         return SA
 
     def __init__(SA, A, initial=None, dct=None): ...
+
+    @property
+    def get(self):
+        return self.gets(Hom.id(self._state_))
