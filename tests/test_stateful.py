@@ -18,3 +18,18 @@ class TestStateful:
     def test_initial_state(self):
         s0 = self.M.get.state
         assert s0 == self.s0
+
+    def test_use_context(self):
+        get = self.M.get
+        with self.M.use("toto"):
+            s1 = get.state
+        assert s1 == "toto"
+
+    def test_map(self):
+        length = self.M.get.map(Str.len)
+        assert length.value == 3
+
+    def test_map_use(self):
+        length = self.M.get.map(Str.len)
+        with self.M.use(""):
+            assert length.value == 0
