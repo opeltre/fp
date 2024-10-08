@@ -324,6 +324,8 @@ class StatefulMonad(StateMonad):
             super().__init__(pipe, initial)
 
         def run(self, s=None):
+
+            # TODO: return Hom(src | None, tgt) supporting optional s0
             if s is None:
                 s = self.__class__._initial_
             return super().run(s)

@@ -16,11 +16,15 @@ signature = lambda n: lambda A: Hom(tuple([A] * n), A)
 
 @struct
 class LiftWrap(Lift):
+    name: str
+    signature: Either(int, typing.Callable)
+    lift_args: Either(type(...), int, tuple) = ...
+    flip: int = 0
     from_source = lambda x: x.data
 
 
 tensor_methods = [
-    # reshapes
+    # arithmetic methods
     LiftWrap("__add__", 2),
     LiftWrap("__sub__", 2),
     LiftWrap("__mul__", 2),
