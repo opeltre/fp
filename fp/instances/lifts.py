@@ -9,6 +9,13 @@ from types import FunctionType
 class Lift:
     """
     Declarative definition of method lifts.
+
+    Parameters
+    ----------
+    name : str
+    signature : int | Callable
+        number of arguments or callable `type -> Type`
+    lift_args : ... | int | tuple
     """
 
     name: str
@@ -50,7 +57,7 @@ class Lift:
 
     def raw_lift(self, objtype: type, lift_args: tuple[int, ...]) -> typing.Callable:
         """
-        Return the lifted callable to be wrapped.
+        Lifted callable S' -> T' to be hom-typed.
         """
         method = self.raw(objtype)
         m = max(lift_args)
@@ -65,6 +72,15 @@ class Lift:
             return y
 
         return lifted
+
+    def raw(self, objtype: type) -> Callable:
+        """Callable S -> T to be lifted."""
+
+        def raw_bound_method(x, *xs):
+            print(type(x))
+            return getattr(x, self.name)(*xs)
+
+        return raw_bound_method
 
 
 @struct
