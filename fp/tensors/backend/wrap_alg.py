@@ -16,10 +16,6 @@ signature = lambda n: lambda A: Hom(tuple([A] * n), A)
 
 @struct
 class LiftWrap(Lift):
-    name: str
-    signature: Either(int, Callable)
-    lift_args: Either(type(...), int, tuple) = ...
-    flip: int = 0
     from_source = lambda x: x.data
 
 
@@ -67,7 +63,8 @@ class LiftInterface(LiftWrap):
     def raw(self, objtype: type) -> Callable:
 
         def raw_bound_method(x, *xs):
-            print(type(x))
+            T = type
+            print(type(x.data))
             return getattr(x, self.name)(*xs)
 
         return raw_bound_method
@@ -80,7 +77,7 @@ class Backend(Ring, Wrap):
     """Wrap the `Array` type of an `Interface` object."""
 
     _api_: Interface
-    _lifted_methods_ = [LiftInterface(**lift) for lift in tensor_methods]
+    _lifted_methods_ = tensor_methods
 
     @classmethod
     def new(cls, api: Interface):

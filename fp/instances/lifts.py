@@ -10,6 +10,26 @@ class Lift:
     """
     Declarative definition of method lifts.
 
+    Given a type constructor or functor `T`, and assuming types `A` of a given
+    type class `C` carry a method `name : (A, ...) -> A`, lifts take care of
+    assigning a method `name` on the transformed type.
+
+    The `struct` fields of a `Lift` instance describe the name and
+    signature of the method to be lifted, as well as the two interlacing
+    maps `from_source` and `to_target`, which in the simplest case (`signature = 1`)
+    allow completion of the diagram:
+
+                        T A ---> T A
+                         .        ^
+        from_source      .        '     to_target
+                         v        '
+                         A  --->  A
+
+    When the method `name : (A, ...) -> `A` has multiple arguments, they can be assumed
+    all in `A` by providing an `int` as signature argument. Otherwise, the signature should
+    be a callable mapping `A : type` to the lifted method's signature, i.e. its
+    `Hom` type instance.
+
     Parameters
     ----------
     name : str
@@ -73,11 +93,10 @@ class Lift:
 
         return lifted
 
-    def raw(self, objtype: type) -> Callable:
+    def raw(self, objtype: type) -> typing.Callable:
         """Callable S -> T to be lifted."""
 
         def raw_bound_method(x, *xs):
-            print(type(x))
             return getattr(x, self.name)(*xs)
 
         return raw_bound_method
@@ -99,7 +118,7 @@ class HomLift(Hom):
 
         def __get__(self, obj, objtype=None):
             if obj is not None:
-                return Hom.curry(self, (obj,))
+                return Hom.partial(self, obj)
             else:
                 return self
 

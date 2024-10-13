@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import typing
 from types import ModuleType
+import numpy as np
 
 from fp.cartesian import Type, Hom
 
@@ -40,7 +41,7 @@ class TensorBase:
         return Tensor(self.data[idx])
 
     def __len__(self):
-        return int(torch.tensor(self.data.shape).prod())
+        return int(np.array(self.data.shape).prod())
 
     def __iter__(self):
         return self.data.__iter__()
