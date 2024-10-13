@@ -34,8 +34,12 @@ class Lift:
     ----------
     name : str
     signature : int | Callable
-        number of arguments or callable `type -> Type`
-    lift_args : ... | int | tuple
+        number of same-type arguments, or callable signature `type -> Hom`
+    lift_args : ... | int | tuple[int, ...]
+        arguments to be projected onto original type:
+        all (`...`), one (`int`) or only a selection (`tuple`).
+    from_source : Callable
+    to_target : Callable
     """
 
     name: str
