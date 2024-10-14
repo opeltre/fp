@@ -12,29 +12,6 @@ from fp.instances import struct, List, Str
 import os
 
 
-@struct
-class LiftWrap(Lift):
-    from_source = lambda x: x.data
-
-
-tensor_methods = [
-    # arithmetic methods
-    LiftWrap("__add__", 2),
-    LiftWrap("__sub__", 2),
-    LiftWrap("__mul__", 2),
-    LiftWrap("__truediv__", 2),
-    LiftWrap("__neg__", 1),
-    # reshapes
-    LiftWrap("flatten", 1),
-    LiftWrap("reshape", lambda T: Hom((T, tuple), T), 0, flip=1),
-]
-
-
-class WrapRing(Ring, Wrap):
-
-    _lifted_methods_ = tensor_methods
-
-
 # ====== Interfaces ======
 
 
@@ -56,16 +33,21 @@ class Interface:
 
 
 @struct
-class LiftInterface(LiftWrap):
+class LiftWrap(Lift):
+    from_source = lambda x: x.data
 
-    def raw(self, objtype: type) -> Callable:
 
-        def raw_bound_method(x, *xs):
-            T = type
-            print(type(x.data))
-            return getattr(x, self.name)(*xs)
-
-        return raw_bound_method
+tensor_methods = [
+    # arithmetic methods
+    LiftWrap("__add__", 2),
+    LiftWrap("__sub__", 2),
+    LiftWrap("__mul__", 2),
+    LiftWrap("__truediv__", 2),
+    LiftWrap("__neg__", 1),
+    # reshapes
+    LiftWrap("flatten", 1),
+    LiftWrap("reshape", lambda T: Hom((T, tuple), T), 0, flip=1),
+]
 
 
 # ====== Backend: Wrap an interface ======
