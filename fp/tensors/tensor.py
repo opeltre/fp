@@ -1,9 +1,9 @@
-from .backend import Backend, NumpyAPI, TorchAPI, JaxAPI, has_jax, has_torch, jax, torch
+from .backend import Backend, INTERFACES, HAS_JAX, HAS_TORCH, jax, torch
 from .tensor_base import TensorBase
 from fp.instances import List
 
 
-class Numpy(Backend(NumpyAPI()), TensorBase):
+class Numpy(Backend(INTERFACES["numpy"]), TensorBase):
 
     def is_floating_point(self):
         return self.data.is_floating_point()
@@ -15,12 +15,12 @@ class Numpy(Backend(NumpyAPI()), TensorBase):
         return self.data.norm(p, dim)
 
 
-if has_jax:
+if HAS_JAX:
 
     from jax.tree_util import register_pytree_node_class
 
     @register_pytree_node_class
-    class Jax(Backend(JaxAPI()), TensorBase):
+    class Jax(Backend(INTERFACES["jax"]), TensorBase):
 
         @classmethod
         def cast(cls, x):
@@ -35,9 +35,9 @@ if has_jax:
             return cls(*children)
 
 
-if has_torch:
+if HAS_TORCH:
 
-    class Torch(Backend(TorchAPI()), TensorBase):
+    class Torch(Backend(INTERFACES["torch"]), TensorBase):
 
         @property
         def size(self):
@@ -87,13 +87,13 @@ class Tensor(Torch): ...
 
 ### hack avoiding circular imports (for cast methods)
 TensorBase.Numpy = Numpy
-TensorBase.Jax = Jax
-TensorBase.Torch = Torch
+TensorBase.Jax = Jax if HAS_JAX else Numpy
+TensorBase.Torch = Torch if HAS_TORCH else Numpy
 ###
 
 # export available backends
 backends = List(Backend)([Numpy])
-if has_jax:
+if HAS_JAX:
     backends = backends + [Jax]
-if has_torch:
+if HAS_TORCH:
     backends = backends + [Torch]

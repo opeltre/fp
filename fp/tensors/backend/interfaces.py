@@ -1,12 +1,16 @@
+from collections import defaultdict
 from fp.instances import struct
 
 from .wrap_alg import Backend, Interface
-from ._pkgs import *
 from types import ModuleType
+
+import numpy as np
+
+INTERFACES = {}
 
 
 @struct
-class NumpyAPI(Interface):
+class NumpyInterface(Interface):
 
     module = np
 
@@ -22,42 +26,73 @@ class NumpyAPI(Interface):
     ]
 
 
-@struct
-class JaxAPI(Interface):
+INTERFACES["numpy"] = NumpyInterface()
 
-    module = jax.numpy
-    Array = jax.lib.xla_extension.ArrayImpl
-    asarray = jax.numpy.asarray
+# --- jax ---
 
-    dtypes = NumpyAPI().dtypes[:-1] + [
-        "cfloat:complex64",
-        "cdouble:complex128",
-    ]
+try:
+    import jax
 
+    HAS_JAX = True
 
-@struct
-class TorchAPI(Interface):
+    @struct
+    class JaxInterface(Interface):
 
-    module = torch
+        module = jax.numpy
+        Array = jax.lib.xla_extension.ArrayImpl
+        asarray = jax.numpy.asarray
 
-    Array = torch.Tensor
-    asarray = torch.as_tensor
+        dtypes = NumpyInterface().dtypes[:-1] + [
+            "cfloat:complex64",
+            "cdouble:complex128",
+        ]
 
-    # dtypes
-    dtypes = [
-        "float",
-        "double",
-        "int",
-        "long",
-        "cfloat",
-    ]
+    INTERFACES["jax"] = JaxInterface()
 
-    repeat = "repeat_interleave"
-    tile = "repeat"
+except ModuleNotFoundError:
+    jax = None
+    HAS_JAX = False
+
+jnp = None if jax is None else jax.numpy
+
+# --- torch ---
+
+try:
+    import torch
+
+    HAS_TORCH = True
+
+    @struct
+    class TorchInterface(Interface):
+
+        module = torch
+
+        Array = torch.Tensor
+        asarray = torch.as_tensor
+
+        # dtypes
+        dtypes = [
+            "float",
+            "double",
+            "int",
+            "long",
+            "cfloat",
+        ]
+
+        repeat = "repeat_interleave"
+        tile = "repeat"
+
+    INTERFACES["torch"] = TorchInterface()
+
+except ModuleNotFoundError:
+    torch = None
+    HAS_TORCH = False
+
+torch_interface = TorchInterface() if HAS_TORCH else NumpyInterface()
 
 
 """
-class Backend(Stateful(Interface, NumpyAPI())):
+class Backend(Stateful(Interface, NumpyInterface())):
     
     @classmethod
     def read_env(cls) -> str:
