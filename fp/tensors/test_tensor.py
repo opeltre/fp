@@ -1,0 +1,32 @@
+from fp.tensors import Tensor
+
+class TestTensor: 
+    
+    T = Tensor 
+
+    def test_constructor(self): 
+        x = self.T([0, 1, 2])
+        assert isinstance(x, self.T)
+
+    def test_iter_vector(self):
+        tuple_x = (0, 1, 2)
+        x = self.T(tuple_x)
+        assert(tuple(x) == tuple_x) 
+
+    def test_add_operator(self):
+        x = self.T((0, 1, 2))
+        y = self.T((3, 2, 1))
+        assert tuple(x + y) == (3, 3, 3)
+
+    def test_add_method(self):
+        x = self.T((0, 1, 2))
+        y = self.T((3, 2, 1))
+        assert tuple(x.add(y) == (3, 3, 3))
+
+    def test_add_partial(self)
+        x = self.T((0, 1, 2))
+        y = self.T((3, 2, 1))
+        add_x = self.T.add(x)
+        assert (add_x.src, add_x.tgt) == (self.T, self.T)
+        assert add_x(y) == (3, 3, 3)
+
