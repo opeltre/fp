@@ -11,8 +11,6 @@ from fp.instances import struct, List, Str
 
 import os
 
-signature = lambda n: lambda A: Hom(tuple([A] * n), A)
-
 
 @struct
 class LiftWrap(Lift):
@@ -107,33 +105,3 @@ class Backend(Ring, Wrap):
         B._wrapped_ = bases[0]._wrapped_
         type(B)._post_new_(B, bases[0]._backend_)
         return B
-
-
-class EitherRing(Ring, Either):
-
-    _lifted_methods_ = tensor_methods
-
-
-class StatefulEither(Either):
-
-    class Object(Either.Object):
-
-        state: type
-        _lifts_: list[str] = []
-
-    def _post_new_(E, *As):
-        super()._post_new_(*As)
-        if not hasattr(E, "state"):
-            E.state = E._tail_[0]
-        E.use(E.state)
-
-    @classmethod
-    def _subclass_(cls, name, bases, dct):
-        dct = dct | {"state": bases[0].state}
-        E = super()._subclass_(name, bases, dct)
-        return E
-
-    def use(E, state):
-        E.state = state
-        for name in E._lifts_:
-            setattr(E, name, getattr(E.state, name))
