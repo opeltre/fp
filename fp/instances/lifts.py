@@ -25,10 +25,20 @@ class Lift:
                          v        '
                          A  --->  A
 
-    When the method `name : (A, ...) -> `A` has multiple arguments, they can be assumed
-    all in `A` by providing an `int` as signature argument. Otherwise, the signature should
-    be a callable mapping `A : type` to the lifted method's signature, i.e. its
-    `Hom` type instance.
+    For general signatures `(A, ...) -> A`, the `from_source` projection will only be
+    applied to the arguments enumerated by the `lift_args` parameter, which defaults to
+    `...` and can be given as `tuple[int, ...]` otherwise.
+
+    When `lift_args` is `...`, the method `name : (A, ...) -> A` only has arguments in `A`
+    and its signature can be given as an int (its _arity_), e.g.
+
+        Lift("__add__", 2, lift_args=...)
+
+    Otherwise, because the method's signature is meant to depend on `A`, it is expected to
+    be given as a `type -> Hom` callable:
+
+        Lift("reshape", lambda T: Hom((T, tuple), T), lift_args=(0,))
+
 
     Parameters
     ----------

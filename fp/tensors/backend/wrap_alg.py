@@ -17,6 +17,25 @@ import os
 
 @struct
 class Interface:
+    """Declare bindings to a numerical backend.
+
+    An `Interface` object can be mapped to a `TensorBase` subclass
+    by a functor wrapping over the `interface.Array` type, e.g. the
+    :class:`Backend` class.
+
+    The summarized `struct` layout makes it easier to spot and enumerate what
+    are mere naming differences.
+
+    Args:
+        module (ModuleType): python module
+        Array (type): base array class, e.g. `np.ndarray`
+        asarray (callable): default constructor
+        dtypes (list[str]): list of dtypes, optionally prepended by alias + `:`, e.g.
+            `"float:float32"`
+        repeat (str): name of `"repeat"` method (`"repeat_interleave"` for torch)
+        tile (str): name of `"tile"` method (`"repeat"` for torch)
+    """
+
     module: ModuleType
     Array: type
     asarray: Callable
