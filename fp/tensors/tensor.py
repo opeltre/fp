@@ -1,5 +1,6 @@
-from .backend import Backend, INTERFACES, HAS_JAX, HAS_TORCH, jax, torch
 from .tensor_base import TensorBase
+from .backend import Backend
+from .interfaces import INTERFACES, HAS_JAX, HAS_TORCH, jax, torch
 from fp.instances import List
 
 

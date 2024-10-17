@@ -1,62 +1,18 @@
-import torch
-import jax
-import numpy as np
-
-from types import ModuleType
-from typing import Callable
-
 from fp.cartesian import Type, Hom, Prod, Either
 from fp.instances import Lift, Wrap, Alg, Ring, Stateful
-from fp.instances import struct, List, Str
+from fp.instances import struct
 
-import os
-
-
-# ====== Interfaces ======
-
-
-@struct
-class Interface:
-    """Declare bindings to a numerical backend.
-
-    An `Interface` object can be mapped to a `TensorBase` subclass
-    by a functor wrapping over the `interface.Array` type, e.g. the
-    :class:`Backend` class.
-
-    The summarized `struct` layout makes it easier to spot and enumerate what
-    are mere naming differences.
-
-    Args:
-        module (ModuleType): python module
-        Array (type): base array class, e.g. `np.ndarray`
-        asarray (callable): default constructor
-        dtypes (list[str]): list of dtypes, optionally prepended by alias + `:`, e.g.
-            `"float:float32"`
-        repeat (str): name of `"repeat"` method (`"repeat_interleave"` for torch)
-        tile (str): name of `"tile"` method (`"repeat"` for torch)
-    """
-
-    module: ModuleType
-    Array: type
-    asarray: Callable
-    dtypes: List(Str)
-    # aliases
-    repeat: Str = "repeat"
-    tile: Str = "tile"
-
-    def __repr__(self):
-        return self.module.__name__
-
-    def __str__(self):
-        return self.module.__name__
+from .interfaces import Interface
 
 
 @struct
 class LiftWrap(Lift):
+    """Lifts a method to the wrapper type."""
+
     from_source = lambda x: x.data
 
 
-tensor_methods = [
+TENSOR_METHODS = [
     # arithmetic methods
     LiftWrap("__add__", 2),
     LiftWrap("__sub__", 2),
@@ -67,7 +23,6 @@ tensor_methods = [
     LiftWrap("flatten", 1),
     LiftWrap("reshape", lambda T: Hom((T, tuple), T), 0, flip=1),
 ]
-
 
 # ====== Backend: Wrap an interface ======
 
@@ -84,7 +39,7 @@ class Backend(Ring, Wrap):
     """
 
     _interface_: Interface
-    _lifted_methods_ = tensor_methods
+    _lifted_methods_ = TENSOR_METHODS
 
     @classmethod
     def new(cls, api: Interface):

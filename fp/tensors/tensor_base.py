@@ -6,7 +6,7 @@ import numpy as np
 
 from fp.cartesian import Type, Hom
 
-from .backend.wrap_alg import Backend
+from .backend import Backend
 
 
 class TensorBase:
