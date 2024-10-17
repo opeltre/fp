@@ -33,3 +33,12 @@ class TestStateful:
         length = self.M.get.map(Str.len)
         with self.M.use(""):
             assert length.value == 0
+
+    def test_mock(self):
+        mock = self.M.get.mock()
+        assert mock.__len__() == 3
+
+    def test_mock_use(self):
+        mock = self.M.get.mock()
+        with self.M.use(""):
+            assert mock.__len__() == 0

@@ -1,4 +1,5 @@
 from __future__ import annotations
+from typing import Literal
 
 from contextlib import contextmanager
 
@@ -10,6 +11,24 @@ from .state import StateMonad, State
 
 
 class StatefulObject(State.Object, Hom.Object):
+    """Stateful computation.
+
+    In contrast with `State.Object` instances, this class is meant to emulate
+    computations that depend on a global shared state. See :class:`Stateful`.
+
+    The `Stateful` constructor's `.use` context manager provides a single
+    entry point for changing the global state, from which every `Stateful.Object`
+    reads from.
+
+    In addition to the `State.Object` interface, stateful objects expose the
+    following properties and methods:
+
+    * `self.state` evaluates the final state,
+    * `self.value` evaluates the read-out value,
+    * `self.mock()` returns a read-only getter to the read-out value,
+      providing e.g. a lazy reference to the global state when used
+      on `self._monad_.get`.
+    """
 
     arity = 1
 
@@ -28,7 +47,7 @@ class StatefulObject(State.Object, Hom.Object):
         return super().run(s)
 
     def mock(self, method: Literal["state"] | Literal["value"] = "value"):
-        return StatefulMock(self, mode)
+        return StatefulMock(self, method)
 
     @property
     def state(self):
@@ -94,7 +113,7 @@ class StatefulMonad(StateMonad):
 
 
 class StatefulMock:
-    """Read-only mock of the final stateful value."""
+    """Read-only mock of a final stateful value."""
 
     def __init__(self, stateful: Stateful, mode: str = "value"):
         self._stateful_ = stateful
@@ -106,11 +125,17 @@ class StatefulMock:
         except AttributeError:
             return getattr(self._stateful_.run()[self._idx_], attr)
 
-    def __str__(self):
+    def __repr__(self):
         return str(self._stateful_)
 
 
 class Stateful(Monad):
+    """Stateful bifunctor and monad.
+
+    The `Stateful(S, A) ~ S -> (S, A)` type provides a similar interface to its
+    homologous :class:`State` type, but differs by handling a global default
+    state accessed by the `Stateful.use` context manager.
+    """
 
     _defaults_ = StatefulMonad
 
