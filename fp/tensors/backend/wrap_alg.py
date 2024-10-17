@@ -73,16 +73,31 @@ tensor_methods = [
 
 
 class Backend(Ring, Wrap):
-    """Wrap the `Array` type of an `Interface` object."""
+    """Wrap the `Array` type of an `Interface` object.
 
-    _api_: Interface
+    This class inherits from `Ring` and `Wrap` as a type constructor.
+
+    * `Wrap` maps the `interface.Array` type to a `Backend` type instance,
+    * `Ring` takes care of lifting algebraic operators on `Backend` types.
+
+    The
+    """
+
+    _interface_: Interface
     _lifted_methods_ = tensor_methods
 
     @classmethod
     def new(cls, api: Interface):
         B = super(cls, cls).new(api.Array)
-        B._backend_ = api
+        B._interface_ = api
         return B
+
+    def __getattr__(self, attr: str):
+        """Access interface attributes from `Backend` instance."""
+        try:
+            return super().__getattr__(self, attr)
+        except AttributeError:
+            return getattr(self._interface_, attr)
 
     def _post_new_(B, api: Interface):
         """Initialize wrapper type with interface fields."""
@@ -102,7 +117,8 @@ class Backend(Ring, Wrap):
 
     @classmethod
     def _subclass_(cls, name, bases, dct):
+        """Propagate hacky attributes to subclasses."""
         B = super()._subclass_(name, bases, dct)
         B._wrapped_ = bases[0]._wrapped_
-        type(B)._post_new_(B, bases[0]._backend_)
+        type(B)._post_new_(B, bases[0]._interface_)
         return B
