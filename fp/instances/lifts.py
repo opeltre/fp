@@ -9,6 +9,47 @@ from types import FunctionType
 class Lift:
     """
     Declarative definition of method lifts.
+
+    Given a type constructor or functor `T`, and assuming types `A` of a given
+    type class `C` carry a method `name : (A, ...) -> A`, lifts take care of
+    assigning a method `name` on the transformed type.
+
+    The `struct` fields of a `Lift` instance describe the name and
+    signature of the method to be lifted, as well as the two interlacing
+    maps `from_source` and `to_target`, which in the simplest case (`signature = 1`)
+    allow completion of the diagram:
+
+                        T A ---> T A
+                         .        ^
+        from_source      .        '     to_target
+                         v        '
+                         A  --->  A
+
+    For general signatures `(A, ...) -> A`, the `from_source` projection will only be
+    applied to the arguments enumerated by the `lift_args` parameter, which defaults to
+    `...` and can be given as `tuple[int, ...]` otherwise.
+
+    When `lift_args` is `...`, the method `name : (A, ...) -> A` only has arguments in `A`
+    and its signature can be given as an int (its _arity_), e.g.
+
+        Lift("__add__", 2, lift_args=...)
+
+    Otherwise, because the method's signature is meant to depend on `A`, it is expected to
+    be given as a `type -> Hom` callable:
+
+        Lift("reshape", lambda T: Hom((T, tuple), T), lift_args=(0,))
+
+
+    Parameters
+    ----------
+    name : str
+    signature : int | Callable
+        number of same-type arguments, or callable signature `type -> Hom`
+    lift_args : ... | int | tuple[int, ...]
+        arguments to be projected onto original type:
+        all (`...`), one (`int`) or only a selection (`tuple`).
+    from_source : Callable
+    to_target : Callable
     """
 
     name: str
@@ -50,7 +91,7 @@ class Lift:
 
     def raw_lift(self, objtype: type, lift_args: tuple[int, ...]) -> typing.Callable:
         """
-        Return the lifted callable to be wrapped.
+        Lifted callable S' -> T' to be hom-typed.
         """
         method = self.raw(objtype)
         m = max(lift_args)
@@ -65,6 +106,14 @@ class Lift:
             return y
 
         return lifted
+
+    def raw(self, objtype: type) -> typing.Callable:
+        """Callable S -> T to be lifted."""
+
+        def raw_bound_method(x, *xs):
+            return getattr(x, self.name)(*xs)
+
+        return raw_bound_method
 
 
 @struct
@@ -83,7 +132,7 @@ class HomLift(Hom):
 
         def __get__(self, obj, objtype=None):
             if obj is not None:
-                return Hom.curry(self, (obj,))
+                return Hom.partial(self, obj)
             else:
                 return self
 
