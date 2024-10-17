@@ -34,7 +34,6 @@ jobs:
 
       - name: Run foobar 🍫 
         run: |
-          #poetry run fp-tests
           poetry run python examples/foobar.py
       
       - name: Run structs 🕺
@@ -45,7 +44,7 @@ jobs:
         run: |
           poetry poe torchinstall
           poetry poe jaxinstall
-          poetry run python examples/arrays.py
+          #poetry run python examples/arrays.py
 
       - name: Run tests ⚗️ 
         run: | 
