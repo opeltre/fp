@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from contextlib import contextmanager
 
 from fp.meta import Monad, Var
@@ -5,6 +7,36 @@ from fp.cartesian import Type, Hom, Prod
 import fp.io as io
 
 from .state import StateMonad, State
+
+
+class StatefulObject(State.Object, Hom.Object):
+
+    arity = 1
+
+    @property
+    def _monad_(self):
+        return self._head_
+
+    def __init__(self, pipe, initial=None):
+        super().__init__(pipe, initial)
+
+    def run(self, s=None):
+
+        # TODO: return Hom(src | None, tgt) supporting optional s0
+        if s is None:
+            s = self.__class__._initial_
+        return super().run(s)
+
+    def mock(self, method: Literal["state"] | Literal["value"] = "value"):
+        return StatefulMock(self, mode)
+
+    @property
+    def state(self):
+        return self.run()[0]
+
+    @property
+    def value(self):
+        return self.run()[1]
 
 
 class StatefulMonad(StateMonad):
@@ -21,31 +53,7 @@ class StatefulMonad(StateMonad):
     _state_: Type = Var("S")
     _initial_: Var("S")
 
-    class Object(State.Object, Hom.Object):
-
-        arity = 1
-
-        @property
-        def _monad_(self):
-            return self._head_
-
-        def __init__(self, pipe, initial=None):
-            super().__init__(pipe, initial)
-
-        def run(self, s=None):
-
-            # TODO: return Hom(src | None, tgt) supporting optional s0
-            if s is None:
-                s = self.__class__._initial_
-            return super().run(s)
-
-        @property
-        def state(self):
-            return self.run()[0]
-
-        @property
-        def value(self):
-            return self.run()[1]
+    Object = StatefulObject
 
     @classmethod
     @contextmanager
@@ -83,6 +91,23 @@ class StatefulMonad(StateMonad):
         Type.__init__(SA, name, bases, dct)
         SA._monad_ = cls
         return SA
+
+
+class StatefulMock:
+    """Read-only mock of the final stateful value."""
+
+    def __init__(self, stateful: Stateful, mode: str = "value"):
+        self._stateful_ = stateful
+        self._idx_ = 0 if mode == "state" else 1
+
+    def __getattr__(self, attr):
+        try:
+            return super().__getattr__(self, attr)
+        except AttributeError:
+            return getattr(self._stateful_.run()[self._idx_], attr)
+
+    def __str__(self):
+        return str(self._stateful_)
 
 
 class Stateful(Monad):

@@ -9,6 +9,90 @@ Point = Type.Unit()
 # TODO: too many pathways for gets, put, puts, etc.
 
 
+class StateObject(Monad.TopType, Hom.Object):
+    """
+    Stateful computation.
+    """
+
+    def __init__(self, pipe, initial=None):
+        self.__name__ = pipe.__name__ if hasattr(pipe, "__name__") else "st"
+        super().__init__(pipe)
+        self._initial_ = initial
+
+    @property
+    def _monad_(self):
+        return self._head_(self._state_)
+
+    def map(self, f):
+        map_f = self._monad_.fmap(f)(self)
+        map_f.__name__ = self.__name__ + " > " + f.__name__
+        return map_f
+
+    def bind(self, mf):
+        maf = super().bind(mf)
+        maf.__name__ = self.__name__ + " >> " + mf.__name__
+        return maf
+
+    @property
+    def run(self):
+        # could as well return self
+        cls = self.__class__
+        return Hom(cls.src, cls.tgt)(self)
+
+    @property
+    def exec(self):
+        return self.tgt.proj(0) @ self.run
+
+    @property
+    def eval(self):
+        return self.tgt.proj(1) @ self.run
+
+    @contextmanager
+    def use(self, state):
+        try:
+            s0 = self._initial_
+            self._initial_ = state
+            s1, a = self.run(state)
+            yield self._monad_.put(s1).unit(a)
+        finally:
+            self._initial_ = s0
+
+    # --- Compositions by method chaining ---
+
+    def then(self, f, tgt=None):
+        if tgt is None:
+            tgt = f.tgt[1]
+        pipe = (*self._pipe, lambda pair: f(*pair))
+        out = self._monad_(tgt)(pipe, self._initial_)
+        out.__name__ = self.__name__ + " ; " + f.__name__
+        return out
+
+    def gets(self, f, tgt=None):
+        tgt = tgt or f.tgt
+        if callable(f):
+            get_f = lambda s, a: (s, f(s))
+        elif isinstance(f, str):
+            get_f = lambda s, a: (s, getattr(s, f))
+        get_f.__name__ = "get " + f.__name__
+        return self.then(get_f, tgt=tgt)
+
+    def put(self, s):
+        out = self.then(lambda *_: (s, ()), tgt=Type.Unit)
+        out.__name__ = self.__name__ + " >> put " + str(s)
+        return out
+
+    def unit(self, a):
+        unit_a = lambda s, _: (s, a)
+        unit_a.__name__ = "return " + str(a)
+        out = self.then(unit_a, type(a))
+        return out
+
+    def puts(self, f):
+        puts_f = lambda s, a: (f(s), a)
+        puts_f.__name__ = "put " + f.__name__
+        return self.then(puts_f, tgt=self._value_)
+
+
 class StateMonad(Type, metaclass=Monad):
     """State monad.
 
@@ -150,88 +234,7 @@ class State(Hom, metaclass=HomFunctor):
     (the global class state of `Stateful(S, s0)` types).
     """
 
-    class Object(Monad.TopType, Hom.Object):
-        """
-        Stateful computation.
-        """
-
-        def __init__(self, pipe, initial=None):
-            self.__name__ = pipe.__name__ if hasattr(pipe, "__name__") else "st"
-            super().__init__(pipe)
-            self._initial_ = initial
-
-        @property
-        def _monad_(self):
-            return self._head_(self._state_)
-
-        def map(self, f):
-            map_f = self._monad_.fmap(f)(self)
-            map_f.__name__ = self.__name__ + " > " + f.__name__
-            return map_f
-
-        def bind(self, mf):
-            maf = super().bind(mf)
-            maf.__name__ = self.__name__ + " >> " + mf.__name__
-            return maf
-
-        @property
-        def run(self):
-            # could as well return self
-            cls = self.__class__
-            return Hom(cls.src, cls.tgt)(self)
-
-        @property
-        def exec(self):
-            return self.tgt.proj(0) @ self.run
-
-        @property
-        def eval(self):
-            return self.tgt.proj(1) @ self.run
-
-        @contextmanager
-        def use(self, state):
-            try:
-                s0 = self._initial_
-                self._initial_ = state
-                s1, a = self.run(state)
-                yield self._monad_.put(s1).unit(a)
-            finally:
-                self._initial_ = s0
-
-        # --- Compositions by method chaining ---
-
-        def then(self, f, tgt=None):
-            if tgt is None:
-                tgt = f.tgt[1]
-            pipe = (*self._pipe, lambda pair: f(*pair))
-            out = self._monad_(tgt)(pipe, self._initial_)
-            out.__name__ = self.__name__ + " ; " + f.__name__
-            return out
-
-        def gets(self, f, tgt=None):
-            tgt = tgt or f.tgt
-            if callable(f):
-                get_f = lambda s, a: (s, f(s))
-            elif isinstance(f, str):
-                get_f = lambda s, a: (s, getattr(s, f))
-            get_f.__name__ = "get " + f.__name__
-            return self.then(get_f, tgt=tgt)
-
-        def put(self, s):
-            out = self.then(lambda *_: (s, ()), tgt=Type.Unit)
-            out.__name__ = self.__name__ + " >> put " + str(s)
-            return out
-
-        def unit(self, a):
-            unit_a = lambda s, _: (s, a)
-            unit_a.__name__ = "return " + str(a)
-            out = self.then(unit_a, type(a))
-            return out
-
-        def puts(self, f):
-            puts_f = lambda s, a: (f(s), a)
-            puts_f.__name__ = "put " + f.__name__
-            return self.then(puts_f, tgt=self._value_)
+    Object = StateObject
 
     @classmethod
     def new(cls, S, A=...):
