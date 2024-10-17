@@ -6,7 +6,8 @@ from .str import Str
 from .list import List
 from .struct import Key, Struct, struct
 from .wrap import Wrap
-from .state import State, StateMonad, Stateful
+from .state import State, StateMonad
+from .stateful import Stateful
 from .async_io import AsyncIO
 
 __all__ = [
