@@ -3,6 +3,8 @@ from .backend import Backend
 from .interfaces import INTERFACES, HAS_JAX, HAS_TORCH, jax, torch
 from fp.instances import List
 
+from fp.tensors.interfaces.stateful import StatefulInterface
+
 
 class Numpy(Backend(INTERFACES["numpy"]), TensorBase):
 
@@ -83,6 +85,7 @@ if HAS_TORCH:
             return str(self)
 
 
+# class Tensor(StatefulBackend(StatefulInterface.get), TensorBase): ...
 class Tensor(Torch): ...
 
 

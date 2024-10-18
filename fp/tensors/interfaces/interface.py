@@ -10,6 +10,16 @@ INTERFACES = {}
 
 
 @struct
+class Dtypes:
+    int: str = "int32"
+    long: str = "int64"
+    float: str = "float32"
+    double: str = "float64"
+    cfloat: str = "complex64"
+    cdouble: str = "complex128"
+
+
+@struct
 class Interface:
     """Declares bindings to a numerical backend.
 
@@ -24,8 +34,8 @@ class Interface:
         module (ModuleType): python module
         Array (type): base array class, e.g. `np.ndarray`
         asarray (callable): default constructor
-        dtypes (list[str]): list of dtypes, optionally prepended by alias + `:`, e.g.
-            `"float:float32"`
+        dtypes (DtypeTable): a struct holding dtype aliases, e.g.
+            `dtypes.float64 = "double"` for torch.
         repeat (str): name of `"repeat"` method (`"repeat_interleave"` for torch)
         tile (str): name of `"tile"` method (`"repeat"` for torch)
     """

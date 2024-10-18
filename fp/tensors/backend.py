@@ -2,7 +2,7 @@ from fp.cartesian import Type, Hom, Prod, Either
 from fp.instances import Lift, Wrap, Alg, Ring, Stateful
 from fp.instances import struct
 
-from .interfaces import Interface
+from .interfaces import Interface, INTERFACES, StatefulInterface
 
 
 @struct
@@ -76,4 +76,16 @@ class Backend(Ring, Wrap):
         B = super()._subclass_(name, bases, dct)
         B._wrapped_ = bases[0]._wrapped_
         type(B)._post_new_(B, bases[0]._interface_)
+        return B
+
+
+class StatefulBackend(Backend):
+
+    Array = Either(*(api.Array for api in INTERFACES.values()))
+
+    @classmethod
+    def new(cls, api: StatefulInterface):
+        B = super(cls, cls).new(cls.Array)
+        B._interface_ = api.mock("state")
+        B._stateful_ = type(api)
         return B

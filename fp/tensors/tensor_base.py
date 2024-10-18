@@ -6,13 +6,12 @@ import numpy as np
 
 from fp.cartesian import Type, Hom
 
-from .backend import Backend
+from .interfaces import Interface
 
 
 class TensorBase:
 
-    _backend_: Backend
-    _module_: ModuleType
+    _interface_: Interface
 
     # --- Tensor attributes ---
 
@@ -63,7 +62,7 @@ class TensorBase:
 
     def numpy(self):
         Numpy = self.__class__.Numpy
-        data = Numpy._backend_.asarray(self.data).copy()
+        data = Numpy._interface_.asarray(self.data).copy()
         return Numpy(data)
 
     def torch(self):
@@ -85,14 +84,14 @@ class TensorBase:
         """
         cls = self.__class__
         repeats = repeats if type(repeats) is int else cls(repeats).data
-        repeat = getattr(self._module_, self._backend_.repeat)
+        repeat = getattr(self._interface_.module, self._interface_.repeat)
         return cls(repeat(self.data, repeats))
 
     def tile(self, ntiles: tuple[int, ...]):
         """
         Tile input array across given dimension-wise repetitions.
         """
-        repeat = getattr(self._module_, self._backend_.tile)
+        repeat = getattr(self._interface_.module, self._interface_.tile)
         return self.__class__(repeat(self.data, ntiles))
 
     # --- tensor product ---
@@ -112,15 +111,15 @@ class TensorBase:
 
     @classmethod
     def asarray(cls, data: typing.Any) -> cls:
-        return cls(cls._module_.asarray(data))
+        return cls(cls._interface_.module.asarray(data))
 
     @classmethod
     def zeros(cls, ns, **ks):
-        return cls(cls._module_.zeros(ns, **ks))
+        return cls(cls._interface_.module.zeros(ns, **ks))
 
     @classmethod
     def ones(cls, ns, **ks):
-        return cls(cls._module_.ones(ns, **ks))
+        return cls(cls._interface_.module.ones(ns, **ks))
 
     @classmethod
     def randn(cls, ns, **ks):
@@ -132,7 +131,7 @@ class TensorBase:
 
     @classmethod
     def range(cls, n, **ks):
-        return cls(cls._module_.arange(n, **ks))
+        return cls(cls._interface_.module.arange(n, **ks))
 
     # --- tensor product ---
 
