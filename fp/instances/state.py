@@ -1,22 +1,103 @@
 from contextlib import contextmanager
 
-from typing import Callable, Iterable
-
 from fp.meta import Monad, HomFunctor, Var
 from fp.cartesian import Type, Hom, Prod
 import fp.io as io
 
 Point = Type.Unit()
 
+# TODO: too many pathways for gets, put, puts, etc.
+
+
+class StateObject(Monad.TopType, Hom.Object):
+    """
+    Stateful computation.
+    """
+
+    def __init__(self, pipe, initial=None):
+        self.__name__ = pipe.__name__ if hasattr(pipe, "__name__") else "st"
+        super().__init__(pipe)
+        self._initial_ = initial
+
+    @property
+    def _monad_(self):
+        return self._head_(self._state_)
+
+    def map(self, f):
+        map_f = self._monad_.fmap(f)(self)
+        map_f.__name__ = self.__name__ + " > " + f.__name__
+        return map_f
+
+    def bind(self, mf):
+        maf = super().bind(mf)
+        maf.__name__ = self.__name__ + " >> " + mf.__name__
+        return maf
+
+    @property
+    def run(self):
+        # could as well return self
+        cls = self.__class__
+        return Hom(cls.src, cls.tgt)(self)
+
+    @property
+    def exec(self):
+        return self.tgt.proj(0) @ self.run
+
+    @property
+    def eval(self):
+        return self.tgt.proj(1) @ self.run
+
+    @contextmanager
+    def use(self, state):
+        try:
+            s0 = self._initial_
+            self._initial_ = state
+            s1, a = self.run(state)
+            yield self._monad_.put(s1).unit(a)
+        finally:
+            self._initial_ = s0
+
+    # --- Compositions by method chaining ---
+
+    def then(self, f, tgt=None):
+        if tgt is None:
+            tgt = f.tgt[1]
+        pipe = (*self._pipe, lambda pair: f(*pair))
+        out = self._monad_(tgt)(pipe, self._initial_)
+        out.__name__ = self.__name__ + " ; " + f.__name__
+        return out
+
+    def gets(self, f, tgt=None):
+        tgt = tgt or f.tgt
+        if callable(f):
+            get_f = lambda s, a: (s, f(s))
+        elif isinstance(f, str):
+            get_f = lambda s, a: (s, getattr(s, f))
+        get_f.__name__ = "get " + f.__name__
+        return self.then(get_f, tgt=tgt)
+
+    def put(self, s):
+        out = self.then(lambda *_: (s, ()), tgt=Type.Unit)
+        out.__name__ = self.__name__ + " >> put " + str(s)
+        return out
+
+    def unit(self, a):
+        unit_a = lambda s, _: (s, a)
+        unit_a.__name__ = "return " + str(a)
+        out = self.then(unit_a, type(a))
+        return out
+
+    def puts(self, f):
+        puts_f = lambda s, a: (f(s), a)
+        puts_f.__name__ = "put " + f.__name__
+        return self.then(puts_f, tgt=self._value_)
+
 
 class StateMonad(Type, metaclass=Monad):
-    """
-    State monad.
+    """State monad.
 
     The monad `State S` maps any type `A` to the stateful computation
     type `State S A`.
-
-
     """
 
     _state_: Type = Var("S")
@@ -119,8 +200,7 @@ class StateMonad(Type, metaclass=Monad):
 
 
 class State(Hom, metaclass=HomFunctor):
-    """
-    State bifunctor and monad.
+    """State bifunctor and monad.
 
     The type `State(S, A)` describes stateful computations yielding a return
     value of type `A` while acting on the state type `S`. The isomorphism::
@@ -154,88 +234,7 @@ class State(Hom, metaclass=HomFunctor):
     (the global class state of `Stateful(S, s0)` types).
     """
 
-    class Object(Monad.TopType, Hom.Object):
-        """
-        Stateful computation.
-        """
-
-        def __init__(self, pipe, initial=None):
-            self.__name__ = pipe.__name__ if hasattr(pipe, "__name__") else "st"
-            super().__init__(pipe)
-            self._initial_ = initial
-
-        @property
-        def _monad_(self):
-            return self._head_(self._state_)
-
-        def map(self, f):
-            map_f = self._monad_.fmap(f)(self)
-            map_f.__name__ = self.__name__ + " > " + f.__name__
-            return map_f
-
-        def bind(self, mf):
-            maf = super().bind(mf)
-            maf.__name__ = self.__name__ + " >> " + mf.__name__
-            return maf
-
-        @property
-        def run(self):
-            # could as well return self
-            cls = self.__class__
-            return Hom(cls.src, cls.tgt)(self)
-
-        @property
-        def exec(self):
-            return self.tgt.proj(0) @ self.run
-
-        @property
-        def eval(self):
-            return self.tgt.proj(1) @ self.run
-
-        @contextmanager
-        def use(self, state):
-            try:
-                s0 = self._initial_
-                self._initial_ = state
-                s1, a = self.run(state)
-                yield self._monad_.put(s1).unit(a)
-            finally:
-                self._initial_ = s0
-
-        # --- Compositions by method chaining ---
-
-        def then(self, f, tgt=None):
-            if tgt is None:
-                tgt = f.tgt[1]
-            pipe = (*self._pipe, lambda pair: f(*pair))
-            out = self._monad_(tgt)(pipe, self._initial_)
-            out.__name__ = self.__name__ + " ; " + f.__name__
-            return out
-
-        def gets(self, f, tgt=None):
-            tgt = tgt or f.tgt
-            if callable(f):
-                get_f = lambda s, a: (s, f(s))
-            elif isinstance(f, str):
-                get_f = lambda s, a: (s, getattr(s, f))
-            get_f.__name__ = "get " + f.__name__
-            return self.then(get_f, tgt=tgt)
-
-        def put(self, s):
-            out = self.then(lambda *_: (s, ()), tgt=Type.Unit)
-            out.__name__ = self.__name__ + " >> put " + str(s)
-            return out
-
-        def unit(self, a):
-            unit_a = lambda s, _: (s, a)
-            unit_a.__name__ = "return " + str(a)
-            out = self.then(unit_a, type(a))
-            return out
-
-        def puts(self, f):
-            puts_f = lambda s, a: (f(s), a)
-            puts_f.__name__ = "put " + f.__name__
-            return self.then(puts_f, tgt=self._value_)
+    Object = StateObject
 
     @classmethod
     def new(cls, S, A=...):
@@ -298,99 +297,3 @@ class State(Hom, metaclass=HomFunctor):
     def _subclass_(cls, *xs, **ys):
         print(cls, "_subclass_", xs[:2])
         return Monad.__new__(cls, *xs, **ys)
-
-
-class StatefulMonad(StateMonad):
-    """
-    Stateful Monads on a pointed state type.
-
-    Fully stateful monads are defined by both a state
-    type `S` and an initial state `_initial_ : S`.
-
-        >>> MyString = Stateful(Str, "Hello World!")
-
-    """
-
-    _state_: Type = Var("S")
-    _initial_: Var("S")
-
-    class Object(State.Object, Hom.Object):
-
-        arity = 1
-
-        @property
-        def _monad_(self):
-            return self._head_
-
-        def __init__(self, pipe, initial=None):
-            super().__init__(pipe, initial)
-
-        def run(self, s=None):
-            if s is None:
-                s = self.__class__._initial_
-            return super().run(s)
-
-        @property
-        def state(self):
-            return self.run()[0]
-
-        @property
-        def value(self):
-            return self.run()[1]
-
-    @classmethod
-    @contextmanager
-    def use(cls, s0: Var("S")):
-        """
-        Context manager for the `_initial_` class attribute.
-
-        Within a managed block, evaluation of any stateful
-        instance will be computed from `s0`.
-
-        Yields
-        ------
-        put_s0 : cls(Type.Unit)
-            a stateful instance with initial state `s0` and
-            returning `()`.
-        """
-        s1 = cls._initial_
-        try:
-            cls._initial_ = s0
-            yield cls.put(s0)
-        finally:
-            cls._initial_ = s1
-
-    @classmethod
-    def new(cls, A):
-        name = cls._get_name_(A)
-        bases = (cls.Object,)
-        dct = dict(
-            _state_=cls._state_,
-            _value_=A,
-            src=cls._state_,
-            tgt=Prod(cls._state_, A),
-        )
-        SA = Type.__new__(cls, name, bases, dct)
-        Type.__init__(SA, name, bases, dct)
-        SA._monad_ = cls
-        return SA
-
-
-class Stateful(Monad):
-
-    _defaults_ = StatefulMonad
-
-    def __new__(cls, S, initial=None, dct=None):
-        if isinstance(S, (Type, type)):
-            name = "Stateful(" + S.__name__ + ")"
-            bases = ()
-            dct = dict(_state_=S, _initial_=initial)
-        else:
-            name, bases = S, initial
-        SA = super().__new__(cls, name, bases, dct)
-        super().__init__(SA, name, bases, dct)
-        SA._head_ = cls
-        SA._tail_ = (S,)
-        return SA
-
-    def __init__(SA, A, initial=None, dct=None): ...
