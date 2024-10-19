@@ -54,17 +54,12 @@ class Backend(Ring, Wrap):
         B._interface_ = api
         return B
 
-    @classmethod
-    def _get_Array_(cls, api: Interface) -> type:
-        """Read `api.Array` attribute, to allow overrides."""
-        return api.Array
-
     def _post_new_(B, api: Interface):
         """Initialize wrapper type with interface fields."""
         # call Wrap._post_new_, lifting algebraic methods
         super()._post_new_(B._Array_)
-        # backend-specific constructor
-        B.cast_data = api.asarray
+        # call backend-specific constructor lazily for mocked api
+        B.cast_data = lambda x: api.asarray(x)
         # dtype casts
         for dtype in api.dtypes:
             alias = dtype.split(":")[-1]
