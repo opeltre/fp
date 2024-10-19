@@ -67,11 +67,11 @@ class TensorBase:
 
     def torch(self):
         Torch = self.__class__.Torch
-        return Torch(Torch.asarray(self.numpy().data))
+        return Torch.asarray(self.numpy().data)
 
     def jax(self):
         Jax = self.__class__.Jax
-        return Jax(Jax.asarray(self.numpy().data))
+        return Jax.asarray(self.numpy().data)
 
     # --- repeats ---
 
