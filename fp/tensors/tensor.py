@@ -1,3 +1,5 @@
+from contextlib import contextmanager
+
 import typing
 from .tensor_base import TensorBase
 from .backend import Backend
@@ -92,6 +94,16 @@ stateful_interface = StatefulInterface.mock()
 class Tensor(Backend(stateful_interface), TensorBase):
 
     _Array_ = typing.Union[*(api.Array for api in INTERFACES.values())]
+
+    @classmethod
+    @contextmanager
+    def use(cls, backend: str):
+        """Context manager handling global backend state."""
+        try:
+            with StatefulInterface.use(INTERFACES[backend]):
+                yield INTERFACES[backend]
+        finally:
+            ...
 
 
 ### hack avoiding circular imports (for cast methods)

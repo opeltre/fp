@@ -30,13 +30,25 @@ TENSOR_METHODS = [
 
 
 class Backend(Ring, Wrap):
-    """Wrap the `Array` type of an `Interface` object.
+    """Functor wrapping the `Array` type of an `Interface` object.
 
-    This class inherits from `Ring` and `Wrap` as a type constructor.
+    Any value `array : Backend(interface)` holds an object `array.data`
+    that is an instance of the plain python type `interface.Array`.
 
-    * `Wrap` maps the `interface.Array` type to a `Backend` type instance,
-    * `Ring` takes care of lifting algebraic operators on `Backend` types.
+    This class inherits from `Ring` and `Wrap` as a type constructor, which
+    have the following effects:
 
+    * `Wrap` maps the `interface.Array` type to a `Backend` type instance
+      and lifts algebraic operators `__add__`, etc. to the wrapper type,
+    * `Ring` then binds typed algebraic classmethods such i.e. `add`, ...
+      to the `Backend` type.
+
+    The `Backend` class is also meant to handle a mock of the `Interface` object,
+    i.e. `StatefulInterface.mock()`.  The `StatefulInterface.use` context manager
+    gives a single entry point for managing the global state.
+
+    Note
+    ----
     The `Backend` type constructor also takes care of setting the `_inteface_`
     reference meant to be used by the downstream `TensorBase` mixin class.
     The metaclass factory logic is localised here, while `TensorBase`
