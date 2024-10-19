@@ -1,3 +1,5 @@
+import typing
+
 from fp.cartesian import Type, Hom, Prod, Either
 from fp.instances import Lift, Wrap, Alg, Ring, Stateful
 from fp.instances import struct
@@ -47,19 +49,10 @@ class Backend(Ring, Wrap):
         B._interface_ = api
         return B
 
-    def __getattr__(self, attr: str):
-        """Access interface attributes from `Backend` instance."""
-        try:
-            return super().__getattr__(self, attr)
-        except AttributeError:
-            return getattr(self._interface_, attr)
-
     def _post_new_(B, api: Interface):
         """Initialize wrapper type with interface fields."""
-        for k, v in api.items():
-            setattr(B, k, v)
+        # call Wrap._post_new_, lifting algebraic methods
         super()._post_new_(api.Array)
-        B._module_ = api.module
         # backend-specific constructor
         B.cast_data = api.asarray
         # dtype casts
@@ -81,11 +74,30 @@ class Backend(Ring, Wrap):
 
 class StatefulBackend(Backend):
 
-    Array = Either(*(api.Array for api in INTERFACES.values()))
+    Array = typing.Union[*(api.Array for api in INTERFACES.values())]
 
     @classmethod
     def new(cls, api: StatefulInterface):
-        B = super(cls, cls).new(cls.Array)
+        B = super(Backend, cls).new(cls.Array)
         B._interface_ = api.mock("state")
         B._stateful_ = type(api)
+        return B
+
+    def _post_new_(B, api: StatefulInterface):
+        """Initialize wrapper type with interface fields."""
+        # call Wrap._post_new_, lifting algebraic methods
+        super(Backend, B)._post_new_(B.Array)
+
+        # backend-specific constructor
+        B.cast_data = lambda x: B._interface_.asarray(x)
+
+        B.__repr__ = lambda x: str(x.data)
+
+        #   B.cast_data = api.asarray
+        #   # dtype casts
+        #   for dtype in api.dtypes:
+        #       alias = dtype.split(":")[-1]
+        #       cast = getattr(api.module, alias)
+        #       method = lambda x: x.__class__(cast(x.data))
+        #       setattr(B, dtype, method)
         return B

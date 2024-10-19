@@ -1,5 +1,5 @@
 from .tensor_base import TensorBase
-from .backend import Backend
+from .backend import Backend, StatefulBackend
 from .interfaces import INTERFACES, HAS_JAX, HAS_TORCH, jax, torch
 from fp.instances import List
 
@@ -85,8 +85,7 @@ if HAS_TORCH:
             return str(self)
 
 
-# class Tensor(StatefulBackend(StatefulInterface.get), TensorBase): ...
-class Tensor(Torch): ...
+class Tensor(StatefulBackend(StatefulInterface.get), TensorBase): ...
 
 
 ### hack avoiding circular imports (for cast methods)
