@@ -1,11 +1,12 @@
+"""Base test class for Tensor implementations."""
+
 import pytest
+from fp.tensors import Tensor, Numpy
 
-from fp.tensors import Tensor
 
+class _TestTensor:
 
-class TestTensor:
-
-    T = Tensor
+    T: type
 
     def test_constructor(self):
         x = self.T([0, 1, 2])
@@ -38,3 +39,11 @@ class TestTensor:
         add_x = self.T.add(x)
         assert (add_x.src, add_x.tgt) == (self.T, self.T)
         assert tuple(add_x(y)) == (3, 3, 3)
+
+
+class TestTensor(_TestTensor):
+    T = Tensor
+
+
+class TestNumpy(_TestTensor):
+    T = Numpy
