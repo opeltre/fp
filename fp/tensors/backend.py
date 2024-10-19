@@ -37,22 +37,32 @@ class Backend(Ring, Wrap):
     * `Wrap` maps the `interface.Array` type to a `Backend` type instance,
     * `Ring` takes care of lifting algebraic operators on `Backend` types.
 
-    The
+    The `Backend` type constructor also takes care of setting the `_inteface_`
+    reference meant to be used by the downstream `TensorBase` mixin class.
+    The metaclass factory logic is localised here, while `TensorBase`
+    provides the rest of the API in a more readable and pythonic way.
     """
 
-    _interface_: Interface
     _lifted_methods_ = TENSOR_METHODS
 
     @classmethod
     def new(cls, api: Interface):
-        B = super(cls, cls).new(api.Array)
+        # allow overriding of `api.Array` with Union for mocked api
+        Array = cls._Array_ if hasattr(cls, "_Array_") else api.Array
+        B = super(cls, cls).new(Array)
+        B._Array_ = Array
         B._interface_ = api
         return B
+
+    @classmethod
+    def _get_Array_(cls, api: Interface) -> type:
+        """Read `api.Array` attribute, to allow overrides."""
+        return api.Array
 
     def _post_new_(B, api: Interface):
         """Initialize wrapper type with interface fields."""
         # call Wrap._post_new_, lifting algebraic methods
-        super()._post_new_(api.Array)
+        super()._post_new_(B._Array_)
         # backend-specific constructor
         B.cast_data = api.asarray
         # dtype casts
@@ -69,35 +79,4 @@ class Backend(Ring, Wrap):
         B = super()._subclass_(name, bases, dct)
         B._wrapped_ = bases[0]._wrapped_
         type(B)._post_new_(B, bases[0]._interface_)
-        return B
-
-
-class StatefulBackend(Backend):
-
-    Array = typing.Union[*(api.Array for api in INTERFACES.values())]
-
-    @classmethod
-    def new(cls, api: StatefulInterface):
-        B = super(Backend, cls).new(cls.Array)
-        B._interface_ = api.mock("state")
-        B._stateful_ = type(api)
-        return B
-
-    def _post_new_(B, api: StatefulInterface):
-        """Initialize wrapper type with interface fields."""
-        # call Wrap._post_new_, lifting algebraic methods
-        super(Backend, B)._post_new_(B.Array)
-
-        # backend-specific constructor
-        B.cast_data = lambda x: B._interface_.asarray(x)
-
-        B.__repr__ = lambda x: str(x.data)
-
-        #   B.cast_data = api.asarray
-        #   # dtype casts
-        #   for dtype in api.dtypes:
-        #       alias = dtype.split(":")[-1]
-        #       cast = getattr(api.module, alias)
-        #       method = lambda x: x.__class__(cast(x.data))
-        #       setattr(B, dtype, method)
         return B

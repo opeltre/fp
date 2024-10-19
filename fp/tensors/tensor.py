@@ -1,5 +1,6 @@
+import typing
 from .tensor_base import TensorBase
-from .backend import Backend, StatefulBackend
+from .backend import Backend
 from .interfaces import INTERFACES, HAS_JAX, HAS_TORCH, jax, torch
 from fp.instances import List
 
@@ -85,7 +86,12 @@ if HAS_TORCH:
             return str(self)
 
 
-class Tensor(StatefulBackend(StatefulInterface.get), TensorBase): ...
+stateful_interface = StatefulInterface.mock()
+
+
+class Tensor(Backend(stateful_interface), TensorBase):
+
+    _Array_ = typing.Union[*(api.Array for api in INTERFACES.values())]
 
 
 ### hack avoiding circular imports (for cast methods)
