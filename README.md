@@ -57,9 +57,44 @@ Overcoming the mysterious difficulties of metaclass construction was a hard enou
 
 [topos]: https://github.com/opeltre/topos 
 
+### `fp.tensors` module
+
+The `Tensor` class is a backend-agnostic class whose instances wrap 
+a reference to a `typing.Union[np.ndarray, torch.Tensor, jax.Array]` object.
+The backend can be fixed explicitly by using any of the equivalent classes 
+`Numpy`, `Torch` and `Jax`.
+
+```py
+>>> from fp.tensors import Tensor
+>>> with Tensor.use("torch"):
+...     x = Tensor((0, 1, 2))
+>>> x.data
+tensor([0, 1, 2])
+```
+
+Typed tensors are created by supplying shape tuples to the  `Tens` functor. 
+With `Linear` and `Otimes`, typed tensors form a [closed monoidal] 
+subcategory of `Type`.
+
+[closed monoidal]: https://en.wikipedia.org/wiki/Closed_monoidal_category
+
+```py
+>>> from fp.tensors import Tens, Linear
+>>> E = Tens((2, 3))
+>>> F = Tens((4,))
+>>> v = E.range()
+Tens 2x3 : [[0, 1, 2],
+           [[3, 4, 5]]
+>>> f = Linear(E, F)(Tensor.randn(4, 6))
+>>> f(v).shape
+(4,)
+```
+
+See [examples/arrays.py](examples.arrays.py) and the [docs] for more details.
 ### `fp.cartesian` module
 
 The type `Hom(A, B)` declares typed functions or type _morphisms_, with input in `A` and output in `B`. Functions with multiple inputs can be declared by supplying a tuple of types `A = (A0, A1, ...)` as input.
+
 
 ```py
 from fp import *
@@ -175,44 +210,6 @@ the currently implemented types, functors, monads, etc.
 
 [instances]: https://github.com/opeltre/fp/blob/master/fp/instances/__init__.py
 
-### `fp.tensors` module
-
-For now, the `Tensor` class is an alias of `Torch`, while Arrays from other backends can be explictly created with `Jax` and `Numpy`. This part of the API is
-subject to change. 
-
-```py
->>> from fp.tensors import Torch, Jax, Numpy
->>> from fp.tensors import backends
->>> backends
-List Backend: [Numpy, Jax, Torch]
->>> x, y, z = (B.range(3) * (10 ** i) for i, B in enumerate(backends))
->>> x
-Numpy: [0 1 2]
->>> y + x.jax() 
-Jax: [0 11  22]
->>> z + (x + y.numpy()).torch()
-Torch: [0, 111, 222]
-```
-
-Typed tensors are created by supplying shape tuples to the  `Tens` functor. 
-With `Linear` and `Otimes`, typed tensors form a [closed monoidal] 
-subcategory of `Type`.
-
-[closed monoidal]: https://en.wikipedia.org/wiki/Closed_monoidal_category
-
-```py
->>> from fp.tensors import Tens, Linear
->>> E = Tens((2, 3))
->>> F = Tens((4,))
->>> v = E.range()
-Tens 2x3 : [[0, 1, 2],
-           [[3, 4, 5]]
->>> f = Linear(E, F)(Tensor.randn(4, 6))
->>> f(v).shape
-(4,)
-```
-
-See [examples/arrays.py](examples.arrays.py) and the [docs] for more details.
 
 ## Contributing and troubleshooting
 
