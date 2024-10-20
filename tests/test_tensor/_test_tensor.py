@@ -39,11 +39,23 @@ class _TestTensor:
         assert (add_x.src, add_x.tgt) == (self.T, self.T)
         assert tuple(add_x(y)) == (3, 3, 3)
 
+    def test_int32(self):
+        x = self.T((0.0, 1.0, 2.0))
+        y = self.T.int32(x)
+        dtype = str(y.data.dtype)
+        assert dtype.find("int") >= 0
+
     def test_int64(self):
         x = self.T((0, 1, 2))
         y = self.T.int64(x)
         dtype = str(y.data.dtype)
         assert dtype.find("int64") >= 0 or dtype.find("long") >= 0
+
+    def test_float32(self):
+        x = self.T((0, 1, 2))
+        y = self.T.float32(x)
+        dtype = str(y.data.dtype)
+        assert dtype.find("float32") >= 0 or dtype.find("double") >= 0
 
     def test_float64(self):
         x = self.T((0, 1, 2))
