@@ -4,9 +4,8 @@ import typing
 from .tensor_base import TensorBase
 from .backend import Backend
 from .interfaces import INTERFACES, HAS_JAX, HAS_TORCH, jax, torch
+from .interfaces import StatefulInterface
 from fp.instances import List
-
-from fp.tensors.interfaces.stateful import StatefulInterface
 
 
 class Numpy(Backend(INTERFACES["numpy"]), TensorBase):

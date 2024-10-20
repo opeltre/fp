@@ -3,7 +3,7 @@ import os
 from fp.instances import Stateful
 from fp import io
 
-from .numpy import NumpyInterface
+from .numpy_interface import NumpyInterface
 from .interface import Interface, INTERFACES
 
 

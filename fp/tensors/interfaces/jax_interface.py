@@ -1,6 +1,6 @@
 from fp.instances import struct
-from .interface import Interface, INTERFACES
-from .numpy import NumpyInterface
+from .interface import Interface, DtypeTable, INTERFACES
+from .numpy_interface import NumpyInterface
 
 try:
     import jax
@@ -9,15 +9,13 @@ try:
 
     @struct
     class JaxInterface(Interface):
-
         module = jax.numpy
+        # array class and constructor
         Array = jax.lib.xla_extension.ArrayImpl
         asarray = jax.numpy.asarray
-
-        dtypes = NumpyInterface().dtypes[:-1] + [
-            "cfloat:complex64",
-            "cdouble:complex128",
-        ]
+        # dtypes : jax.numpy.<dtype>(x)
+        dtypes = DtypeTable()
+        dtypes_bind = "module"
 
     INTERFACES["jax"] = JaxInterface()
 

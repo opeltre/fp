@@ -1,7 +1,7 @@
 from collections import defaultdict
 from fp.instances import struct
 
-from .interface import Interface, INTERFACES
+from .interface import Interface, DtypeTable, INTERFACES
 
 import numpy as np
 
@@ -13,14 +13,9 @@ class NumpyInterface(Interface):
 
     Array = np.ndarray
     asarray = np.asarray
-
-    dtypes = [
-        "float:float32",
-        "double:float64",
-        "int:int32",
-        "long:int64",
-        "cfloat",
-    ]
+    # dtypes: np.<dtype>(x)
+    dtypes = DtypeTable()
+    dtypes_bind = "module"
 
 
 INTERFACES["numpy"] = NumpyInterface()

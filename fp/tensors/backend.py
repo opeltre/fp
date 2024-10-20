@@ -1,4 +1,5 @@
 import typing
+import functools
 
 from fp.cartesian import Type, Hom, Prod, Either
 from fp.instances import Lift, Wrap, Alg, Ring, Stateful
@@ -72,13 +73,18 @@ class Backend(Ring, Wrap):
         super()._post_new_(B._Array_)
         # call backend-specific constructor lazily for mocked api
         B.cast_data = lambda x: api.asarray(x)
-        # dtype casts
-        for dtype in api.dtypes:
-            alias = dtype.split(":")[-1]
-            cast = getattr(api.module, alias)
-            method = lambda x: x.__class__(cast(x.data))
-            setattr(B, dtype, method)
+        # assign dtype casts
+        for dtype in api.dtypes.keys():
+            setattr(
+                B,
+                dtype,
+                functools.partial(B._dtype_cast_, dtype),
+            )
         return B
+
+    def _dtype_cast_(self, dtype, x):
+        cast_method = self._interface_.dtype_cast(dtype)
+        return self(cast_method(x.data))
 
     @classmethod
     def _subclass_(cls, name, bases, dct):

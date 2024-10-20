@@ -1,5 +1,5 @@
 from .interface import Interface, INTERFACES
-from .numpy import np
-from .torch import HAS_TORCH, torch
-from .jax import HAS_JAX, jax, jnp
-from .stateful import StatefulInterface
+from .numpy_interface import np
+from .torch_interface import HAS_TORCH, torch
+from .jax_interface import HAS_JAX, jax, jnp
+from .stateful_interface import StatefulInterface
