@@ -1,8 +1,6 @@
 from fp.instances import *
 from fp.meta import Type, HomFunctor
 from fp.tensors import *
-from fp.tensors.typed_tensor import TypedTensor
-
 import fp.io as io
 
 
@@ -12,7 +10,7 @@ F = Tens((6,))
 idx = E.range()
 idx.shows("idx")
 
-E.add("idx").show()
+E.add(idx).show()
 
 # --- switch backends
 
@@ -25,8 +23,9 @@ z = idx.torch().shows("z")
 LinEF = Linear(E, F)
 
 
-#--- jax.jit compilation
+# --- jax.jit compilation
 
 import jax
+
 add = jax.jit(lambda x, y: x + y)
 add(x.jax(), y)

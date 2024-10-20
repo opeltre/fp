@@ -5,7 +5,8 @@ from .shape import Torus
 from fp.instances import Ring
 
 
-class TypedTensor(Tensor, metaclass=Ring):
+class TensBase(Tensor, metaclass=Ring):
+    """Base class for shaped tensor types."""
 
     shape: Tensor
     domain: Torus

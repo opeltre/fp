@@ -1,7 +1,7 @@
 import torch
 
 from .tensor import Tensor, Backend
-from .typed_tensor import TypedTensor
+from .tens_base import TensBase
 from .shape import Torus
 
 from fp.meta import HomFunctor, Functor, NFunctor
@@ -37,7 +37,7 @@ class Tens(Backend, Ring, metaclass=Functor):
         Tens_A.__name__ = name
         bases = (
             Tens_A,
-            TypedTensor,
+            TensBase,
         )
         dct = dict(Tens_A.__dict__)
         dct["shape"] = tuple(A)
