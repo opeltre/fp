@@ -104,6 +104,12 @@ class Tensor(Backend(stateful_interface), TensorBase):
         finally:
             ...
 
+    def __repr__(self):
+        return repr(self.data)
+
+    def __str__(self):
+        return "x".join(str(n) for n in self.shape)
+
 
 ### hack avoiding circular imports (for cast methods)
 TensorBase.Numpy = Numpy

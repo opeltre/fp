@@ -17,7 +17,7 @@ class StatefulInterface(Stateful(Interface, NumpyInterface())):
         on your environment.
         """
         env = "FP_TENSOR_BACKEND"
-        s0 = os.environ[env] if env in os.environ else "torch"
+        s0 = os.environ[env] if env in os.environ else "numpy"
         if s0 in INTERFACES:
             cls._initial_ = INTERFACES[s0]
         else:
