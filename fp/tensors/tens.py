@@ -47,7 +47,7 @@ class Tens(Backend, Ring, metaclass=Functor):
         return TA
 
     def _post_new_(Tens_A, A):
-        Backend._post_new_(Tens_A, Tensor._backend_)
+        Backend._post_new_(Tens_A, Tensor._interface_)
         Ring.__init__(Tens_A, Tens_A.__name__)
         cls = Tens_A.__class__
         io.log((cls, "_post_new_", Tens_A, A), v=1)
@@ -207,7 +207,7 @@ class Linear(Hom, Tens, metaclass=HomFunctor):
         msg = (str(m) for m in (LinAB.__name__, "_post_new_", A, B, *xs))
         io.log(" ".join(msg), v=1)
         cls = LinAB.__class__
-        Backend._post_new_(LinAB, LinAB._backend_)
+        Backend._post_new_(LinAB, LinAB._interface_)
 
     # --- Class methods
 
