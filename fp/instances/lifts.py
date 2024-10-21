@@ -2,7 +2,6 @@ from .struct import struct
 from fp.cartesian import Type, Hom, Either
 
 import typing
-from types import FunctionType
 
 
 @struct
@@ -135,13 +134,3 @@ class Lift:
             return getattr(x, self.name)(*xs)
 
         return raw_bound_method
-
-
-@struct
-class WrapLift(Lift):
-    from_source = lambda x: x.data
-
-
-@struct
-class ProdLift(Lift):
-    from_source = lambda x: x[0]
