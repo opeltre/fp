@@ -28,11 +28,11 @@ class Lift:
     applied to the arguments enumerated by the `lift_args` parameter, which defaults to
     `...` and can be given as `tuple[int, ...]` otherwise.
 
-    When `lift_args` is `...`, the method `name : (A, ...) -> A` only has arguments in `A`
-    and its signature can be given as an int (its _arity_), e.g.
+    When `lift_args` is `...` (the default), the method `name : (A, ...) -> A` only has
+    arguments in `A` and its signature can be given as an int (its _arity_), e.g.
 
         class MyMonoid:
-            __add__ = Lift(2, lift_args=...)
+            __add__ = Lift(2)
 
     Otherwise, because the method's signature is meant to depend on `A`, it is expected to
     be given as a `type -> Hom` callable:
