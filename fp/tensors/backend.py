@@ -56,7 +56,14 @@ class Backend(Ring, Wrap):
     provides the rest of the API in a more readable and pythonic way.
     """
 
-    _lifted_methods_ = TENSOR_METHODS
+    class Object(Wrap.Object):
+        __add__ = LiftWrap("__add__", 2).method()
+        __sub__ = LiftWrap("__sub__", 2).method()
+        __mul__ = LiftWrap("__mul__", 2).method()
+        __neg__ = LiftWrap("__neg__", 1).method()
+        __truediv__ = LiftWrap("__truediv__", 2).method()
+        flatten = LiftWrap("flatten", 1).method()
+        reshape = LiftWrap("reshape", lambda T: Hom((T, tuple), T), 0, flip=1).method()
 
     @classmethod
     def new(cls, api: Interface):

@@ -27,11 +27,6 @@ if HAS_JAX:
     @register_pytree_node_class
     class Jax(Backend(INTERFACES["jax"]), TensorBase):
 
-        @classmethod
-        def cast(cls, x):
-            if isinstance(x, jax.Array):
-                return cls(x)
-
         def tree_flatten(self):
             return ((self.data,), None)
 

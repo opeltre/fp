@@ -94,10 +94,9 @@ class Wrap(Type, metaclass=Functor):
         # --- Lift methods
         cls = Wrap_A.__class__
         for lift in Wrap_A._lifted_methods_:
-            homtype = lift.homtype(Wrap_A)
-            io.log(f"lifting {lift.name}: {type(lift)} {homtype}", v=2)
-            Wf = lift.method(Wrap_A)
-            setattr(Wrap_A, lift.name, Wf)
+            lift_fn = lift.method()
+            io.log(f"lifting {lift.name}: {type(lift)} {type(lift_fn)}", v=2)
+            setattr(Wrap_A, lift.name, lift.method())
         return Wrap_A
 
     def __init__(Wrap_A, *As): ...

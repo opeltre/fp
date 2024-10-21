@@ -21,7 +21,7 @@ class _TestTensor:
         y = self.T((3, 2, 1))
         assert tuple(x + y) == (3, 3, 3)
 
-    @pytest.mark.skip("__get__(obj) broken?")
+    @pytest.mark.skip("TODO with Lifts and Methods?")
     def test_add_bound(self):
         x = self.T((0, 1, 2))
         y = self.T((3, 2, 1))
