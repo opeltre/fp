@@ -1,5 +1,7 @@
 from fp.meta import Type, Functor, Functor
 from fp.cartesian import Hom, Prod
+from fp.instances import struct
+from fp.instances import Lift as LiftBase
 import fp.io as io
 
 from types import MethodType
@@ -46,36 +48,14 @@ class WrapObject(Functor.TopType, metaclass=Type):
 
 class Wrap(Type, metaclass=Functor):
     """
-    Type wrapper lifting selected methods to the container type.
-
-    The class method `lift` will iterate over the class attribute
-    `_lifted_methods_` to assign lifted methods on the wrapped type.
-
-    Attributes:
-    -----------
-        _lifted_methods_ (`list`):
-            A list of of triples `(name, signature, lift_args)` where
-                * name (`str`): name of the method to be lifted,
-                * signature (`Callable[type, Type]`) yielding lifted method type `signature(cls)`,
-                * lift_args (`int | tuple[int] | type(...)`) index of arguments to be unwrapped.
-
-            **Example**
-
-            .. code::
-
-                class StrWrapper(Wrap):
-
-                    _lifted_methods_ = [
-                        ('upper', lambda A: Hom(A, A), ...)
-                        ('isalnum', lambda A: Hom(A, Bool), ...)
-                        ('join', lambda A: Hom((A, List[A]), Bool), 0)
-                    ]
+    Type wrappers hoding a `.data` attribute.
     """
 
     Object = WrapObject
 
-    # lifts
-    _lifted_methods_ = []
+    @struct
+    class Lift(LiftBase):
+        from_source = lambda x: x.data
 
     @classmethod
     def new(cls, A):
@@ -89,17 +69,6 @@ class Wrap(Type, metaclass=Functor):
         msg += " ".join(str(A) for A in As[:2])
         io.log(msg, v=1)
         return Type.__new__(cls, *As)
-
-    def _post_new_(Wrap_A, A):
-        # --- Lift methods
-        cls = Wrap_A.__class__
-        for lift in Wrap_A._lifted_methods_:
-            lift_fn = lift.method()
-            io.log(f"lifting {lift.name}: {type(lift)} {type(lift_fn)}", v=2)
-            setattr(Wrap_A, lift.name, lift.method())
-        return Wrap_A
-
-    def __init__(Wrap_A, *As): ...
 
     @classmethod
     def join(cls, wwx):

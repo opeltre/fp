@@ -108,11 +108,14 @@ class HomObject(Arrow.Object):
         elif len(xs) == 1 and isinstance(xs[0], arrow.src):
             # n-ary call on Prod instance
             Src = arrow.src
-
-        else:
+        elif len(xs) <= arrow.arity:
             # partial call
             ts = arrow.src._tail_[: len(xs)]
             Src = Type.Prod(*ts)
+        else:
+            raise ValueError(
+                f"too many arguments for {arrow.src} -> {arrow.tgt} on {xs}"
+            )
 
         if not isinstance(Src, Var):
             # concrete type, True

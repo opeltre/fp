@@ -32,33 +32,51 @@ class Lift:
     When `lift_args` is `...`, the method `name : (A, ...) -> A` only has arguments in `A`
     and its signature can be given as an int (its _arity_), e.g.
 
-        Lift("__add__", 2, lift_args=...)
+        class MyMonoid:
+            __add__ = Lift(2, lift_args=...)
 
     Otherwise, because the method's signature is meant to depend on `A`, it is expected to
     be given as a `type -> Hom` callable:
 
-        Lift("reshape", lambda T: Hom((T, tuple), T), lift_args=(0,))
+        class MyArray:
+            reshape = Lift(lambda T: Hom((T, tuple), T), lift_args=(0,))
 
 
     Parameters
     ----------
-    name : str
-    signature : int | Callable
-        number of same-type arguments, or callable signature `type -> Hom`
+    signature : int | Callable[type, Hom]
+        number of arguments when `lift_args = ...` or callable signature
+    from_source : Callable[type, type]
+        extracts input values specified by `lift_args` before applying
+        the wrapped method.
+    to_target : Callable[type, type]
+        lift returned value back to wrapping type
     lift_args : ... | int | tuple[int, ...]
         arguments to be projected onto original type:
         all (`...`), one (`int`) or only a selection (`tuple`).
-    from_source : Callable
-    to_target : Callable
+    name : str | None
+        managed by `__set_attr__`
     """
 
-    name: str
     signature: Either(int, typing.Callable)
-    lift_args: Either(type(...), int, tuple) = ...
-    flip: int = 0
     # override default lift for each functor
     from_source: typing.Callable = lambda x: x
-    to_target: typing.Callable = lambda x: x
+    to_target: typing.Callable = lambda y: y
+    #
+    lift_args: Either(type(...), int, tuple) = ...
+    flip: int = 0
+    # manage by __set_name__
+    name: typing.Optional[str] = None
+
+    def __get__(self, obj, objtype=None):
+        if obj is None:
+            return self.hom(objtype)
+        else:
+            method = self.hom(type(obj))
+            return method(obj)
+
+    def __set_name__(self, objtype, name):
+        self.name = name
 
     def homtype(self, objtype: type) -> Hom:
         """
@@ -117,19 +135,6 @@ class Lift:
             return getattr(x, self.name)(*xs)
 
         return raw_bound_method
-
-
-class LiftedMethod:
-
-    def __init__(self, lift: Lift):
-        self.lift = lift
-
-    def __get__(self, obj, objtype=None):
-        if obj is None:
-            return self.lift.hom(objtype)
-        else:
-            method = self.lift.hom(type(obj))
-            return method(obj)
 
 
 @struct

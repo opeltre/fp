@@ -8,28 +8,6 @@ from fp.instances import struct
 from .interfaces import Interface, INTERFACES, StatefulInterface
 
 
-@struct
-class LiftWrap(Lift):
-    """Lifts a method to the wrapper type."""
-
-    from_source = lambda x: x.data
-
-
-TENSOR_METHODS = [
-    #   # arithmetic methods
-    #   LiftWrap("__add__", 2),
-    #   LiftWrap("__sub__", 2),
-    #   LiftWrap("__mul__", 2),
-    #   LiftWrap("__truediv__", 2),
-    #   LiftWrap("__neg__", 1),
-    #   # reshapes
-    #   LiftWrap("flatten", 1),
-    #   LiftWrap("reshape", lambda T: Hom((T, tuple), T), 0, flip=1),
-]
-
-# ====== Backend: Wrap an interface ======
-
-
 class Backend(Ring, Wrap):
     """Functor wrapping the `Array` type of an `Interface` object.
 
@@ -57,13 +35,15 @@ class Backend(Ring, Wrap):
     """
 
     class Object(Wrap.Object):
-        __add__ = LiftWrap(2)
-        __sub__ = LiftWrap(2)
-        __mul__ = LiftWrap(2)
-        __neg__ = LiftWrap(1)
-        __truediv__ = LiftWrap(2)
-        flatten = LiftWrap(1)
-        reshape = LiftWrap(lambda T: Hom((T, tuple), T), lift_args=0, flip=1)
+        """Holds a `.data` attribute reference to an array."""
+
+        __add__ = Wrap.Lift(2)
+        __sub__ = Wrap.Lift(2)
+        __mul__ = Wrap.Lift(2)
+        __neg__ = Wrap.Lift(1)
+        __truediv__ = Wrap.Lift(2)
+        flatten = Wrap.Lift(1)
+        reshape = Wrap.Lift(lambda T: Hom((T, tuple), T), lift_args=0, flip=1)
 
     @classmethod
     def new(cls, api: Interface):
