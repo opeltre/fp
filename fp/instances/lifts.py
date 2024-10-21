@@ -66,14 +66,17 @@ class Lift:
         """
         if callable(self.signature.data):
             hom = self.signature.data(objtype)
-            return HomLift(hom.src, hom.tgt)
+            return Hom(hom.src, hom.tgt)
         elif type(self.signature.data) is int:
             n = self.signature.data
-            return HomLift(tuple([objtype] * n), objtype)
+            return Hom(tuple([objtype] * n), objtype)
         else:
             print("homtype", type(self.signature), objtype)
 
-    def method(self, objtype: type) -> Hom.Object:
+    def method(self):
+        return LiftedMethod(self)
+
+    def hom(self, objtype: type) -> Hom.Object:
         """
         Lift a method to the wrapped type.
         """
@@ -116,6 +119,19 @@ class Lift:
         return raw_bound_method
 
 
+class LiftedMethod:
+
+    def __init__(self, lift: Lift):
+        self.lift = lift
+
+    def __get__(self, obj, objtype=None):
+        if obj is None:
+            return self.lift.hom(objtype)
+        else:
+            method = self.lift.hom(type(obj))
+            return method(obj)
+
+
 @struct
 class WrapLift(Lift):
     from_source = lambda x: x.data
@@ -124,71 +140,3 @@ class WrapLift(Lift):
 @struct
 class ProdLift(Lift):
     from_source = lambda x: x[0]
-
-
-class HomLift(Hom):
-
-    class Object(Hom.Object):
-
-        def __get__(self, obj, objtype=None):
-            if obj is not None:
-                return Hom.partial(self, obj)
-            else:
-                return self
-
-
-class LiftedMethod:
-
-    def __init__(self, lift: Lift):
-        self.lift = lift
-        if isinstance(lift.signature, int):
-            r = lift.signature
-            self.signature = lambda T: Hom(tuple([T] * r), T)
-        else:
-            self.signature = signature
-
-    def method(self, obj: typing.Any) -> Type.Hom.Object:
-        """
-        Lift a method to the wrapped type.
-        """
-        lift_args = self.lift.lift_args
-        homtype = self.lift.signature(type(obj))
-        if isinstance(lift_args, int):
-            lift_args = (lift_args,)
-        elif lift_args is ...:
-            lift_args = tuple(range(homtype.arity))
-
-        @homtype
-        def lifted_method(*xs):
-            """
-            Lifted method.
-            """
-            xs = list(xs)
-            for i in lift_args:
-                xs[i] = xs[i].data
-            return io.cast(method(*xs), homtype.tgt)
-
-    def __set_name__(self, name, objtype):
-        self.lifted = getattr(objtype._lifted_, self.name)
-        try:
-            homtype = self.signature(objtype)
-            self.typed = homtype(self.lifted)
-        except:
-            print("invalid signature")
-            self.typed = self.lifted
-        # unused
-        self.target_name = name
-
-    def __get__(self, obj, objtype=None):
-        if obj is not None:
-            return self.typed(obj)
-        else:
-            return self.typed
-
-    def __set__(self, obj, val): ...
-
-    def __getattr__(self, attr):
-        try:
-            return super().__getattr__(attr)
-        except AttributeError:
-            return getattr(self.lift, attr)
