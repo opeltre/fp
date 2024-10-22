@@ -39,6 +39,10 @@ class TestHom:
     def test_call_cast(self):
         assert self.bar(4) == B("||||")
 
+    def test_empty_call(self):
+        f = Hom((), int)(lambda: 1)
+        assert f() == 1
+
     def test_matmul_call(self):
         foobar = self.foo @ self.bar
         barfoo = self.bar @ self.foo
