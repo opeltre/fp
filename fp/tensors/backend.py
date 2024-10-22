@@ -49,7 +49,7 @@ class Backend(Ring, Wrap):
     def new(cls, api: Interface):
         # allow overriding of `api.Array` with Union for mocked api
         Array = cls._Array_ if hasattr(cls, "_Array_") else api.Array
-        B = super(cls, cls).new(Array)
+        B = super().new(Array)
         B._Array_ = Array
         B._interface_ = api
         return B
