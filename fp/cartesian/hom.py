@@ -150,7 +150,7 @@ class HomObject(Arrow.Object):
             return io.cast(xs, Src) if not isinstance(Src, Var) else xs
 
     @staticmethod
-    def target_type(arrow, xs, match=True):
+    def target_type(arrow, xs: tuple, match=True) -> Type:
         """
         Target type inference.
         """

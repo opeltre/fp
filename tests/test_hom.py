@@ -10,7 +10,71 @@ B = Type("B", (str,), {})
 HomObject = Hom.Object
 
 
-class TestHomObject: ...
+class TestHomObject:
+
+    class HomAB(HomObject):
+        src = int
+        tgt = str
+        arity = 1
+
+    class HomBA(HomObject):
+        src = str
+        tgt = int
+        arity = 1
+
+    class HomBAB(HomObject):
+        src = Type.Prod(str, int)
+        tgt = str
+        arity = 2
+
+    foo = HomBA(lambda s: len(s))
+    bar = HomAB(lambda n: "|" * n)
+    foobar = HomBAB(lambda s, n: s * n)
+
+    def test_eq(self):
+        assert self.bar == self.bar
+        assert self.foo != self.bar
+
+    def test_hash(self):
+        d = {self.bar: "bar", self.foo: "foo"}
+        assert len(d) == 2
+
+    ### source_type ###
+
+    def test_source_type_unary(self):
+        Tx, match_x = HomObject.source_type(self.foo, ("abc",))
+        Ty, match_y = HomObject.source_type(self.bar, (3,))
+        assert Tx is str and match_x is True
+        assert Ty is int and match_y is True
+
+    def test_source_type_binary(self):
+        Tx, match = HomObject.source_type(self.foobar, ("abc", 3))
+        assert match is True
+        assert Tx == Type.Prod(str, int)
+
+    def test_source_type_partial(self):
+        Tx, match = HomObject.source_type(self.foobar, ("abc",))
+        assert match is True
+        assert Tx == Type.Prod(
+            str,
+        )
+
+    ### target_type ###
+
+    def test_target_type_unary(self):
+        Ty = HomObject.target_type(self.foo, ("abc",))
+        assert Ty is int
+
+    def test_target_type_binary(self):
+        Ty = HomObject.target_type(self.foobar, ("abc", 2))
+        assert Ty is str
+
+    def test_target_type_partial(self):
+        # called by curryfication
+        self.foobar._head_ = Hom
+        Ty = HomObject.target_type(self.foobar, ("abc",))
+        assert Ty.arity == 1
+        assert (Ty.src, Ty.tgt) == (Type.Prod(int), str)
 
 
 class TestHom:
