@@ -81,14 +81,17 @@ class Lift:
         """
         Parse method signature specified on `objtype`.
         """
-        if callable(self.signature.data):
-            hom = self.signature.data(objtype)
+        signature = self.signature.data
+        if callable(signature):
+            hom = signature(objtype)
             return Hom(hom.src, hom.tgt)
-        elif type(self.signature.data) is int:
-            n = self.signature.data
+        elif signature == 1:
+            return Hom(objtype, objtype)
+        elif type(signature) is int:
+            n = signature
             return Hom(tuple([objtype] * n), objtype)
         else:
-            print("homtype", type(self.signature), objtype)
+            raise ValueError(f"Invalid signature, expected int | Callable[type, Hom]")
 
     def method(self):
         return LiftedMethod(self)
@@ -122,7 +125,8 @@ class Lift:
         def lifted(*xs):
             head = (x if f == 1 else f(x) for x, f in zip(xs, from_source))
             tail = (x for x in xs[m + 1 :])
-            y = self.to_target(method(*head, *tail))
+            y0 = method(*head, *tail)
+            y = self.to_target(y0)
             return y
 
         return lifted

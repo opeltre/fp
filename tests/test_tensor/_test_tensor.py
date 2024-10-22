@@ -16,6 +16,16 @@ class _TestTensor:
         x = self.T(tuple_x)
         assert tuple(x) == tuple_x
 
+    def test_flatten_unbound(self):
+        x = self.T(((0, 1), (2, 3)))
+        x_flat = self.T.flatten(x)
+        assert tuple(x_flat) == (0, 1, 2, 3)
+
+    def test_neg(self):
+        x = self.T((-1.0, 0.0, 1.0))
+        x = -x
+        assert tuple(i for i in x.data) == (1.0, 0.0, -1.0)
+
     def test_add_operator(self):
         x = self.T((0, 1, 2))
         y = self.T((3, 2, 1))
