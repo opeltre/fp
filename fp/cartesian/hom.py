@@ -142,7 +142,7 @@ class HomObject(Arrow.Object):
             # n-ary call (on n typed inputs)
             return xs
 
-        if r == 0 and xs[0] == Type.Unit() or xs[0] is None:
+        if r == 0 and (len(xs) == 0 or xs[0] == Type.Unit() or xs[0] is None):
             # constant
             return Type.Unit()
 
@@ -282,8 +282,13 @@ class Hom(Arrow, metaclass=HomFunctor):
             f_xs.__name__ = f"{f.__name__} " + " ".join((str(x) for x in xs))
             return cls(src, f.tgt)(f_xs)
 
+        elif len(xs) == f.arity:
+            f_xs = functools.partial(f, *xs)
+            f_xs.__name__ = f"{f.__name__} " + " ".join((str(x) for x in xs))
+            return cls((), f.tgt)(f_xs)
+
         raise TypeError(
-            f"Cannot partially call {Arr.arity} function on " + f"{len(xs)}-ary input"
+            f"Cannot partially call {f.arity} function on " + f"{len(xs)}-ary input"
         )
 
     @classmethod

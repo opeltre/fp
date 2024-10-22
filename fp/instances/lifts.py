@@ -69,8 +69,14 @@ class Lift:
 
     def __get__(self, obj, objtype=None):
         if obj is None:
+            # unbound : Tx.method
             return self.hom(objtype)
+        elif objtype is not None:
+            # x.unary() : unary.__get__(x, Tx).__call__()
+            method = self.hom(objtype)
+            return Hom.partial(method, obj)
         else:
+            # bound : x.method
             method = self.hom(type(obj))
             return method(obj)
 
