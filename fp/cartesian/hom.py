@@ -19,8 +19,16 @@ class HomObject(Arrow.Object):
     tgt: Type
     arity: int
 
-    def __init__(self, pipe: Callable | tuple[Callable]):
-        # wrap callables in the monoidal tuple type
+    def __init__(self, pipe: Callable | tuple[Callable, ...]):
+        """Wrap callable(s) in the monoidal tuple type.
+
+        Tuples of callables are accepted in order to wrap function
+        compositions in a linear and monoidal data structure, but
+        passing a tuple as `pipe` argument manually is discouraged.
+        Multiple inputs / outputs are processed consistently
+        throughout the type using the `src`, `tgt` and `arity`
+        attributes of `Hom` objects.
+        """
         if isinstance(pipe, tuple):
             self._pipe = pipe
         elif callable(pipe) and self.arity == 1:
@@ -32,6 +40,7 @@ class HomObject(Arrow.Object):
             self.__name__ = pipe.__name__ if pipe.__name__ != "<lambda>" else "λ"
 
     def __call__(self, *xs) -> tgt:
+        """Evaluate morphism on inputs."""
 
         def pipe(x):
             for f in self._pipe:

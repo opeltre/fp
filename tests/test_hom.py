@@ -39,6 +39,40 @@ class TestHomObject:
         d = {self.bar: "bar", self.foo: "foo"}
         assert len(d) == 2
 
+    ### application ###
+
+    def test_call(self):
+        foo_abc = self.foo("abc")
+        assert foo_abc == 3
+        bar_4 = self.bar(4)
+        assert bar_4 == "||||"
+
+    def test_lshift(self):
+        foo_x = self.foo << "x"
+        assert foo_x == 1
+
+    ### composition ###
+
+    @pytest.mark.xfail
+    def test_matmul_fail(self):
+        self.foo @ self.foo
+
+    def test_matmul(self):
+        self.foo._head_ = Hom
+        self.bar._head_ = Hom
+        foo_bar = self.foo @ self.bar
+        bar_foo = self.bar @ self.foo
+        assert (foo_bar.src, foo_bar.tgt) == (self.bar.src, self.foo.tgt)
+        assert (bar_foo.src, bar_foo.tgt) == (self.foo.src, self.bar.tgt)
+
+    def test_matmul_eval(self):
+        self.foo._head_ = Hom
+        self.bar._head_ = Hom
+        foo_bar = self.foo @ self.bar
+        bar_foo = self.bar @ self.foo
+        assert foo_bar(4) == 4
+        assert bar_foo("toto") == "||||"
+
     ### source_type ###
 
     def test_source_type_unary(self):
