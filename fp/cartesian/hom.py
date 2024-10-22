@@ -19,15 +19,16 @@ class HomObject(Arrow.Object):
     tgt: Type
     arity: int
 
+    # reference to Hom
+    _head_: HomFunctor
+
     def __init__(self, pipe: Callable | tuple[Callable, ...]):
         """Wrap callable(s) in the monoidal tuple type.
 
-        Tuples of callables are accepted in order to wrap function
-        compositions in a linear and monoidal data structure, but
-        passing a tuple as `pipe` argument manually is discouraged.
-        Multiple inputs / outputs are processed consistently
-        throughout the type using the `src`, `tgt` and `arity`
-        attributes of `Hom` objects.
+        Tuples of callables are used to wrap function compositions in a linear
+        and monoidal data structure. Multiple inputs / outputs are processed
+        consistently throughout the pipe using the `src`, `tgt` and `arity`
+        attributes of `Hom` objects, see :attr:`Hom.compose`.
         """
         if isinstance(pipe, tuple):
             self._pipe = pipe
