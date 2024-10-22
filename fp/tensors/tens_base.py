@@ -38,6 +38,7 @@ class TensBase(Tensor, metaclass=Ring):
         In general, if x : Tens(A) and y : Tens(B) then xy
         is of type Tens([*A, *B])
         """
+        cls = self._head_
         TA, TB = self.__class__, other.__class__
         TAB = cls([*TA.shape, *TB.shape])
         xy = Tensor.otimes(self, other)
