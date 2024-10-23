@@ -1,6 +1,17 @@
 import functools
 from typing import Callable
 from .hom import Hom
+from .prod import Prod
+
+
+def method(annotated: Callable):
+    annotations = annotated.__annotations__
+    tgt = annotations.pop("return")
+    src_tuple = tuple(annotations.values())
+    src = src_tuple[0] if len(src_tuple) == 1 else Prod(*src_tuple)
+    signature = lambda T: Hom(src, tgt).substitute({src[0].__name__: T})
+    print(signature(object))
+    return Method(signature, annotated)
 
 
 class Method:
