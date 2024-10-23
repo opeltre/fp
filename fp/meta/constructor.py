@@ -320,14 +320,16 @@ class Var(Type, metaclass=Constructor):
         if A._tail_ is None:
             name = A.__name__.split(":")[0]
             SA = matches[name]
-            if not A._accessors_ and isinstance(SA, Type):
+            if not len(A._accessors_) and isinstance(SA, Type):
                 return SA
-            if A._accessors_ and isinstance(SA, Type):
+            if len(A._accessors_) and isinstance(SA, Type):
                 for attr in A._accessors_:
                     SA = getattr(SA, attr)
                 return SA
             elif isinstance(SA, tuple):
                 return tuple(A.substitute({name: Si}) for Si in SA)
+            else:
+                raise ValueError(f"Could not substitute value {SA} : {type(SA)}")
         head = A._head_ if not isinstance(A._head_, Var) else matches[A._head_.__name__]
         tail = []
         for Ai in A._tail_:
