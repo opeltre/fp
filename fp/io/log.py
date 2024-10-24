@@ -13,6 +13,10 @@ def log(text, v=0, prefix=None):
         print(color(prefix, v), color(text))
 
 
+def warn(text):
+    log(text, v=0, prefix="/!\\")
+
+
 def color(text, c=None):
 
     COLORS = [
