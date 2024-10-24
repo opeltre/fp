@@ -5,6 +5,9 @@ import fp.io as io
 
 class Prod(Type, metaclass=Functor):
 
+    src = Type
+    tgt = Type
+
     arity = ...
     _kind_ = ..., ()
 
@@ -28,7 +31,7 @@ class Prod(Type, metaclass=Functor):
         (Int, Str) : (4, '||||||||')
     """
 
-    class Object(tuple):
+    class Object(tuple, metaclass=Type):
         """
         Product base type: `tuple` alias.
         """
@@ -61,12 +64,19 @@ class Prod(Type, metaclass=Functor):
             if not isinstance(xs, P):
                 return P(*(io.cast(x, A) for A, x in zip(P._tail_, xs)))
 
+    @classmethod
+    def new(cls, *As):
+        return super().new(*As)
+
     def __init__(P, *As): ...
 
     def __getitem__(P, i: int | slice):
         if isinstance(i, int):
             return P._tail_[i]
         return P.__class__(*P._tail_[i])
+
+    def __len__(P):
+        return len(P._tail_)
 
     @classmethod
     def fmap(cls, *fs: Callable) -> Callable:
