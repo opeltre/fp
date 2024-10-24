@@ -1,10 +1,13 @@
 from fp.cartesian import Type, Hom, Prod
 from fp.cartesian.method import Method, method
 from fp.meta import Var
+from fp.instances import Int
 
 
-class Counter(Type):
-    _tail_ = None
+class Counter(metaclass=Type):
+
+    def __new__(cls, n: int = 0):
+        return object.__new__(cls)
 
     def __init__(self, n: int = 0):
         self.data = n
@@ -14,11 +17,14 @@ class Counter(Type):
         return self.__class__(self.data + 1)
 
     @method
-    def mult(self: Var("Counter"), n: int) -> Var("Counter"):
+    def mult(self: Var("Counter"), n: Int) -> Var("Counter"):
         return self.__class__(self.data * n)
 
 
 class TestMethod:
+
+    def test_type_decorator(self):
+        assert isinstance(Counter, Type)
 
     @staticmethod
     def test_annotate_bound():
