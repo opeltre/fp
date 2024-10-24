@@ -1,17 +1,50 @@
 from __future__ import annotations
 
+import functools
+from typing import Callable, Any
+from enum import Enum
+
+from colorama import Fore
+
 from .kind import Kind
 from .type import Type
 from .method import Method
 
-import functools
-
-from typing import Callable, Any
-
 import fp.io as io
 import fp.utils
 
-from colorama import Fore
+
+class ConstructorCall(Enum):
+    new = "new"
+    variable = "variable"
+    struct = "struct"
+    subclass = "subclass"
+
+
+def _calling_mode(*As, **kwargs) -> ConstructorCall:
+    """Check if arguments are unhashable class/struct definitions."""
+    # subclass definition calls: T(name, bases, dct)
+    if len(As) >= 3 and type(As[2]) is dict:
+        return ConstructorCall("subclass")
+
+    # struct definition : Struct(keys, values, name, bases, dct)
+    is_struct = len(As) >= 5 and type(As[4]) is dict
+    is_struct |= "dct" in kwargs
+    if is_struct:
+        return ConstructorCall("struct")
+
+    # variable constructor : T.new("A", ...)
+    if any(isinstance(A, (str, Var, type(...))) for A in As):
+        return ConstructorCall("variable")
+
+    # type constructor : T.new(*As)
+    return ConstructorCall("new")
+
+
+def _is_parameterized(*As):
+    """Check if arguments contain strings/ellipsis/type variables."""
+    is_var = any(isinstance(A, (str, Var, type(...))) for A in As)
+    return is_var
 
 
 class Constructor(Kind):
@@ -33,9 +66,8 @@ class Constructor(Kind):
             """
             Parse input variables to a type constructor.
 
-            Defaults to the identity, override to extend support for arguments
-            (e.g. support unhashable inputs, enforce equality of equivalent inputs,
-            ...).
+            Defaults to the identity, override to extend support for arguments.
+            (e.g. support unhashable inputs, enforce equality of equivalent inputs).
             """
             return As
 
@@ -45,7 +77,8 @@ class Constructor(Kind):
                 base = cls.Object
                 try:
                     name = cls._get_name_(*As)
-                except:
+                except Exception as e:
+                    io.warn(f"Could not compute {cls}._get_name_({As})")
                     name = "T As"
                 if isinstance(cls, Type):
                     return type(cls).__new__(cls, name, (base,), {})
@@ -65,7 +98,13 @@ class Constructor(Kind):
                     type(base)._post_new_(T, *base._tail_)
             return T
 
-        def _post_new_(TA, *As): ...
+        def _post_new_(TA, *As):
+            """Type initiliazation hook.
+
+            Override this method to configure a newly created type
+            without interfering with the metaclass and `new` logic.
+            """
+            ...
 
         def __init__(TA, *As): ...
 
@@ -118,11 +157,12 @@ class Constructor(Kind):
         new_ = functools.cache(new)
 
         def cached_new(cls, *xs, **ys):
-            try:
+            mode, Mode = _calling_mode(*xs, **ys), ConstructorCall
+            if mode == Mode("new") or mode == Mode("variable"):
                 # T(*As)
                 xs = cls._pre_new_(*xs)
                 return new_(cls, *xs, **ys)
-            except Exception as e:
+            elif mode == Mode("subclass") or mode == Mode("struct"):
                 # class MyT(T(*As), metaclass=T):
                 return new(cls, *xs, **ys)
 
@@ -130,44 +170,59 @@ class Constructor(Kind):
 
     @staticmethod
     def _new_(T: Constructor, *As: Any) -> Type:
-        """
-        Wrapper around T.new constructor to be referenced as T.__new__.
-        """
-        try:
-            if any(isinstance(A, (str, Var, type(...))) for A in As):
-                # action on type variables
-                if len(As) >= 3 and isinstance(As[2], dict):
-                    raise RuntimeError("")
+        """Defines `T.__new__` as a wrapper around `T.new`."""
+        mode, Mode = _calling_mode(*As), ConstructorCall
+
+        if mode == Mode("subclass"):
+            try:
+                io.log(f"Subclass {As[0]} -> {T}", v=2)
+                if hasattr(T, "_subclass_") and mode.name == "subclass":
+                    return T._subclass_(*As[:3])
+                TA = Type.__new__(T, *As)
+                base = As[1][0]
+                TA._head_ = base._head_
+                TA._tail_ = base._tail_
+                return TA
+            except Exception as err:
+                print(err)
+                raise io.ConstructorError(
+                    f"Could not create subclass {As[0]} of {T}.\n\n"
+                    "If you override T._subclass_(name, bases, dct), "
+                    "it must return a type."
+                )
+
+        if mode == Mode("variable"):
+            try:
+                io.log(f"Parameterised type: {T}({As})", v=2)
                 if T is not Var:
                     As = Var._read_vars_(As)
                 elif T is Var:
                     As = tuple(A if A is not ... else "..." for A in As)
                 if issubclass(T, Var):
+                    io.log(f"Call {T}.new")
                     TA = T.new(*(A if A is not ... else "..." for A in As))
                 else:
                     TA = T.var()(*As)
-            else:
-                # concrete action
-                TA = T.new(*As)
-            # post new
-            TA.__name__ = T._get_name_(*As)
-            TA._head_ = T
-            TA._tail_ = As
-            T._post_new_(TA, *As)
-            return TA
-        except Exception as e:
-            # subclass definition
-            io.log(f"_subclass_ {T}: {As[0]} -> {As[1]}", v=1)
-            is_def = len(As) >= 3 and type(As[0]) is str and type(As[2]) is dict
-            if hasattr(T, "_subclass_") and is_def:
-                return T._subclass_(*As[:3])
-            TA = Type.__new__(T, *As)
-            base = As[1][0]
-            TA._head_ = base._head_
-            TA._tail_ = base._tail_
-            return TA
-        except:
-            raise io.ConstructorError("new", T, As)
+
+            except Exception as err:
+                raise io.ConstructorError(
+                    f"Could not create parameterised type {T}({As})"
+                )
+
+        if mode == Mode("new"):
+            io.log(f"Concrete type: {T}({As})", v=2)
+            TA = T.new(*As)
+
+        if mode == Mode("struct"):
+            io.log(f"Struct type: {As[:2]}", v=2)
+            TA = T.new(*As)
+
+        # post new
+        TA.__name__ = T._get_name_(*As)
+        TA._head_ = T
+        TA._tail_ = As
+        T._post_new_(TA, *As)
+        return TA
 
     def var(T) -> Constructor:
         """
@@ -201,6 +256,10 @@ class Var(Type, metaclass=Constructor):
     _accessors_ = None
 
     class Object: ...
+
+    @classmethod
+    def new(cls, *As):
+        return super().new(*As)
 
     def _post_new_(A, name: str, *accessors: str):
         A._tail_ = None
