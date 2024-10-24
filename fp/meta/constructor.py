@@ -199,7 +199,6 @@ class Constructor(Kind):
                 elif T is Var:
                     As = tuple(A if A is not ... else "..." for A in As)
                 if issubclass(T, Var):
-                    io.log(f"Call {T}.new")
                     TA = T.new(*(A if A is not ... else "..." for A in As))
                 else:
                     TA = T.var()(*As)
