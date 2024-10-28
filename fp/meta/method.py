@@ -76,20 +76,3 @@ class Method:
                 if k == p:
                     out.append((k, m))
         return out
-        #####
-        for k, _ in objtype._methods_:
-            try:
-                mk = getattr(objtype, k)
-                out.append((k, mk))
-            except:
-                ...
-        return out
-
-
-class ClassMethod(classmethod):
-
-    def __init__(self, method):
-        super().__init__(method)
-        self._name = method.__name__
-
-    def name(self, getname): ...

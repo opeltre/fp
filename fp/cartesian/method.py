@@ -5,13 +5,15 @@ from .prod import Prod
 from fp.meta import Var
 
 
-def method(annotated: Callable):
+def _read_method_signature(annotated: Callable):
+    """Parse method signature, with first type variable substitution."""
     annotations = annotated.__annotations__
     tgt = annotations.pop("return")
     src_tuple = tuple(annotations.values())
-    src = src_tuple[0] if len(src_tuple) == 1 else Prod(*src_tuple)
-    signature = lambda T: Hom(src, tgt).substitute({src[0].__name__: T})
-    print(signature(Var("A")))
+    src0 = src_tuple[0]
+    src = src0 if len(src_tuple) == 1 else Prod(*src_tuple)
+    signature = lambda T: Hom(src, tgt).substitute({src0.__name__: T})
+    print(signature(Var("T")))
     return Method(signature, annotated)
 
 
@@ -21,7 +23,10 @@ class Method:
     def annotate(cls, signature):
         return lambda method: cls(signature, method)
 
-    def __init__(self, signature: Callable[type, Hom], method=None):
+    def __init__(self, method: Callable, signature: Callable[type, Hom] | None = None):
+        if signature is None:
+            # infer signature from annotations
+            signature = _read_method_signature(method)
         self.signature = signature
         self._method = method
 
@@ -40,3 +45,12 @@ class Method:
             # (bound) obj.<method> : (*args) -> tgt
             method = self.signature(type(obj))(self._method)
             return Hom.partial(method, obj)
+
+
+class ClassMethod(Method):
+
+    def __get__(self, obj, objtype=None) -> Hom.Object:
+        if objtype is not None:
+            return self.signature(objtype)(self._method)
+        else:
+            return self.signature(type(obj))(self._method)
