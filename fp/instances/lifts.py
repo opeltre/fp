@@ -120,7 +120,7 @@ class Lift:
 
     def raw_lift(self, objtype: type, lift_args: tuple[int, ...]) -> typing.Callable:
         """
-        Lifted callable S' -> T' to be hom-typed.
+        Lifted callable (T A, ...) -> T A to be hom-typed.
         """
         method = self.raw(objtype)
         m = max(lift_args)
@@ -138,7 +138,7 @@ class Lift:
         return lifted
 
     def raw(self, objtype: type) -> typing.Callable:
-        """Callable S -> T to be lifted."""
+        """Callable (A, ...) -> A to be lifted."""
 
         def raw_bound_method(x, *xs):
             return getattr(x, self.name)(*xs)
