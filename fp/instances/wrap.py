@@ -53,9 +53,15 @@ class Wrap(Type, metaclass=Functor):
 
     Object = WrapObject
 
-    @struct
     class Lift(LiftBase):
-        from_source = lambda x: x.data
+
+        @staticmethod
+        def from_source(x):
+            return x.data
+
+        @staticmethod
+        def to_target(x):
+            return x
 
     @classmethod
     def new(cls, A):

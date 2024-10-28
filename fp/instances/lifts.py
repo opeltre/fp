@@ -4,7 +4,6 @@ from fp.cartesian import Type, Hom, Either
 import typing
 
 
-@struct
 class Lift:
     """
     Declarative definition of method lifts.
@@ -57,15 +56,20 @@ class Lift:
         managed by `__set_attr__`
     """
 
-    signature: Either(int, typing.Callable)
-    # override default lift for each functor
     from_source: typing.Callable = lambda x: x
     to_target: typing.Callable = lambda y: y
-    #
-    lift_args: Either(type(...), int, tuple) = ...
-    flip: int = 0
-    # manage by __set_name__
-    name: typing.Optional[str] = None
+
+    def __init__(
+        self,
+        signature: Either(int, typing.Callable),
+        lift_args: Either(type(...), int, tuple) = ...,
+        flip: int = 0,
+        name: typing.Optional[str] = None,
+    ):
+        self.signature = Either(int, typing.Callable)(signature)
+        self.lift_args = Either(type(...), int, tuple)(lift_args)
+        self.flip = flip
+        self.name = name
 
     def __get__(self, obj, objtype=None):
         if obj is None:
