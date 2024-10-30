@@ -1,6 +1,6 @@
-from fp.instances import *
+from fp.base import *
 from fp.cartesian import *
-from fp import io
+from fp import utils
 
 from math import pi, log10
 
@@ -72,7 +72,7 @@ The `Struct(keys, values)` bifunctor is contravariant in its
 left `keys` argument. 
 """
 
-io.cast(joe, Person) is joe
+utils.cast(joe, Person) is joe
 
 """
 This means that subclasses of any `Struct` type can be 

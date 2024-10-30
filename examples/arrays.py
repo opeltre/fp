@@ -1,7 +1,7 @@
 from fp.instances import *
 from fp.meta import Type, HomFunctor
 from fp.tensors import *
-import fp.io as io
+import fp.utils as utils
 
 
 E = Tens((4, 3))
