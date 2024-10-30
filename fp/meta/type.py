@@ -26,6 +26,8 @@ class Type(type, metaclass=Kind):
 
     def __new__(cls, name, bases=(), dct={}, head=None, tail=None):
         """Create a new type expression."""
+        if isinstance(name, type):
+            return cls._from_class_definition(name)
         T = super().__new__(cls, name, bases, dct)
         # expression tree for pattern matching
         T._head_ = name if isinstance(head, type(None)) else head
@@ -55,6 +57,16 @@ class Type(type, metaclass=Kind):
         T.shows = shows
         T.show = show
         return T
+
+    @classmethod
+    def _from_class_definition(cls, class_def: type) -> type:
+        # decorate a class definition
+        return cls.__new__(
+            cls,
+            class_def.__name__,
+            class_def.__bases__,
+            dict(class_def.__dict__),
+        )
 
     def __init__(self, *xs, **ys): ...
 

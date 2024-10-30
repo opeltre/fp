@@ -79,7 +79,7 @@ class AsyncIO(Type, metaclass=Monad):
 
     @classmethod
     def new(cls, A):
-        IOA = super().new(cls, A)
+        IOA = super().new(A)
         IOA.src = Type.Unit
         IOA.tgt = A
         IOA._type_ = A

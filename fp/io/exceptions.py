@@ -30,8 +30,7 @@ class CastError(Error):
 
 class ConstructorError(Error):
 
-    def __init__(self, name, T, As):
-        msg = f"\n\t{T}.new{As}"
+    def __init__(self, msg):
         super().__init__(msg)
 
 

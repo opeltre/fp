@@ -11,7 +11,7 @@ try:
     class JaxInterface(Interface):
         module = jax.numpy
         # array class and constructor
-        Array = jax.lib.xla_extension.ArrayImpl
+        Array = jax.numpy.ndarray
         asarray = jax.numpy.asarray
         # dtypes : jax.numpy.<dtype>(x)
         dtypes = DtypeTable()

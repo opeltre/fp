@@ -8,28 +8,6 @@ from fp.instances import struct
 from .interfaces import Interface, INTERFACES, StatefulInterface
 
 
-@struct
-class LiftWrap(Lift):
-    """Lifts a method to the wrapper type."""
-
-    from_source = lambda x: x.data
-
-
-TENSOR_METHODS = [
-    # arithmetic methods
-    LiftWrap("__add__", 2),
-    LiftWrap("__sub__", 2),
-    LiftWrap("__mul__", 2),
-    LiftWrap("__truediv__", 2),
-    LiftWrap("__neg__", 1),
-    # reshapes
-    LiftWrap("flatten", 1),
-    LiftWrap("reshape", lambda T: Hom((T, tuple), T), 0, flip=1),
-]
-
-# ====== Backend: Wrap an interface ======
-
-
 class Backend(Ring, Wrap):
     """Functor wrapping the `Array` type of an `Interface` object.
 
@@ -56,13 +34,22 @@ class Backend(Ring, Wrap):
     provides the rest of the API in a more readable and pythonic way.
     """
 
-    _lifted_methods_ = TENSOR_METHODS
+    class Object(Wrap.Object):
+        """Holds a `.data` attribute reference to an array."""
+
+        __add__ = Wrap.Lift(2)
+        __sub__ = Wrap.Lift(2)
+        __mul__ = Wrap.Lift(2)
+        __neg__ = Wrap.Lift(1)
+        __truediv__ = Wrap.Lift(2)
+        flatten = Wrap.Lift(1)
+        reshape = Wrap.Lift(lambda T: Hom((T, tuple), T), lift_args=0, flip=1)
 
     @classmethod
     def new(cls, api: Interface):
         # allow overriding of `api.Array` with Union for mocked api
         Array = cls._Array_ if hasattr(cls, "_Array_") else api.Array
-        B = super(cls, cls).new(Array)
+        B = super().new(Array)
         B._Array_ = Array
         B._interface_ = api
         return B

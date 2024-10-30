@@ -9,8 +9,14 @@ from fp.cartesian import Type, Hom
 from fp.instances import Ring
 import fp.io as io
 
+from .tensor import Tensor
+from .backend import Backend
+from .interfaces import StatefulInterface
 
-class Tens(Backend, Ring, metaclass=Functor):
+StatefulBackend = Backend(StatefulInterface.mock())
+
+
+class Tens(Backend, metaclass=Functor):
     """
     Typed tensor spaces.
 
@@ -26,31 +32,21 @@ class Tens(Backend, Ring, metaclass=Functor):
                     [ 4,  5]]
     """
 
+    _Array_ = Tensor._Array_
+
+    class Object(TensBase): ...
+
     @classmethod
     def new(cls, A):
-        class Tens_A:
-
-            shape = A
-            domain = Torus(A)
-
-        name = cls._get_name_(A)
-        Tens_A.__name__ = name
-        bases = (
-            Tens_A,
-            TensBase,
-        )
-        dct = dict(Tens_A.__dict__)
-        dct["shape"] = tuple(A)
-        dct["domain"] = Torus(A)
-        TA = Ring.__new__(cls, name, bases, dct)
-        io.log(("Tens new", TA, type(TA), type(TA) is cls), v=1)
-        return TA
+        Tens_A = super().new(StatefulInterface.mock())
+        Tens_A.shape = A
+        Tens_A.domain = A
+        io.log((cls, "new", Tens_A, A), v=1)
+        return Tens_A
 
     def _post_new_(Tens_A, A):
-        Backend._post_new_(Tens_A, Tensor._interface_)
-        Ring.__init__(Tens_A, Tens_A.__name__)
-        cls = Tens_A.__class__
-        io.log((cls, "_post_new_", Tens_A, A), v=1)
+        Tens_A.shape = A
+        Tens_A.domain = Torus(A)
 
     def __init__(cls, A, *xs, **ks): ...
 

@@ -2,10 +2,8 @@ from .struct import struct
 from fp.cartesian import Type, Hom, Either
 
 import typing
-from types import FunctionType
 
 
-@struct
 class Lift:
     """
     Declarative definition of method lifts.
@@ -29,51 +27,86 @@ class Lift:
     applied to the arguments enumerated by the `lift_args` parameter, which defaults to
     `...` and can be given as `tuple[int, ...]` otherwise.
 
-    When `lift_args` is `...`, the method `name : (A, ...) -> A` only has arguments in `A`
-    and its signature can be given as an int (its _arity_), e.g.
+    When `lift_args` is `...` (the default), the method `name : (A, ...) -> A` only has
+    arguments in `A` and its signature can be given as an int (its _arity_), e.g.
 
-        Lift("__add__", 2, lift_args=...)
+        class MyMonoid:
+            __add__ = Lift(2)
 
     Otherwise, because the method's signature is meant to depend on `A`, it is expected to
     be given as a `type -> Hom` callable:
 
-        Lift("reshape", lambda T: Hom((T, tuple), T), lift_args=(0,))
+        class MyArray:
+            reshape = Lift(lambda T: Hom((T, tuple), T), lift_args=(0,))
 
 
     Parameters
     ----------
-    name : str
-    signature : int | Callable
-        number of same-type arguments, or callable signature `type -> Hom`
+    signature : int | Callable[type, Hom]
+        number of arguments when `lift_args = ...` or callable signature
+    from_source : Callable[type, type]
+        extracts input values specified by `lift_args` before applying
+        the wrapped method.
+    to_target : Callable[type, type]
+        lift returned value back to wrapping type
     lift_args : ... | int | tuple[int, ...]
         arguments to be projected onto original type:
         all (`...`), one (`int`) or only a selection (`tuple`).
-    from_source : Callable
-    to_target : Callable
+    name : str | None
+        managed by `__set_attr__`
     """
 
-    name: str
-    signature: Either(int, typing.Callable)
-    lift_args: Either(type(...), int, tuple) = ...
-    flip: int = 0
-    # override default lift for each functor
     from_source: typing.Callable = lambda x: x
-    to_target: typing.Callable = lambda x: x
+    to_target: typing.Callable = lambda y: y
+
+    def __init__(
+        self,
+        signature: Either(int, typing.Callable),
+        lift_args: Either(type(...), int, tuple) = ...,
+        flip: int = 0,
+        name: typing.Optional[str] = None,
+    ):
+        self.signature = Either(int, typing.Callable)(signature)
+        self.lift_args = Either(type(...), int, tuple)(lift_args)
+        self.flip = flip
+        self.name = name
+
+    def __get__(self, obj, objtype=None):
+        if obj is None:
+            # unbound : Tx.method
+            return self.hom(objtype)
+        elif objtype is not None:
+            # x.unary() : unary.__get__(x, Tx).__call__()
+            method = self.hom(objtype)
+            return Hom.partial(method, obj)
+        else:
+            # bound : x.method
+            method = self.hom(type(obj))
+            return method(obj)
+
+    def __set_name__(self, objtype, name):
+        self.name = name
 
     def homtype(self, objtype: type) -> Hom:
         """
         Parse method signature specified on `objtype`.
         """
-        if callable(self.signature.data):
-            hom = self.signature.data(objtype)
-            return HomLift(hom.src, hom.tgt)
-        elif type(self.signature.data) is int:
-            n = self.signature.data
-            return HomLift(tuple([objtype] * n), objtype)
+        signature = self.signature.data
+        if callable(signature):
+            hom = signature(objtype)
+            return Hom(hom.src, hom.tgt)
+        elif signature == 1:
+            return Hom(objtype, objtype)
+        elif type(signature) is int:
+            n = signature
+            return Hom(tuple([objtype] * n), objtype)
         else:
-            print("homtype", type(self.signature), objtype)
+            raise ValueError(f"Invalid signature, expected int | Callable[type, Hom]")
 
-    def method(self, objtype: type) -> Hom.Object:
+    def method(self):
+        return LiftedMethod(self)
+
+    def hom(self, objtype: type) -> Hom.Object:
         """
         Lift a method to the wrapped type.
         """
@@ -91,7 +124,7 @@ class Lift:
 
     def raw_lift(self, objtype: type, lift_args: tuple[int, ...]) -> typing.Callable:
         """
-        Lifted callable S' -> T' to be hom-typed.
+        Lifted callable (T A, ...) -> T A to be hom-typed.
         """
         method = self.raw(objtype)
         m = max(lift_args)
@@ -102,93 +135,16 @@ class Lift:
         def lifted(*xs):
             head = (x if f == 1 else f(x) for x, f in zip(xs, from_source))
             tail = (x for x in xs[m + 1 :])
-            y = self.to_target(method(*head, *tail))
+            y0 = method(*head, *tail)
+            y = self.to_target(y0)
             return y
 
         return lifted
 
     def raw(self, objtype: type) -> typing.Callable:
-        """Callable S -> T to be lifted."""
+        """Callable (A, ...) -> A to be lifted."""
 
         def raw_bound_method(x, *xs):
             return getattr(x, self.name)(*xs)
 
         return raw_bound_method
-
-
-@struct
-class WrapLift(Lift):
-    from_source = lambda x: x.data
-
-
-@struct
-class ProdLift(Lift):
-    from_source = lambda x: x[0]
-
-
-class HomLift(Hom):
-
-    class Object(Hom.Object):
-
-        def __get__(self, obj, objtype=None):
-            if obj is not None:
-                return Hom.partial(self, obj)
-            else:
-                return self
-
-
-class LiftedMethod:
-
-    def __init__(self, lift: Lift):
-        self.lift = lift
-        if isinstance(lift.signature, int):
-            r = lift.signature
-            self.signature = lambda T: Hom(tuple([T] * r), T)
-        else:
-            self.signature = signature
-
-    def method(self, obj: typing.Any) -> Type.Hom.Object:
-        """
-        Lift a method to the wrapped type.
-        """
-        lift_args = self.lift.lift_args
-        homtype = self.lift.signature(type(obj))
-        if isinstance(lift_args, int):
-            lift_args = (lift_args,)
-        elif lift_args is ...:
-            lift_args = tuple(range(homtype.arity))
-
-        @homtype
-        def lifted_method(*xs):
-            """
-            Lifted method.
-            """
-            xs = list(xs)
-            for i in lift_args:
-                xs[i] = xs[i].data
-            return io.cast(method(*xs), homtype.tgt)
-
-    def __set_name__(self, name, objtype):
-        self.lifted = getattr(objtype._lifted_, self.name)
-        try:
-            homtype = self.signature(objtype)
-            self.typed = homtype(self.lifted)
-        except:
-            print("invalid signature")
-            self.typed = self.lifted
-        # unused
-        self.target_name = name
-
-    def __get__(self, obj, objtype=None):
-        if obj is not None:
-            return self.typed(obj)
-        else:
-            return self.typed
-
-    def __set__(self, obj, val): ...
-
-    def __getattr__(self, attr):
-        try:
-            return super().__getattr__(attr)
-        except AttributeError:
-            return getattr(self.lift, attr)

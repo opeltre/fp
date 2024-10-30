@@ -19,8 +19,17 @@ class HomObject(Arrow.Object):
     tgt: Type
     arity: int
 
-    def __init__(self, pipe: Callable | tuple[Callable]):
-        # wrap callables in the monoidal tuple type
+    # reference to Hom
+    _head_: HomFunctor
+
+    def __init__(self, pipe: Callable | tuple[Callable, ...]):
+        """Wrap callable(s) in the monoidal tuple type.
+
+        Tuples of callables are used to wrap function compositions in a linear
+        and monoidal data structure. Multiple inputs / outputs are processed
+        consistently throughout the pipe using the `src`, `tgt` and `arity`
+        attributes of `Hom` objects, see :attr:`Hom.compose`.
+        """
         if isinstance(pipe, tuple):
             self._pipe = pipe
         elif callable(pipe) and self.arity == 1:
@@ -32,6 +41,7 @@ class HomObject(Arrow.Object):
             self.__name__ = pipe.__name__ if pipe.__name__ != "<lambda>" else "λ"
 
     def __call__(self, *xs) -> tgt:
+        """Evaluate morphism on inputs."""
 
         def pipe(x):
             for f in self._pipe:
@@ -108,11 +118,14 @@ class HomObject(Arrow.Object):
         elif len(xs) == 1 and isinstance(xs[0], arrow.src):
             # n-ary call on Prod instance
             Src = arrow.src
-
-        else:
+        elif len(xs) <= arrow.arity:
             # partial call
             ts = arrow.src._tail_[: len(xs)]
             Src = Type.Prod(*ts)
+        else:
+            raise ValueError(
+                f"too many arguments for {arrow.src} -> {arrow.tgt} on {xs}"
+            )
 
         if not isinstance(Src, Var):
             # concrete type, True
@@ -139,7 +152,7 @@ class HomObject(Arrow.Object):
             # n-ary call (on n typed inputs)
             return xs
 
-        if r == 0 and xs[0] == Type.Unit() or xs[0] is None:
+        if r == 0 and (len(xs) == 0 or xs[0] == Type.Unit() or xs[0] is None):
             # constant
             return Type.Unit()
 
@@ -147,7 +160,7 @@ class HomObject(Arrow.Object):
             return io.cast(xs, Src) if not isinstance(Src, Var) else xs
 
     @staticmethod
-    def target_type(arrow, xs, match=True):
+    def target_type(arrow, xs: tuple, match=True) -> Type:
         """
         Target type inference.
         """
@@ -279,8 +292,13 @@ class Hom(Arrow, metaclass=HomFunctor):
             f_xs.__name__ = f"{f.__name__} " + " ".join((str(x) for x in xs))
             return cls(src, f.tgt)(f_xs)
 
+        elif len(xs) == f.arity:
+            f_xs = functools.partial(f, *xs)
+            f_xs.__name__ = f"{f.__name__} " + " ".join((str(x) for x in xs))
+            return cls((), f.tgt)(f_xs)
+
         raise TypeError(
-            f"Cannot partially call {Arr.arity} function on " + f"{len(xs)}-ary input"
+            f"Cannot partially call {f.arity} function on " + f"{len(xs)}-ary input"
         )
 
     @classmethod
