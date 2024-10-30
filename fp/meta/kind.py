@@ -3,7 +3,7 @@ from colorama import Fore
 from .method import Method
 
 from functools import cache
-import fp.io as io
+import fp.utils as utils
 
 Args = tuple[int] | type(...)
 
@@ -69,7 +69,7 @@ class Kind(type):
             sgn = T._eval_signature_(method)
             T._holes_[k] = sgn
             t, tc = T.__name__, type(T).__name__
-            print(io.WARN, k, ":", sgn, f"missing in {t} <= {tc}")
+            print(utils.WARN, k, ":", sgn, f"missing in {t} <= {tc}")
 
     def _doc_(T):
         # document methods
@@ -121,7 +121,7 @@ class Kind(type):
         except:
             name = signature.__name__
             if not any(b.__name__ == "Var" for b in T.__bases__):
-                print(io.WARN, name, ": could not evaluate signature on", T)
+                print(utils.WARN, name, ": could not evaluate signature on", T)
             return signature
 
     def __init_subclass__(child, *xs, **ys):

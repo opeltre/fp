@@ -1,8 +1,7 @@
 from fp.meta import Type, Functor, Functor
 from fp.cartesian import Hom, Prod
-from fp.instances import struct
 from fp.instances import Lift as LiftBase
-import fp.io as io
+import fp.utils as utils
 
 from types import MethodType
 from typing import Callable, Iterable
@@ -26,7 +25,7 @@ class WrapObject(Functor.TopType, metaclass=Type):
             try:
                 self.data = A(data)
             except:
-                raise io.TypeError("input for Wrap {A}", data, A)
+                raise utils.TypeError("input for Wrap {A}", data, A)
 
     def __repr__(self):
         return self._wrapped_.__str__(self.data)
@@ -43,7 +42,7 @@ class WrapObject(Functor.TopType, metaclass=Type):
     def __init_subclass__(child, **kws):
         cls = super(child, child)
         msg = str(cls._head_) + " __init_subclass__: " + child.__name__
-        io.log(msg, v=1)
+        utils.log(msg, v=1)
 
 
 class Wrap(Type, metaclass=Functor):
@@ -73,7 +72,7 @@ class Wrap(Type, metaclass=Functor):
     def _subclass_(cls, *As):
         msg = str(cls) + " _subclass_: "
         msg += " ".join(str(A) for A in As[:2])
-        io.log(msg, v=1)
+        utils.log(msg, v=1)
         return Type.__new__(cls, *As)
 
     @classmethod
@@ -108,7 +107,7 @@ class Wrap(Type, metaclass=Functor):
             xs = list(xs)
             for i in lift_args:
                 xs[i] = xs[i].data
-            return io.cast(method(*xs), homtype.tgt)
+            return utils.cast(method(*xs), homtype.tgt)
 
         lifted_method.__name__ = method.__name__
         return lifted_method

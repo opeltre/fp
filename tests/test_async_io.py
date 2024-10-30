@@ -5,9 +5,9 @@ from time import time
 import fp
 from fp.meta import Type
 from fp.cartesian import Hom
-from fp.instances import Int, Str
+from fp.base import Int, Str
 from fp.instances.async_io import AsyncIO as IO
-import fp.io.inputs
+import fp.utils.inputs
 
 
 async def answer():
@@ -61,9 +61,9 @@ class TestAsyncIO:
         assert IO.bind(self.io, sub2).run() == 40
 
     def test_get(self, monkeypatch):
-        monkeypatch.setattr(fp.io.inputs, "_input", lambda: "hello world!")
+        monkeypatch.setattr(fp.utils.inputs, "_input", lambda: "hello world!")
         assert IO.get().run() == "hello world!"
 
     def test_gets(self, monkeypatch):
-        monkeypatch.setattr(fp.io.inputs, "_input", lambda: "hello world!")
+        monkeypatch.setattr(fp.utils.inputs, "_input", lambda: "hello world!")
         assert IO.gets(Str.len).run() == 12

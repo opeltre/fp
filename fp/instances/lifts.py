@@ -1,4 +1,4 @@
-from .struct import struct
+from ..base.struct import struct
 from fp.cartesian import Type, Hom, Either
 
 import typing

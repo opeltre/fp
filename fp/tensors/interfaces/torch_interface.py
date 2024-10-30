@@ -1,4 +1,4 @@
-from fp.instances import struct
+from fp.base import struct
 from .interface import Interface, DtypeTable, INTERFACES
 
 

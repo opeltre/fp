@@ -10,7 +10,7 @@ from .kind import Kind
 from .type import Type
 from .method import Method
 
-import fp.io as io
+import fp.utils as utils
 import fp.utils
 
 
@@ -72,7 +72,7 @@ class Constructor(Kind):
                 try:
                     name = cls._get_name_(*As)
                 except Exception as e:
-                    io.warn(f"Could not compute {cls}._get_name_({As})")
+                    utils.warn(f"Could not compute {cls}._get_name_({As})")
                     name = "T As"
                 if isinstance(cls, Type):
                     return type(cls).__new__(cls, name, (base,), {})
@@ -85,7 +85,7 @@ class Constructor(Kind):
         def _subclass_(cls, name: str, bases: tuple, dct: dict):
             msg = str(cls.__name__) + " _subclass_: "
             msg += name + " " + str(bases)
-            io.log(msg, v=1)
+            utils.log(msg, v=1)
             T = Type.__new__(cls, name, bases, dct)
             for base in bases:
                 if hasattr(base, "_post_new_"):
@@ -168,7 +168,7 @@ class Constructor(Kind):
         mode = _calling_mode(*As)
         if mode == _Mode("subclass"):
             try:
-                io.log(f"Subclass {As[0]} -> {T}", v=2)
+                utils.log(f"Subclass {As[0]} -> {T}", v=2)
                 if hasattr(T, "_subclass_") and mode.name == "subclass":
                     return T._subclass_(*As[:3])
                 TA = Type.__new__(T, *As)
@@ -178,7 +178,7 @@ class Constructor(Kind):
                 return TA
             except Exception as err:
                 print(err)
-                raise io.ConstructorError(
+                raise utils.ConstructorError(
                     f"Could not create subclass {As[0]} of {T}.\n\n"
                     "If you override T._subclass_(name, bases, dct), "
                     "it must return a type."
@@ -186,7 +186,7 @@ class Constructor(Kind):
 
         if mode == _Mode("variable"):
             try:
-                io.log(f"Parameterised type: {T}({As})", v=2)
+                utils.log(f"Parameterised type: {T}({As})", v=2)
                 if T is not Var:
                     As = Var._read_vars_(As)
                 elif T is Var:
@@ -197,16 +197,16 @@ class Constructor(Kind):
                     TA = T.var()(*As)
 
             except Exception as err:
-                raise io.ConstructorError(
+                raise utils.ConstructorError(
                     f"Could not create parameterised type {T}({As})"
                 )
 
         if mode == _Mode("new"):
-            io.log(f"Concrete type: {T}({As})", v=2)
+            utils.log(f"Concrete type: {T}({As})", v=2)
             TA = T.new(*As)
 
         if mode == _Mode("struct"):
-            io.log(f"Struct type: {As[:2]}", v=2)
+            utils.log(f"Struct type: {As[:2]}", v=2)
             TA = T.new(*As)
 
         # post new

@@ -1,5 +1,5 @@
 from .kind import Kind
-import fp.io as io
+import fp.utils as utils
 import fp
 
 from typing import Any
@@ -33,8 +33,8 @@ class Type(type, metaclass=Kind):
         T._head_ = name if isinstance(head, type(None)) else head
         T._tail_ = tail
         # pretty print type annotations
-        T.__str__ = io.str_method(T.__str__)
-        T.__repr__ = io.repr_method(T.__repr__)
+        T.__str__ = utils.str_method(T.__str__)
+        T.__repr__ = utils.repr_method(T.__repr__)
 
         # seamless printing helpers
         def shows(x: Any, m: str) -> Any:

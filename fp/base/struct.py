@@ -6,8 +6,8 @@ from fp.cartesian import Type, Prod, Hom, Arrow
 from .list import List
 from .str import Str
 
-import fp.io as io
-from fp.io.show import showStruct
+import fp.utils as utils
+from fp.utils.show import showStruct
 
 
 class Key(List(Str)):
@@ -88,18 +88,18 @@ class StructObject(metaclass=Type):
         nargs = len(xs)
         fields = [(k, *v) for k, v in zip(self._keys_, self._values_)]
         for x, (name, Tx, *_) in zip(xs, fields):
-            setattr(self, name, io.cast(x, Tx))
+            setattr(self, name, utils.cast(x, Tx))
         for name, Tx, *val in fields[nargs:]:
             try:
                 y = ys[name]
-                setattr(self, name, io.cast(y, Tx))
+                setattr(self, name, utils.cast(y, Tx))
             except:
                 if len(val):
                     (y,) = val
-                    setattr(self, name, io.cast(y, Tx))
+                    setattr(self, name, utils.cast(y, Tx))
                 else:
                     struct = self.__class__
-                    raise io.KeyError(
+                    raise utils.KeyError(
                         f"Missing key {name} creating a {struct} instance."
                     )
 

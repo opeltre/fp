@@ -1,5 +1,6 @@
 import fp
-from fp.instances import Stateful, Str
+from fp.base import Str
+from fp.instances import Stateful
 
 
 class TestStateful:
