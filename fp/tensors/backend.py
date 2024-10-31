@@ -2,7 +2,7 @@ import typing
 import functools
 
 from fp.cartesian import Type, Hom, Prod, Either
-from fp.instances import Lift, Wrap, Stateful
+from fp.instances import Wrap, Stateful
 from fp.base import struct, Alg, Ring
 
 from .interfaces import Interface, INTERFACES, StatefulInterface

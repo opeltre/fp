@@ -1,6 +1,5 @@
 from fp.meta import Type
 
-from .lifts import Lift
 from .wrap import Wrap
 from .state import State, StateMonad
 from .stateful import Stateful

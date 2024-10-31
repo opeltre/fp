@@ -1,6 +1,6 @@
 from fp.meta import Type, Functor, Functor
 from fp.cartesian import Hom, Prod
-from fp.instances import Lift as LiftBase
+from fp.meta.lifts import Lift as LiftBase
 import fp.utils as utils
 
 from types import MethodType
