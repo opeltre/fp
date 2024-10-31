@@ -1,4 +1,3 @@
-from ..base.struct import struct
 from fp.cartesian import Type, Hom, Either
 
 import typing
@@ -19,7 +18,7 @@ class Lift:
 
                         T A ---> T A
                          .        ^
-        from_source      .        '     to_target
+        from_source      |        |     to_target
                          v        '
                          A  --->  A
 
@@ -56,8 +55,13 @@ class Lift:
         managed by `__set_attr__`
     """
 
-    from_source: typing.Callable = lambda x: x
-    to_target: typing.Callable = lambda y: y
+    @staticmethod
+    def from_source(x):
+        return x
+
+    @staticmethod
+    def to_target(y):
+        return y
 
     def __init__(
         self,
@@ -102,9 +106,6 @@ class Lift:
             return Hom(tuple([objtype] * n), objtype)
         else:
             raise ValueError(f"Invalid signature, expected int | Callable[type, Hom]")
-
-    def method(self):
-        return LiftedMethod(self)
 
     def hom(self, objtype: type) -> Hom.Object:
         """
