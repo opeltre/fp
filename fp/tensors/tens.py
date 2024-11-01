@@ -4,7 +4,7 @@ from .tensor import Tensor, Backend
 from .tens_base import TensBase
 from .shape import Torus
 
-from fp.meta import HomFunctor, Functor, NFunctor
+from fp.meta import HomFunctor, Functor
 from fp.cartesian import Type, Hom
 from fp.base import Ring
 import fp.utils as utils
@@ -282,11 +282,12 @@ class Linear(Hom, Tens, metaclass=HomFunctor):
         raise Exception("Dense tensor product of operators not implemented")
 
 
-class Otimes(metaclass=NFunctor):
+class Otimes(metaclass=Functor):
     """
     Tensor product of linear spaces.
     """
 
+    arity = 2
     start_dim = 0
 
     def __new__(cls, Tens_A, Tens_B):

@@ -129,13 +129,3 @@ class HomFunctor(ArrowFunctor):
     @TypeClassMethod
     def eval(T):
         return ("A", T("A", "B")), "B"
-
-
-class NFunctor(Functor):
-    """
-    Functors with arbitrary signatures.
-    """
-
-    kind = "(*, ...) -> *"
-    arity = ...
-    _kind_ = ..., ()
