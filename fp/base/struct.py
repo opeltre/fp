@@ -15,44 +15,55 @@ class Key(List(Str)):
     Hom = Arrow
 
 
-class FieldManager(Hom):
+class FieldObject(Hom.Object):
 
-    class Object(Hom.Object):
+    def __init__(self, slot_descriptor, key: str):
+        getter = lambda obj: slot_descriptor.__get__(obj)
+        super().__init__(getter)
+        self._slot_descriptor = slot_descriptor
+        self._key_ = key
+        self._value_ = self.tgt
+        self.__name__ = "." + key
 
-        def __init__(self, slot_descriptor, key: str):
-            getter = lambda obj: slot_descriptor.__get__(obj)
-            super().__init__(getter)
-            self._slot_descriptor = slot_descriptor
-            self._key_ = key
-            self.__name__ = "." + key
+    def __get__(self, obj, objtype=None):
+        if obj is not None:
+            return self._slot_descriptor.__get__(obj, objtype)
+        # typed class method
+        src, tgt = objtype, self._value_
+        get = Field(src, tgt)(self._slot_descriptor, self._key_)
+        get.__name__ = "." + self._key_
+        return get
 
-        @property
-        def set(self):
-            S, T = self.src, self.tgt
+    def __set__(self, obj, val):
+        self._slot_descriptor.__set__(obj, val)
 
-            @Hom((T, S), S)
-            def setter(value, obj):
-                copy = S(**obj)
-                self._slot_descriptor.__set__(copy, value)
-                return copy
+    @property
+    def set(self):
+        S, T = self.src, self.tgt
 
-            setter.__name__ = self.__name__ + ".set"
-            return setter
+        @Hom((T, S), S)
+        def setter(value, obj):
+            copy = S(**obj)
+            self._slot_descriptor.__set__(copy, value)
+            return copy
 
-        @property
-        def put(self):
-            S, T = self.src, self.tgt
+        setter.__name__ = self.__name__ + ".set"
+        return setter
 
-            @Hom((T, S), S)
-            def putter(value, obj):
-                self._slot_descriptor.__set__(obj, value)
-                return obj
+    @property
+    def put(self):
+        S, T = self.src, self.tgt
 
-            putter.__name__ = self.__name__ + ".put"
-            return putter
+        @Hom((T, S), S)
+        def putter(value, obj):
+            self._slot_descriptor.__set__(obj, value)
+            return obj
+
+        putter.__name__ = self.__name__ + ".put"
+        return putter
 
 
-class Field:
+class Field(Hom):
     """
     Manage `Struct` access and updates.
 
@@ -67,11 +78,7 @@ class Field:
         obj.field : V
     """
 
-    def __init__(self, slot_descriptor, V, v=None):
-        self.slot_descriptor = slot_descriptor
-        self._value_ = V
-        if v is not None:
-            self._default_ = v
+    Object = FieldObject
 
     @classmethod
     def bind(cls, src: tuple[Type, str], tgt: Type | Value):
@@ -81,30 +88,10 @@ class Field:
         S, k = src
         V, *v = tgt if isinstance(tgt, tuple) else (tgt, ())
         slot = getattr(S, k)
-        field = cls(slot, V, *v)
+        field = cls(S, V)(slot, k)
         field.__set_name__(k, S)
         setattr(S, k, field)
         return field
-
-    def __set_name__(self, name, objtype):
-        self._key_ = name
-
-    def __get__(self, obj, objtype=None):
-        if obj is not None:
-            return self.slot_descriptor.__get__(obj, objtype)
-        # typed class method
-        src, tgt = objtype, self._value_
-        get = FieldManager(src, tgt)(self.slot_descriptor, self._key_)
-        get.__name__ = "." + self._key_
-        return get
-
-    def __set__(self, obj, val):
-        self.slot_descriptor.__set__(obj, val)
-
-    def _with_(self, obj, val):
-        out = obj.copy()
-        self.__set__(out, val)
-        return out
 
 
 class StructObject(metaclass=Type):
