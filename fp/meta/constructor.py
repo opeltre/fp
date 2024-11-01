@@ -8,7 +8,7 @@ from colorama import Fore
 
 from .kind import Kind
 from .type import Type
-from .method import Method
+from .method import TypeClassMethod
 
 import fp.utils as utils
 import fp.utils
@@ -79,7 +79,9 @@ class Constructor(Kind):
                 return Type.__new__(cls, name, (base,), {})
             except Exception as e:
                 print(e)
-                raise RuntimeError(f"Method {cls.__name__}.new was not overriden.")
+                raise RuntimeError(
+                    f"TypeClassMethod {cls.__name__}.new was not overriden."
+                )
 
         @classmethod
         def _subclass_(cls, name: str, bases: tuple, dct: dict):
@@ -106,7 +108,7 @@ class Constructor(Kind):
     def kind(T):
         return "(*, ...) -> *"
 
-    @Method
+    @TypeClassMethod
     def new(T: Constructor):
         return Type.Hom("...", Type)
 

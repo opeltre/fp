@@ -1,7 +1,7 @@
 from fp.cartesian import Type, Hom, Prod
-from fp.cartesian.method import Method, method
+from fp.cartesian.method import Method
 from fp.meta import Var
-from fp.instances import Int
+from fp.base import Int
 
 
 class Counter(metaclass=Type):
@@ -16,7 +16,7 @@ class Counter(metaclass=Type):
     def inc(self):
         return self.__class__(self.data + 1)
 
-    @method
+    @Method
     def mult(self: Var("Counter"), n: Int) -> Var("Counter"):
         return self.__class__(self.data * n)
 

@@ -1,6 +1,6 @@
 from colorama import Fore
 
-from .method import Method
+from .method import TypeClassMethod
 
 from functools import cache
 import fp.utils as utils
@@ -13,11 +13,11 @@ class Kind(type):
     Type kinds.
 
     Subclasses of `Kind` may register class method signatures with
-    the `@Method` decorator, e.g.
+    the `@TypeClassMethod` decorator, e.g.
 
         >>> class Functor(Type):
         ...
-        ...     @Method
+        ...     @TypeClassMethod
         ...     def fmap(F):
         ...         return Hom('A', 'B'), Hom(F('A'), F('B'))
     """
@@ -48,7 +48,7 @@ class Kind(type):
             return None
         T._holes_ = {}
         # --- register methods
-        for k, method in Method.list(cls):
+        for k, method in TypeClassMethod.list(cls):
             # explicit dct definition
             if k in dct:
                 method = dct[k]
@@ -78,7 +78,7 @@ class Kind(type):
             cut = doc.find("\n\n")
             head, tail = (doc[:cut], doc[cut:]) if cut >= 0 else (doc, "")
             methods = T.methods().items()
-            title = "Class Methods"
+            title = "Class TypeClassMethods"
             title = "\n\n" + title + "\n" + "-" * len(title) + "\n\n"
             if tail[: len(title)] == title or not len(methods):
                 return None
@@ -103,9 +103,9 @@ class Kind(type):
 
     def methods(T):
         """
-        Method signatures.
+        TypeClassMethod signatures.
         """
-        methods = Method.list(T.__class__)
+        methods = TypeClassMethod.list(T.__class__)
         return {k: T._eval_signature_(mk) for k, mk in methods}
 
     def _eval_signature_(T, method):

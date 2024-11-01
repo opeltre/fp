@@ -1,4 +1,4 @@
-from .method import Method
+from .method import TypeClassMethod
 from .type import Type
 from .functor import Functor
 
@@ -12,11 +12,11 @@ class Monoidal(Functor):
     and its monoidal operation `*` (cartesian product).
     """
 
-    @Method
+    @TypeClassMethod
     def unit(cls):
         return "A", cls("A")
 
-    @Method
+    @TypeClassMethod
     def lift2(cls):
         return (
             Type.Hom(("A", "B"), "C"),
@@ -37,15 +37,15 @@ class Monad(Monoidal):
         - subprocess execution, asynchronous await, ...
     """
 
-    @Method
+    @TypeClassMethod
     def unit(cls):
         return "A", cls("A")
 
-    @Method
+    @TypeClassMethod
     def join(cls):
         return cls(cls("A")), cls("A")
 
-    @Method
+    @TypeClassMethod
     def bind(cls):
         return (cls("A"), Type.Hom("A", cls("B"))), cls("B")
 

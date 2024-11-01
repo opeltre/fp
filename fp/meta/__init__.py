@@ -1,5 +1,5 @@
 from .kind import Kind
-from .method import Method
+from .method import TypeClassMethod
 from .type import Type
 from .constructor import Constructor, Var
 from .functor import Functor, Cofunctor, Bifunctor, NFunctor, ArrowFunctor, HomFunctor
@@ -7,7 +7,7 @@ from .monad import Monad
 from .lifts import Lift
 
 __all__ = [
-    "Method",
+    "TypeClassMethod",
     "Kind",
     "Type",
     "Var",

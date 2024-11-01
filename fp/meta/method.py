@@ -1,9 +1,9 @@
 import inspect
 
 
-class Method:
+class TypeClassMethod:
     """
-    Method descriptor used as attribute to describe a type class.
+    TypeClassMethod descriptor used as attribute to describe a type class.
 
     Use as a decorator to declare a method for a type class `MyClass <= TypeClass`
 
@@ -18,7 +18,7 @@ class Method:
 
     Returns:
     --------
-        `method (Method)`:
+        `method (TypeClassMethod)`:
             a python descriptor with `__dict__` lookup on type instances.
             Warnings will be printed upon class instance creation
             for any missing method implementations.
@@ -31,7 +31,7 @@ class Method:
         # Type class `Eq` with a single method `eq : a -> a -> Bool`
         >>> class Eq(fp.Type):
         ...
-        ...     @fp.Method
+        ...     @fp.TypeClassMethod
         ...     def eq(a):
         ...         return fp.Hom((a, a), fp.Bool)
     """
@@ -64,7 +64,7 @@ class Method:
 
         Note:
         -----
-        Methods appear in alphabetical order. It would be more
+        TypeClassMethods appear in alphabetical order. It would be more
         understandable if they appeared in the order they were
         created.
         """
