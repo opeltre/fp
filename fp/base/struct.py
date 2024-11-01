@@ -11,11 +11,13 @@ from fp.utils.show import showStruct
 
 
 class Key(List(Str)):
+    """Category of keys, partial order for inclusion."""
 
     Hom = Arrow
 
 
 class FieldObject(Hom.Object):
+    """Field descriptors."""
 
     def __init__(self, slot_descriptor, key: str):
         getter = lambda obj: slot_descriptor.__get__(obj)
@@ -39,6 +41,7 @@ class FieldObject(Hom.Object):
 
     @property
     def set(self):
+        """Pure field update."""
         S, T = self.src, self.tgt
 
         @Hom((T, S), S)
@@ -52,6 +55,7 @@ class FieldObject(Hom.Object):
 
     @property
     def put(self):
+        """In-place field update."""
         S, T = self.src, self.tgt
 
         @Hom((T, S), S)
@@ -95,11 +99,11 @@ class Field(Hom):
 
 
 class StructObject(metaclass=Type):
-    """
-    Base class for `Struct` objects.
+    """Base class for `Struct` objects.
 
-    The empty struct is the pullback of any child instance by
-    the universal inclusion `() -> D` for any domain `D : tuple[keys]`.
+    Structs are mutable and use slot-based attribute management, which means
+    they cannot be assigned any new attribute that is not contained in their
+    type's keys.
     """
 
     __slots__ = ()
@@ -134,12 +138,19 @@ class StructObject(metaclass=Type):
         for k in self.__slots__:
             yield k
 
+    def values(self):
+        for k, v in self.items():
+            yield v
+
     def keys(self):
         return self.__slots__
 
     def items(self):
         for k in self:
             yield k, getattr(self, k)
+
+    def __eq__(self, other):
+        return all(x == y for x, y in zip(self.values(), other.values()))
 
     def __getitem__(self, k):
         if isinstance(k, int):
@@ -159,36 +170,13 @@ class StructObject(metaclass=Type):
         xs = (getattr(self, k) for k in Super._keys_)
         return Super(*xs)
 
-    def map(self, **fs):
-        targets = []
-        ys = []
-        defaults = []
-        for key, (src, *deft) in zip(self._keys_, self._values_):
-            x = getattr(self, key)
-            if key in fs:
-                f = fs[key]
-                if type(f) is tuple:
-                    f, tgt = f
-                else:
-                    tgt = hasattr(f, "tgt") and f.tgt
-                y = f(x)
-                ys.append(y)
-                targets.append(tgt or type(y))
-                defaults.append(deft if tgt is src else ())
-        fields = ((k, Ty, *y) for k, Ty, y in zip(self.__slots__, targets, defaults))
-        return self._head_(*fields)(*ys)
-
-    def apply(self, **fs):
-        for key, f in fs.items():
-            x = getattr(self, key)
-            setattr(self, key, f(x))
-
 
 # alias for pointed types (T, val:T)
 Value = tuple[Type, typing.Any]
 
 
 class Struct(Type, metaclass=Cofunctor):
+    """Struct functor, contravariant in the set of keys."""
 
     src = Key
     tgt = Type
@@ -220,8 +208,8 @@ class Struct(Type, metaclass=Cofunctor):
     @classmethod
     def new(
         cls,
-        keys: tuple[str],
-        values: Type | tuple[Type | Value] = (),
+        keys: tuple[str, ...],
+        values: tuple[Type | Value, ...] = (),
         name: str | None = None,
         bases: tuple[type, ...] = (),
         dct: dict = {},
@@ -311,7 +299,15 @@ class Struct(Type, metaclass=Cofunctor):
             return values
 
     @classmethod
-    def cofmap(cls, f): ...
+    def cofmap(cls, f):
+        """Pullback, i.e. restriction to a subset of keys."""
+        raise NotImplementedError(
+            "TODO: construct a struct 'supertype' given any Key.Hom arrow.\n"
+            "If this arrow has a name and is hashable, we may be able "
+            "to return the same supertype every time.\n\n"
+            "It is of course better practice to effectively define the supertype "
+            "before hand and inherit from it, using `.pull` to extract subfields."
+        )
 
 
 def struct(C: type) -> Struct:
