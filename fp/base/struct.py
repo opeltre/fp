@@ -150,7 +150,12 @@ class StructObject(metaclass=Type):
             yield k, getattr(self, k)
 
     def __eq__(self, other):
+        if type(other) != type(self):
+            return False
         return all(x == y for x, y in zip(self.values(), other.values()))
+
+    def __hash__(self):
+        return id(self)
 
     def __getitem__(self, k):
         if isinstance(k, int):
