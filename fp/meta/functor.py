@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from .method import TypeClassMethod
 from .kind import Kind
 from .constructor import Constructor, Var
+from .type_class_method import TypeClassMethod
 from .type import Type
 
 import fp.utils as utils

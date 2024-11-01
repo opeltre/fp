@@ -1,4 +1,4 @@
-from .method import TypeClassMethod
+from .type_class_method import TypeClassMethod
 from .type import Type
 from .functor import Functor
 

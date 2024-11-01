@@ -8,7 +8,7 @@ from colorama import Fore
 
 from .kind import Kind
 from .type import Type
-from .method import TypeClassMethod
+from .type_class_method import TypeClassMethod
 
 import fp.utils as utils
 import fp.utils

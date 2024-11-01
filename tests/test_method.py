@@ -1,5 +1,5 @@
 from fp.cartesian import Type, Hom, Prod
-from fp.cartesian.method import Method
+from fp.meta.method import Method
 from fp.meta import Var
 from fp.base import Int
 

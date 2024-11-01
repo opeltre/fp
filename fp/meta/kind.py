@@ -1,6 +1,6 @@
 from colorama import Fore
 
-from .method import TypeClassMethod
+from .type_class_method import TypeClassMethod
 
 from functools import cache
 import fp.utils as utils
