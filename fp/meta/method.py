@@ -62,7 +62,15 @@ class Method:
 class ClassMethod(Method):
 
     def __get__(self, obj, objtype=None) -> Type.Hom.Object:
-        if objtype is not None:
-            return self.signature(objtype)(self._method)
+        if objtype is None:
+            objtype = type(obj)
+        sgn = self.signature(objtype)
+        if isinstance(sgn.src, Type.Prod) and len(sgn.src) != 2:
+            src = sgn.src[1:]
+        elif isinstance(sgn.src, Type.Prod):
+            src = sgn.src[1]
         else:
-            return self.signature(type(obj))(self._method)
+            src = Type.Unit
+        method_cls = functools.partial(self._method, objtype)
+        method_cls.__name__ = objtype.__name__ + "." + self._method.__name__
+        return Type.Hom(src, sgn.tgt)(method_cls)
