@@ -1,10 +1,11 @@
 import fp
-from fp import Int, Str
+from fp.base import Int, Str
+from fp.instances import State
 
 
 class TestState:
 
-    St = fp.State(Str)
+    St = State(Str)
 
     length = St(Int)(lambda s: ("", len(s)))
 

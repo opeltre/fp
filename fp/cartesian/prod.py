@@ -1,6 +1,6 @@
 from fp.meta import Type, NFunctor, Functor
 from typing import Callable
-import fp.io as io
+import fp.utils as utils
 
 
 class Prod(Type, metaclass=Functor):
@@ -39,7 +39,7 @@ class Prod(Type, metaclass=Functor):
         def __new__(P, *xs):
             if len(xs) != len(P._tail_):
                 raise TypeError(f"Got {len(xs)} terms in product type {P.__name__}")
-            xs = [io.cast(x, A) for A, x in zip(P._tail_, xs)]
+            xs = [utils.cast(x, A) for A, x in zip(P._tail_, xs)]
             return super().__new__(P, xs)
 
         def __init__(prod, *xs): ...
@@ -62,7 +62,7 @@ class Prod(Type, metaclass=Functor):
         @classmethod
         def cast(P, xs):
             if not isinstance(xs, P):
-                return P(*(io.cast(x, A) for A, x in zip(P._tail_, xs)))
+                return P(*(utils.cast(x, A) for A, x in zip(P._tail_, xs)))
 
     @classmethod
     def new(cls, *As):
@@ -134,7 +134,7 @@ class Prod(Type, metaclass=Functor):
     def cast(cls, xs):
         if isinstance(xs, tuple):
             return cls(*xs)
-        return io.cast(xs, cls)
+        return utils.cast(xs, cls)
 
 
 """ Monoidal Unit """

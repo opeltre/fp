@@ -1,4 +1,4 @@
-import fp.io as io
+import fp.utils as utils
 from fp.cartesian import Type, Hom
 from .algebra import Ring, Alg, Monoid
 

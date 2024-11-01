@@ -1,6 +1,6 @@
 from __future__ import annotations
 from fp.meta import Type, NFunctor, Monad
-import fp.io as io
+import fp.utils as utils
 from .prod import Prod
 from .hom import Hom
 
@@ -50,7 +50,7 @@ class Either(Type, metaclass=Monad):
         def cast(E, x):
             for i, Ti in enumerate(E._tail_):
                 try:
-                    return E(io.cast(x, Ti))
+                    return E(utils.cast(x, Ti))
                 except:
                     pass
 
@@ -140,7 +140,7 @@ class Either(Type, metaclass=Monad):
 class Bottom:
 
     def __new__(cls, *xs):
-        raise io.CastError(cls, xs)
+        raise utils.CastError(cls, xs)
 
 
 Either.Unit = Type("∅ ", (Bottom,), {})

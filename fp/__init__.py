@@ -1,12 +1,14 @@
-import fp.io as io
 import fp.utils as utils
 import fp.meta as meta
 import fp.cartesian as cartesian
-from fp.cartesian import *
+import fp.base as base
 import fp.instances as instances
-from fp.instances import *
 
-__all__ = cartesian.__all__ + instances.__all__ 
+from fp.cartesian import *
+from fp.base import *
 
-io.document(cartesian)
-io.document(instances)
+__all__ = cartesian.__all__ + base.__all__
+
+utils.document(base)
+utils.document(cartesian)
+utils.document(instances)

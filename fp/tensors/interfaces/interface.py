@@ -2,7 +2,7 @@ import numpy as np
 
 from types import ModuleType
 from typing import Callable
-from fp.instances import struct, List, Str
+from fp.base import struct, List, Str
 
 # ====== Interfaces : populated during __init__.py ======
 

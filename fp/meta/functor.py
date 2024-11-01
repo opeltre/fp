@@ -5,7 +5,7 @@ from .kind import Kind
 from .constructor import Constructor, Var
 from .type import Type
 
-import fp.io as io
+import fp.utils as utils
 
 
 class Category(Kind):

@@ -3,7 +3,7 @@ from __future__ import annotations
 from fp.meta import Type, Monad
 from .num import Int, Monoid
 
-import fp.io as io
+import fp.utils as utils
 
 
 class List(Monoid, metaclass=Monad):
@@ -16,10 +16,10 @@ class List(Monoid, metaclass=Monad):
         def __init__(self, xs):
             A = self._tail_[0]
             try:
-                ys = (io.cast(x, A) for x in xs)
+                ys = (utils.cast(x, A) for x in xs)
                 super().__init__(ys)
             except Exception as e:
-                raise io.TypeError("input", xs, self.__class__)
+                raise utils.TypeError("input", xs, self.__class__)
 
         def __repr__(self):
             return "[" + ", ".join([str(x) for x in self]) + "]"

@@ -2,7 +2,7 @@ from contextlib import contextmanager
 
 from fp.meta import Monad, HomFunctor, Var
 from fp.cartesian import Type, Hom, Prod
-import fp.io as io
+import fp.utils as utils
 
 Point = Type.Unit()
 
@@ -166,7 +166,7 @@ class StateMonad(Type, metaclass=Monad):
         Get and return an image of the state by `f : S -> A`.
         """
         S, A = f.src, f.tgt
-        io.asserts.subclass(S, f.src)
+        utils.asserts.subclass(S, f.src)
         gets_f = cls.unit(Point).gets(f)
         gets_f.__name__ = "gets " + f.__name__
         return gets_f
@@ -177,7 +177,7 @@ class StateMonad(Type, metaclass=Monad):
         Update the state by an image of `f : A -> S`.
         """
         S, A = f.tgt, f.src
-        io.asserts.subclass(A, f.src)
+        utils.asserts.subclass(A, f.src)
 
         @Hom(A, cls(A))
         def puts_f(a):

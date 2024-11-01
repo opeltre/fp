@@ -1,5 +1,5 @@
 import re
-import fp.io as io
+import fp.utils as utils
 from fp.cartesian import Type, Hom
 
 
@@ -40,19 +40,19 @@ class Operad(Type):
 
             def _op_(x):
                 y = op(x)
-                return y if isinstance(y, tgt) else io.cast(y, tgt)
+                return y if isinstance(y, tgt) else utils.cast(y, tgt)
 
         elif arity == 2:
 
             def _op_(x1, x2):
                 y = op(x1, x2)
-                return y if isinstance(y, tgt) else io.cast(y, tgt)
+                return y if isinstance(y, tgt) else utils.cast(y, tgt)
 
         else:
 
             def _op_(*xs):
                 y = op(*xs)
-                return y if isinstance(y, tgt) else io.cast(y, tgt)
+                return y if isinstance(y, tgt) else utils.cast(y, tgt)
 
         _op_.__name__ = op.__name__
         return _op_
@@ -91,19 +91,19 @@ class Ring(Monoid):
 
             def _op_(x):
                 y = op(x)
-                return y if isinstance(y, tgt) else io.cast(y, tgt)
+                return y if isinstance(y, tgt) else utils.cast(y, tgt)
 
         elif arity == 2:
 
             def _op_(x1, x2):
                 y = op(x1, x2)
-                return y if isinstance(y, tgt) else io.cast(y, tgt)
+                return y if isinstance(y, tgt) else utils.cast(y, tgt)
 
         else:
 
             def _op_(*xs):
                 y = op(*xs)
-                return y if isinstance(y, tgt) else io.cast(y, tgt)
+                return y if isinstance(y, tgt) else utils.cast(y, tgt)
 
         _op_.__name__ = op.__name__
         return _op_

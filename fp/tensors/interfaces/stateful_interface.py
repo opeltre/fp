@@ -1,7 +1,7 @@
 import os
 
 from fp.instances import Stateful
-from fp import io
+from fp import utils
 
 from .numpy_interface import NumpyInterface
 from .interface import Interface, INTERFACES
@@ -21,7 +21,7 @@ class StatefulInterface(Stateful(Interface, NumpyInterface())):
         if s0 in INTERFACES:
             cls._initial_ = INTERFACES[s0]
         else:
-            io.log(
+            utils.log(
                 f"Could not find backend {s0}\n"
                 "Available backends are: {list(INTERFACES.keys())}"
             )

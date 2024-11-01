@@ -6,8 +6,8 @@ from .shape import Torus
 
 from fp.meta import HomFunctor, Functor, NFunctor
 from fp.cartesian import Type, Hom
-from fp.instances import Ring
-import fp.io as io
+from fp.base import Ring
+import fp.utils as utils
 
 from .tensor import Tensor
 from .backend import Backend
@@ -41,7 +41,7 @@ class Tens(Backend, metaclass=Functor):
         Tens_A = super().new(StatefulInterface.mock())
         Tens_A.shape = A
         Tens_A.domain = A
-        io.log((cls, "new", Tens_A, A), v=1)
+        utils.log((cls, "new", Tens_A, A), v=1)
         return Tens_A
 
     def _post_new_(Tens_A, A):
@@ -201,7 +201,7 @@ class Linear(Hom, Tens, metaclass=HomFunctor):
 
     def _post_new_(LinAB, A, B, *xs):
         msg = (str(m) for m in (LinAB.__name__, "_post_new_", A, B, *xs))
-        io.log(" ".join(msg), v=1)
+        utils.log(" ".join(msg), v=1)
         cls = LinAB.__class__
         Backend._post_new_(LinAB, LinAB._interface_)
 

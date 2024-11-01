@@ -5,8 +5,8 @@ from typing import Awaitable, Iterable, TypeAlias
 
 from fp.meta import Type, Monad
 from fp.cartesian import Type, Hom
-from fp.instances import Str
-import fp.io as io
+from fp.base import Str
+import fp.utils as utils
 
 
 async def _sleep(seconds: int | float) -> Type.Unit:
@@ -108,7 +108,7 @@ class AsyncIO(Type, metaclass=Monad):
 
         @cls(Str)
         async def getLine():
-            return Str(io.inputs._input())
+            return Str(utils.inputs._input())
 
         return getLine
 

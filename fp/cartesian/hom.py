@@ -5,7 +5,7 @@ import functools
 import types
 from typing import Iterable, Callable, Literal
 
-from fp import io
+from fp import utils
 from fp.meta import Type, Var, HomFunctor, ArrowFunctor
 from .arrow import Arrow
 
@@ -73,7 +73,7 @@ class HomObject(Arrow.Object):
                 return self()
 
         print(self.arity, len(xs))
-        raise io.TypeError("input", xs, self.src)
+        raise utils.TypeError("input", xs, self.src)
 
     def __lshift__(self, x: src) -> tgt:
         return self(x)
@@ -143,7 +143,7 @@ class HomObject(Arrow.Object):
             return xs[0]
         if r == 1:
             # unary call (untyped)
-            return io.cast(xs[0], Src) if not isinstance(Src, Var) else xs[0]
+            return utils.cast(xs[0], Src) if not isinstance(Src, Var) else xs[0]
 
         if r > 1 and len(xs) == 1 and isinstance(xs[0], Src):
             # n-ary call (on single Prod instance)
@@ -157,7 +157,7 @@ class HomObject(Arrow.Object):
             return Type.Unit()
 
         else:
-            return io.cast(xs, Src) if not isinstance(Src, Var) else xs
+            return utils.cast(xs, Src) if not isinstance(Src, Var) else xs
 
     @staticmethod
     def target_type(arrow, xs: tuple, match=True) -> Type:
@@ -186,7 +186,7 @@ class HomObject(Arrow.Object):
     @staticmethod
     def target_cast(Tgt, y):
         if not isinstance(Tgt, Var):
-            return io.cast(y, Tgt)
+            return utils.cast(y, Tgt)
         return y
 
 
@@ -351,5 +351,5 @@ class Hom(Arrow, metaclass=HomFunctor):
             # (A1, ..., An) -> B
             src, arity = Type.Prod(*A), len(A)
         else:
-            raise io.TypeError("source", A, Type | Iterable[Type])
+            raise utils.TypeError("source", A, Type | Iterable[Type])
         return src, tgt, arity

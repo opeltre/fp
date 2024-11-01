@@ -1,5 +1,5 @@
-from .struct import struct
-from fp.cartesian import Type, Hom, Either
+from __future__ import annotations
+from .type import Type
 
 import typing
 
@@ -19,7 +19,7 @@ class Lift:
 
                         T A ---> T A
                          .        ^
-        from_source      .        '     to_target
+        from_source      |        |     to_target
                          v        '
                          A  --->  A
 
@@ -34,7 +34,7 @@ class Lift:
             __add__ = Lift(2)
 
     Otherwise, because the method's signature is meant to depend on `A`, it is expected to
-    be given as a `type -> Hom` callable:
+    be given as a `type -> Type.Hom` callable:
 
         class MyArray:
             reshape = Lift(lambda T: Hom((T, tuple), T), lift_args=(0,))
@@ -42,7 +42,7 @@ class Lift:
 
     Parameters
     ----------
-    signature : int | Callable[type, Hom]
+    signature : int | Callable[type, Type.Hom]
         number of arguments when `lift_args = ...` or callable signature
     from_source : Callable[type, type]
         extracts input values specified by `lift_args` before applying
@@ -56,18 +56,23 @@ class Lift:
         managed by `__set_attr__`
     """
 
-    from_source: typing.Callable = lambda x: x
-    to_target: typing.Callable = lambda y: y
+    @staticmethod
+    def from_source(x):
+        return x
+
+    @staticmethod
+    def to_target(y):
+        return y
 
     def __init__(
         self,
-        signature: Either(int, typing.Callable),
-        lift_args: Either(type(...), int, tuple) = ...,
+        signature: Type.Sum(int, typing.Callable),
+        lift_args: Type.Sum(type(...), int, tuple) = ...,
         flip: int = 0,
         name: typing.Optional[str] = None,
     ):
-        self.signature = Either(int, typing.Callable)(signature)
-        self.lift_args = Either(type(...), int, tuple)(lift_args)
+        self.signature = Type.Sum(int, typing.Callable)(signature)
+        self.lift_args = Type.Sum(type(...), int, tuple)(lift_args)
         self.flip = flip
         self.name = name
 
@@ -78,7 +83,7 @@ class Lift:
         elif objtype is not None:
             # x.unary() : unary.__get__(x, Tx).__call__()
             method = self.hom(objtype)
-            return Hom.partial(method, obj)
+            return Type.Hom.partial(method, obj)
         else:
             # bound : x.method
             method = self.hom(type(obj))
@@ -87,35 +92,34 @@ class Lift:
     def __set_name__(self, objtype, name):
         self.name = name
 
-    def homtype(self, objtype: type) -> Hom:
+    def homtype(self, objtype: type) -> Type.Hom:
         """
         Parse method signature specified on `objtype`.
         """
         signature = self.signature.data
         if callable(signature):
             hom = signature(objtype)
-            return Hom(hom.src, hom.tgt)
+            return Type.Hom(hom.src, hom.tgt)
         elif signature == 1:
-            return Hom(objtype, objtype)
+            return Type.Hom(objtype, objtype)
         elif type(signature) is int:
             n = signature
-            return Hom(tuple([objtype] * n), objtype)
+            return Type.Hom(tuple([objtype] * n), objtype)
         else:
-            raise ValueError(f"Invalid signature, expected int | Callable[type, Hom]")
+            raise ValueError(
+                f"Invalid signature, expected int | Callable[type, Type.Hom]"
+            )
 
-    def method(self):
-        return LiftedMethod(self)
-
-    def hom(self, objtype: type) -> Hom.Object:
+    def hom(self, objtype: type) -> Type.Hom.Object:
         """
         Lift a method to the wrapped type.
         """
         # evaluate signature
         homtype = self.homtype(objtype)
         # parse lift_args
-        from_dots = Hom(type(...), tuple)(lambda _: tuple(range(homtype.arity)))
-        from_int = Hom(int, tuple)(lambda i: (i,))
-        gather = Either.gather(from_dots, from_int, Hom.id(tuple))
+        from_dots = Type.Hom(type(...), tuple)(lambda _: tuple(range(homtype.arity)))
+        from_int = Type.Hom(int, tuple)(lambda i: (i,))
+        gather = Type.Sum.gather(from_dots, from_int, Type.Hom.id(tuple))
         lift_args = gather(self.lift_args)
         # wrap lifted callable
         lifted = homtype(self.raw_lift(objtype, lift_args))

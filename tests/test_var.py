@@ -1,6 +1,6 @@
 from fp.meta import Var
 from fp.cartesian import Hom, Prod
-from fp.instances import List, Int, Str
+from fp.base import List, Int, Str
 
 
 def test_substitute():

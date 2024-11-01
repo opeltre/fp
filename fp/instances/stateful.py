@@ -5,7 +5,7 @@ from contextlib import contextmanager
 
 from fp.meta import Monad, Var
 from fp.cartesian import Type, Hom, Prod
-import fp.io as io
+import fp.utils as utils
 
 from .state import StateMonad, State
 

@@ -1,8 +1,8 @@
 import torch
-from fp import io
+from fp import utils
 from fp.meta import Functor
 from fp.cartesian import Type, Hom
-from fp.instances import Int, List, Ring
+from fp.base import Int, List, Ring
 from .tensor import Tensor
 from .backend import Backend
 
@@ -135,7 +135,7 @@ class Torus(Backend, Ring, metaclass=Functor):
         bases = (BaseShape,)
         dct = {"__name__": name}
         TA = Tensor._subclass_(name, bases, dct)
-        io.log(("Torus new", TA, type(TA), type(TA) is cls), v=1)
+        utils.log(("Torus new", TA, type(TA), type(TA) is cls), v=1)
         return TA
 
         # new shape instance

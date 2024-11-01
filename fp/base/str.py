@@ -1,7 +1,7 @@
 from .algebra import Monoid
 from .num import Int
 from fp.cartesian import Hom
-from fp import io
+from fp import utils
 
 
 class Str(str, metaclass=Monoid):
@@ -15,7 +15,7 @@ class Str(str, metaclass=Monoid):
             return s
         if type(s) is str:
             return cls(s)
-        raise io.CastError(cls, s)
+        raise utils.CastError(cls, s)
 
 
 Str.len = Hom(Str, Int)(len)

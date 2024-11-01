@@ -2,7 +2,7 @@ import torch
 
 from .tensor import Tensor, TensorBase
 from .shape import Torus
-from fp.instances import Ring
+from fp.base import Ring
 
 
 class TensBase(Tensor, metaclass=Ring):
