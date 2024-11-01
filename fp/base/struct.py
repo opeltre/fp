@@ -155,11 +155,9 @@ class StructObject(metaclass=Type):
     def __repr__(self):
         return showStruct(self)
 
-    def pull(self, keys):
-        if isinstance(keys, tuple):
-            xs = (getattr(self, k) for k in keys)
-            values = tuple((type(x), x) for x in xs)
-            return Struct(keys, values)(*xs)
+    def pull(self, Super: Type):
+        xs = (getattr(self, k) for k in Super._keys_)
+        return Super(*xs)
 
     def map(self, **fs):
         targets = []

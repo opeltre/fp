@@ -10,6 +10,10 @@ class TestStruct:
         number: fp.List(fp.Int)
         job: fp.Str = "Pizzaiolo"
 
+    @fp.struct
+    class Chiller:
+        name: fp.Str
+
     @pytest.fixture(scope="class")
     def joe(self):
         return self.Person("joe", [0, 4, 3, 2])
@@ -49,3 +53,8 @@ class TestStruct:
     def test_put(self, jack):
         self.Person.job.put("Rock star")(jack)
         assert jack.job == "Rock star"
+
+    def test_pull(self, jack):
+        retired_jack = jack.pull(self.Chiller)
+        assert isinstance(retired_jack, self.Chiller)
+        assert retired_jack.name == "jack"
