@@ -3,6 +3,7 @@ from typing import Callable
 from .hom import Hom
 from .prod import Prod
 from fp.meta import Var
+from fp.utils.exceptions import SignatureError
 
 
 def _read_method_signature(annotated: Callable):
@@ -13,15 +14,21 @@ def _read_method_signature(annotated: Callable):
     src0 = src_tuple[0]
     src = src0 if len(src_tuple) == 1 else Prod(*src_tuple)
     signature = lambda T: Hom(src, tgt).substitute({src0.__name__: T})
-    print(signature(Var("T")))
-    return Method(signature, annotated)
+    # Preventively evaluate signature upon method definition
+    try:
+        signature_T = signature(Var("T"))
+    except:
+        raise SignatureError(
+            f"Could not read signature from annotations: {annotations}"
+        )
+    return signature
 
 
 class Method:
 
     @classmethod
     def annotate(cls, signature):
-        return lambda method: cls(signature, method)
+        return lambda method: cls(method, signature)
 
     def __init__(self, method: Callable, signature: Callable[type, Hom] | None = None):
         if signature is None:

@@ -10,6 +10,9 @@ class Error(Exception):
         super().__init__(RULE + msg)
 
 
+class SignatureError(Error): ...
+
+
 class KeyError(Error): ...
 
 
