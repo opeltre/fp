@@ -8,7 +8,7 @@ class TypeClassMethod:
     Use as a decorator to declare a method for a type class `MyClass <= TypeClass`
 
     This will register a `__dict__` lookup on type instances of `MyClass`,
-    and allows for polymorphic typing on the class methods of the type instance.
+    and allows for polymorphic typing on the class methods of type class instances.
 
     Parameters:
     -----------
@@ -39,10 +39,6 @@ class TypeClassMethod:
     def __set_name__(self, owner, name):
         self._name = "_" + name
         self.name = name
-        if hasattr(owner, "_methods_"):
-            owner._methods_ += [(name, self)]
-        else:
-            owner._methods_ = [(name, self)]
 
     def __init__(self, signature):
         self.signature = signature
@@ -71,7 +67,7 @@ class TypeClassMethod:
         out = []
         methods = objtype._methods_
         members = inspect.getmembers(objtype, lambda x: isinstance(x, cls))
-        for k, _ in methods:
+        for k, _ in methods.items():
             for p, m in members:
                 if k == p:
                     out.append((k, m))

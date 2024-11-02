@@ -61,6 +61,41 @@ class Method:
 
 class ClassMethod(Method):
 
+    def __init__(
+        self, method: Callable, signature: Callable[type, Type.Hom] | None = None
+    ):
+        if signature is None:
+            try:
+                # infer signature from annotations
+                signature = _read_method_signature(method)
+            except:
+                ...
+        self.signature = signature
+        self._method = method
+
+    def __set_name__(self, objtype, name):
+        self.__name__ = name
+        if hasattr(objtype, "method_signatures"):
+            signatures = objtype.method_signatures()
+            if name in signatures:
+                # TODO: clean this up by providing working signature
+                signature = signatures[name]
+
+                def sgn(T):
+                    sgn_T = signature(T)
+                    if isinstance(sgn_T, tuple):
+                        sgn_T = Type.Hom(*sgn_T)
+                    src, tgt = sgn_T.src, sgn_T.tgt
+                    # prepend class argument (unbound signature)
+                    _src = (
+                        (type(objtype), *src._tail_)
+                        if isinstance(src, Type.Prod)
+                        else (type(objtype), src)
+                    )
+                    return Type.Hom(_src, tgt)
+
+                self.signature = sgn
+
     def __get__(self, obj, objtype=None) -> Type.Hom.Object:
         if objtype is None:
             objtype = type(obj)

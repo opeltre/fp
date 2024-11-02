@@ -1,6 +1,5 @@
 from colorama import Fore
-
-from .type_class_method import TypeClassMethod
+import inspect
 
 from functools import cache
 import fp.utils as utils
@@ -10,7 +9,7 @@ Args = tuple[int] | type(...)
 
 class Kind(type):
     """
-    Type kinds.
+    Type kinds describe the signature of type constructors.
 
     Subclasses of `Kind` may register class method signatures with
     the `@TypeClassMethod` decorator, e.g.
@@ -23,7 +22,6 @@ class Kind(type):
     """
 
     kind = "*"
-    _methods_ = []
 
     def __new__(cls, name, bases, dct):
         """Create a kind."""
@@ -35,63 +33,6 @@ class Kind(type):
         cls._check_methods_(T, bases, dct)
         return T
 
-    @classmethod
-    def _check_methods_(cls, T, bases, dct):
-        """
-        Check that declared class methods are defined.
-
-        Called by `Kind.__new__` to explicitly call setattr as needed.
-        """
-        if T.__base__.__name__ == "Var":
-            return None
-        elif any(b.__name__ == "Var" for b in T.__bases__):
-            return None
-        T._holes_ = {}
-        # --- register methods
-        for k, method in TypeClassMethod.list(cls):
-            # explicit dct definition
-            if k in dct:
-                method = dct[k]
-                setattr(T, k, method)
-                continue
-            # look for default implementation in bases
-            inherited = False
-            for base in bases:
-                if hasattr(base, k):
-                    setattr(T, k, getattr(base, k).__get__(T, T.__class__))
-                    inherited = True
-                    break
-            # skip if found
-            if inherited:
-                # _doc_ += k + ": " + str(T._eval_signature_(method)) + "\n"
-                continue
-            # register hole and raise warning
-            sgn = T._eval_signature_(method)
-            T._holes_[k] = sgn
-            t, tc = T.__name__, type(T).__name__
-            print(utils.WARN, k, ":", sgn, f"missing in {t} <= {tc}")
-
-    def _doc_(T):
-        # document methods
-        doc = T.__doc__ or ""
-        try:
-            cut = doc.find("\n\n")
-            head, tail = (doc[:cut], doc[cut:]) if cut >= 0 else (doc, "")
-            methods = T.methods().items()
-            title = "Class TypeClassMethods"
-            title = "\n\n" + title + "\n" + "-" * len(title) + "\n\n"
-            if tail[: len(title)] == title or not len(methods):
-                return None
-            Mdoc = title
-            for k, mk in T.methods().items():
-                Mdoc += f"* {k} : `{mk}`  \n"
-            doc = head + Mdoc.replace("\n", "\n    ") + tail
-        except Exception as e:
-            (e)
-            raise e
-        finally:
-            T.__doc__ = doc
-
     def __repr__(self):
         """Show type name."""
         out = f"{self} : " + Fore.YELLOW + f"{self.kind}" + Fore.RESET
@@ -100,34 +41,6 @@ class Kind(type):
 
     def __str__(self):
         return self.__name__
-
-    def methods(T):
-        """
-        TypeClassMethod signatures.
-        """
-        methods = TypeClassMethod.list(T.__class__)
-        return {k: T._eval_signature_(mk) for k, mk in methods}
-
-    def _eval_signature_(T, method):
-        """
-        Used to wrap evaluation of signature.
-
-        Override in subclasses with a reference to `Type.Hom`.
-        """
-        if hasattr(method, "signature"):
-            signature = method.signature
-        try:
-            return signature(T)
-        except:
-            name = signature.__name__
-            if not any(b.__name__ == "Var" for b in T.__bases__):
-                print(utils.WARN, name, ": could not evaluate signature on", T)
-            return signature
-
-    def __init_subclass__(child, *xs, **ys):
-        child._methods_ = []
-        for m in super(child, child)._methods_:
-            child._methods_.append(m)
 
     @staticmethod
     def _functor_kind_(r: int | type(...), cov: Args, contrav: Args) -> str:
@@ -160,3 +73,106 @@ class Kind(type):
         if len(args) == 1:
             return args[0] + " -> *"
         return "(" + ", ".join(args) + ") -> *"
+
+    @classmethod
+    def _check_methods_(cls, T, bases, dct):
+        """
+        Check that declared class methods are defined.
+
+        Called by `Kind.__new__` to explicitly call setattr as needed.
+        """
+        if T.__base__.__name__ == "Var":
+            return None
+        elif any(b.__name__ == "Var" for b in T.__bases__):
+            return None
+        T._holes_ = {}
+        # --- register methods
+        for k, method in cls.list_methods():
+            # explicit dct definition
+            if k in dct:
+                method_impl = dct[k]
+                setattr(T, k, method_impl)
+                continue
+            # look for default implementation in bases
+            inherited = False
+            for base in bases:
+                if hasattr(base, k):
+                    setattr(T, k, getattr(base, k).__get__(T))
+                    inherited = True
+                    break
+            # skip if found
+            if inherited:
+                # _doc_ += k + ": " + str(T._eval_signature_(method)) + "\n"
+                continue
+            # register hole and raise warning
+            sgn = T._eval_signature_(method)
+            T._holes_[k] = sgn
+            t, tc = T.__name__, type(T).__name__
+            print(utils.WARN, k, ":", sgn, f"missing in {t} <= {tc}")
+
+    def _doc_(T):
+        # document methods
+        doc = T.__doc__ or ""
+        try:
+            cut = doc.find("\n\n")
+            head, tail = (doc[:cut], doc[cut:]) if cut >= 0 else (doc, "")
+            methods = T.methods().items()
+            title = "Type Class Methods"
+            title = "\n\n" + title + "\n" + "-" * len(title) + "\n\n"
+            if tail[: len(title)] == title or not len(methods):
+                return None
+            Mdoc = title
+            for k, mk in T.methods().items():
+                Mdoc += f"* {k} : `{mk}`  \n"
+            doc = head + Mdoc.replace("\n", "\n    ") + tail
+        except Exception as e:
+            raise e
+        finally:
+            T.__doc__ = doc
+
+    @classmethod
+    def list_methods(cls):
+        """
+        List method names and signatures defined on a type class.
+
+        Note:
+        -----
+        TypeClassMethods appear in alphabetical order. It would be more
+        understandable if they appeared in the order they were
+        created.
+        """
+        out = []
+        members = inspect.getmembers(
+            cls, lambda member: member.__class__.__name__ == "TypeClassMethod"
+        )
+        for k, m in members:
+            out.append((k, m))
+        return out
+
+    def methods(T):
+        """
+        TypeClassMethod signatures.
+        """
+        methods = T.list_methods()
+        return {k: T._eval_signature_(mk) for k, mk in methods}
+
+    @classmethod
+    def method_signatures(cls):
+        methods = cls.list_methods()
+        return {k: mk.signature for k, mk in methods}
+
+    def _eval_signature_(T, method):
+        """
+        Used to wrap evaluation of signature.
+
+        Override in subclasses with a reference to `Type.Hom`.
+        """
+        if hasattr(method, "signature"):
+            signature = method.signature
+        try:
+            return signature(T)
+        except:
+            name = signature.__name__
+            if not any(b.__name__ == "Var" for b in T.__bases__):
+                print(utils.WARN, name, ": could not evaluate signature on", T)
+            return signature
