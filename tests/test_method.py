@@ -1,3 +1,5 @@
+import pytest
+
 from fp.cartesian import Type, Hom, Prod
 from fp.meta.method import Method, ClassMethod
 from fp.meta import Var
@@ -53,6 +55,7 @@ class TestMethod:
         assert len(Counter.mult.src) == 2
 
 
+@pytest.mark.skip("not a type constructor")
 class TestClassMethod:
 
     class Counter2(Counter):

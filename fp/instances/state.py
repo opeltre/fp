@@ -259,6 +259,13 @@ class State(Hom, metaclass=HomFunctor):
         return cls("S").fmap(f)
 
     @classmethod
+    def cofmap(cls, g):
+        raise NotImplementedError(
+            "Source category should be a cartesian product `(Type2, Type)` "
+            "where `Type2` has reversed arrow pairs acting on state type."
+        )
+
+    @classmethod
     def _get_name_(cls, S, A=...):
         if A is ...:
             return f"{cls.__name__} {S}"
