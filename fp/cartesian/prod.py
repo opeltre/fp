@@ -1,4 +1,4 @@
-from fp.meta import Type, NFunctor, Functor
+from fp.meta import Type, Functor
 from typing import Callable
 import fp.utils as utils
 

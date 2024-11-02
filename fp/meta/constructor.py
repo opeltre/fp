@@ -8,17 +8,25 @@ from colorama import Fore
 
 from .kind import Kind
 from .type import Type
-from .method import Method
+from .type_class_method import TypeClassMethod
 
 import fp.utils as utils
 import fp.utils
 
 
 class _Mode(Enum):
+    """Four possible ways a Constructor's __new___ method may be called.
+
+    * the 'canonical' way will directly call `T.new(*As)`,
+    * type variables are produced with `T.var().new(*As)`,
+    * inheriting from `TA : T` will call `T._subclass_(name, bases, dct)`
+    * `Struct` definitions hold a dict too and have to be dealt with separately.
+    """
+
     new = "new"
     variable = "variable"
-    struct = "struct"
     subclass = "subclass"
+    struct = "struct"
 
 
 def _calling_mode(*As, **kwargs) -> _Mode:
@@ -79,7 +87,9 @@ class Constructor(Kind):
                 return Type.__new__(cls, name, (base,), {})
             except Exception as e:
                 print(e)
-                raise RuntimeError(f"Method {cls.__name__}.new was not overriden.")
+                raise RuntimeError(
+                    f"TypeClassMethod {cls.__name__}.new was not overriden."
+                )
 
         @classmethod
         def _subclass_(cls, name: str, bases: tuple, dct: dict):
@@ -106,7 +116,7 @@ class Constructor(Kind):
     def kind(T):
         return "(*, ...) -> *"
 
-    @Method
+    @TypeClassMethod
     def new(T: Constructor):
         return Type.Hom("...", Type)
 
@@ -320,14 +330,16 @@ class Var(Type, metaclass=Constructor):
         if A._tail_ is None:
             name = A.__name__.split(":")[0]
             SA = matches[name]
-            if not A._accessors_ and isinstance(SA, Type):
+            if not len(A._accessors_) and isinstance(SA, Type):
                 return SA
-            if A._accessors_ and isinstance(SA, Type):
+            if len(A._accessors_) and isinstance(SA, Type):
                 for attr in A._accessors_:
                     SA = getattr(SA, attr)
                 return SA
             elif isinstance(SA, tuple):
                 return tuple(A.substitute({name: Si}) for Si in SA)
+            else:
+                raise ValueError(f"Could not substitute value {SA} : {type(SA)}")
         head = A._head_ if not isinstance(A._head_, Var) else matches[A._head_.__name__]
         tail = []
         for Ai in A._tail_:

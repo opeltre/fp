@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from .method import Method
 from .kind import Kind
 from .constructor import Constructor, Var
+from .type_class_method import TypeClassMethod
 from .type import Type
 
 import fp.utils as utils
@@ -10,7 +10,7 @@ import fp.utils as utils
 
 class Category(Kind):
 
-    @Method
+    @TypeClassMethod
     def Hom(T):
         return (T, T), Type
 
@@ -50,7 +50,7 @@ class Functor(Constructor):
         """String representation of functor signature."""
         return Kind._functor_kind_(T.arity, *T._kind_)
 
-    @Method
+    @TypeClassMethod
     def fmap(T):
         """
         Map a source arrow `A -> B` to a target arrow `T(A) -> T(B)`.
@@ -80,7 +80,7 @@ class Cofunctor(Constructor):
     def kind(T):
         return Kind._functor_kind_(T.arity, *T._kind_)
 
-    @Method
+    @TypeClassMethod
     def cofmap(T):
         src = T.src if hasattr(T, "src") else Type
         tgt = T.tgt if hasattr(T, "tgt") else Type
@@ -102,11 +102,11 @@ class Bifunctor(Functor):
     arity = 2
     _kind_ = (1,), (0,)
 
-    @Method
+    @TypeClassMethod
     def fmap(T):
         return T.src.Hom("A", "B"), T.tgt.Hom(T("X", "A"), T("X", "B"))
 
-    @Method
+    @TypeClassMethod
     def cofmap(T):
         return T.src.Hom("X", "Y"), T.tgt.Hom(T("Y", "A"), T("X", "A"))
 
@@ -116,7 +116,7 @@ class ArrowFunctor(Bifunctor):
     Bifunctors with a composition law.
     """
 
-    @Method
+    @TypeClassMethod
     def compose(T):
         return (T("A", "B"), T("B", "C")), T("A", "C")
 
@@ -126,16 +126,6 @@ class HomFunctor(ArrowFunctor):
     Bifunctors with a composition law and an evaluation map.
     """
 
-    @Method
+    @TypeClassMethod
     def eval(T):
         return ("A", T("A", "B")), "B"
-
-
-class NFunctor(Functor):
-    """
-    Functors with arbitrary signatures.
-    """
-
-    kind = "(*, ...) -> *"
-    arity = ...
-    _kind_ = ..., ()
