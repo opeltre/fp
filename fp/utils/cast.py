@@ -4,6 +4,9 @@ from .exceptions import CastError
 
 def cast(x: Any, A: type):
 
+    if not isinstance(A, type):
+        raise CastError(A, x)
+
     # safe mode
     if isinstance(x, A):
         return x

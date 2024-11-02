@@ -13,6 +13,9 @@ class Error(Exception):
 class SignatureError(Error): ...
 
 
+class SubstitutionError(Error): ...
+
+
 class KeyError(Error): ...
 
 

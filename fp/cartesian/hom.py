@@ -6,6 +6,7 @@ import types
 from typing import Iterable, Callable, Literal
 
 from fp import utils
+from fp.utils.exceptions import SubstitutionError
 from fp.meta import Type, Var, HomFunctor, ArrowFunctor
 from .arrow import Arrow
 
@@ -132,8 +133,11 @@ class HomObject(Arrow.Object):
             return Src, True
         else:
             # parametric type, match: dict
-            Tx = Type.Prod(type(x) for x in xs) if len(xs) > 1 else type(xs[0])
-            return Src, Src.match(Tx)
+            Tx = Type.Prod(*(type(x) for x in xs)) if len(xs) > 1 else type(xs[0])
+            match = Src.match(Tx)
+            if match is None:
+                raise SubstitutionError(f"Could not match {Src} on {Tx}")
+            return Src, match
 
     @staticmethod
     def source_cast(Src, r, xs):
@@ -170,6 +174,7 @@ class HomObject(Arrow.Object):
 
         if "target_type" in dir(arrow._head_):
             return arrow._head_.target_type(arrow, xs)
+
         if len(xs) == arrow.arity or (len(xs) == 1 and isinstance(xs[0], arrow.src)):
             # full application type
             if match is True or not isinstance(arrow.tgt, Var):
@@ -177,7 +182,14 @@ class HomObject(Arrow.Object):
                 return arrow.tgt
             elif match is not None:
                 # substitute type variables
-                return arrow.tgt.substitute(match)
+                Tgt = arrow.tgt.substitute(match)
+                if Tgt is None:
+                    raise SubstitutionError(
+                        f"Could not substitute {match} in {arrow.tgt}"
+                    )
+                return Tgt
+            else:
+                raise SubstitutionError(f"Could not evaluate {repr(arrow)} on {xs}")
         else:
             # curried type
             As = tuple(subst(A) for A in arrow.src._tail_[len(xs) :])
