@@ -81,6 +81,7 @@ class Kind(type):
 
         Called by `Kind.__new__` to explicitly call setattr as needed.
         """
+        # TODO: clean this up, e.g. with inspect
         if T.__base__.__name__ == "Var":
             return None
         elif any(b.__name__ == "Var" for b in T.__bases__):
@@ -91,13 +92,11 @@ class Kind(type):
             # explicit dct definition
             if k in dct:
                 method_impl = dct[k]
-                setattr(T, k, method_impl)
                 continue
             # look for default implementation in bases
             inherited = False
             for base in bases:
-                if hasattr(base, k):
-                    setattr(T, k, getattr(base, k).__get__(T))
+                if k in base.__dict__:
                     inherited = True
                     break
             # skip if found
@@ -129,6 +128,34 @@ class Kind(type):
             raise e
         finally:
             T.__doc__ = doc
+
+    def __init_subclass__(child, **kwargs):
+        """Pass signatures to `_defaults_` template class.
+
+        This is necessary because:
+        * we don't want to make `_defaults_` an instance of the type class,
+          which would try as well to inherit from itself
+        * we don't want to duplicate `TypeClassMethod` signatures in the
+         `_defaults_` template class.
+
+        Alternatives would be get rid of the `TypeClassMethod` somehow, by having
+        e.g. a `MonadBase` ABC from which Monad instances would get placeholder
+        definitions.
+
+        But in any case, the problem of type annotations would persist, because
+        the following is not accepted by python:
+
+            def fmap(cls, f: Hom("A", "B")) -> Hom(cls("A"), cls("B")):
+
+        Localizing parametric type annotations to the metaclass is kind of helpful.
+        """
+        if hasattr(child, "_defaults_"):
+            members = inspect.getmembers(
+                child._defaults_,
+                lambda member: member.__class__.__name__ == "ClassMethod",
+            )
+            for name, member in members:
+                member.signature = getattr(child, name).signature
 
     @classmethod
     def list_methods(cls):

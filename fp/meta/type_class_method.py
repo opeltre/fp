@@ -36,22 +36,9 @@ class TypeClassMethod:
         ...         return fp.Hom((a, a), fp.Bool)
     """
 
-    def __set_name__(self, owner, name):
-        self._name = "_" + name
-        self.name = name
-
     def __init__(self, signature):
         self.signature = signature
         self.__doc__ = signature.__doc__
-
-    def __get__(self, obj, objtype=None):
-        if obj is not None:
-            return getattr(obj, self._name)
-        else:
-            return self
-
-    def __set__(self, obj, value):
-        setattr(obj, self._name, value)
 
     @classmethod
     def list(cls, objtype):

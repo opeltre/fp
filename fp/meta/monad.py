@@ -52,12 +52,12 @@ class Monad(Monoidal):
 
     class _defaults_(Functor._defaults_):
 
-        @classmethod
+        @ClassMethod
         def join(cls, mma):
             MA = mma._tail_[0]
             return mma.bind(Type.Hom.id(MA))
 
-        @classmethod
+        @ClassMethod
         def fmap(cls, f):
             """
             Default implementation of `fmap(f)` as `bind ... (unit @ f)`.
@@ -74,7 +74,7 @@ class Monad(Monoidal):
             fmap_f.__name__ = "map " + f.__name__
             return fmap_f
 
-        @classmethod
+        @ClassMethod
         def bind(cls, ma, mf):
             """
             Default implementation of `bind` in terms of `join`.
@@ -82,7 +82,7 @@ class Monad(Monoidal):
             mmb = cls.fmap(mf)(ma)
             return cls.join(mmb)
 
-        @classmethod
+        @ClassMethod
         def lift2(cls, f):
             """
             Default implementation of `lift2` by nested binds.

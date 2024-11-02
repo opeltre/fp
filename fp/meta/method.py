@@ -78,34 +78,20 @@ class ClassMethod(Method):
         if hasattr(objtype, "method_signatures"):
             signatures = objtype.method_signatures()
             if name in signatures:
-                # TODO: clean this up by providing working signature
                 signature = signatures[name]
-
-                def sgn(T):
-                    sgn_T = signature(T)
-                    if isinstance(sgn_T, tuple):
-                        sgn_T = Type.Hom(*sgn_T)
-                    src, tgt = sgn_T.src, sgn_T.tgt
-                    # prepend class argument (unbound signature)
-                    _src = (
-                        (type(objtype), *src._tail_)
-                        if isinstance(src, Type.Prod)
-                        else (type(objtype), src)
-                    )
-                    return Type.Hom(_src, tgt)
-
-                self.signature = sgn
+                self.signature = signature
 
     def __get__(self, obj, objtype=None) -> Type.Hom.Object:
+        if self.signature is None:
+            # _defaults_ has no signatures:
+            # they are manually set by Kind.__init_subclass__ for now
+            return self
         if objtype is None:
             objtype = type(obj)
-        sgn = self.signature(objtype)
-        if isinstance(sgn.src, Type.Prod) and len(sgn.src) != 2:
-            src = sgn.src[1:]
-        elif isinstance(sgn.src, Type.Prod):
-            src = sgn.src[1]
-        else:
-            src = Type.Unit
         method_cls = functools.partial(self._method, objtype)
         method_cls.__name__ = objtype.__name__ + "." + self._method.__name__
-        return Type.Hom(src, sgn.tgt)(method_cls)
+        homtype = self.signature(objtype)
+        if isinstance(homtype, tuple):
+            # most TypeClassMethod signatures return tuple
+            homtype = Type.Hom(*homtype)
+        return homtype(method_cls)

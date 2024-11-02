@@ -15,10 +15,18 @@ import fp.utils
 
 
 class _Mode(Enum):
+    """Four possible ways a Constructor's __new___ method may be called.
+
+    * the 'canonical' way will directly call `T.new(*As)`,
+    * type variables are produced with `T.var().new(*As)`,
+    * inheriting from `TA : T` will call `T._subclass_(name, bases, dct)`
+    * `Struct` definitions hold a dict too and have to be dealt with separately.
+    """
+
     new = "new"
     variable = "variable"
-    struct = "struct"
     subclass = "subclass"
+    struct = "struct"
 
 
 def _calling_mode(*As, **kwargs) -> _Mode:

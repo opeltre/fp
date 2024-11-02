@@ -1,6 +1,6 @@
 from __future__ import annotations
-
-from fp.meta import Type, Monad
+from fp.meta import Type, Monad, ClassMethod
+from fp.cartesian import Hom
 from .num import Int, Monoid
 
 import fp.utils as utils
@@ -38,8 +38,8 @@ class List(Monoid, metaclass=Monad):
     def new(cls, A):
         return Monoid.__new__(cls, "List A", (cls.Object,), {})
 
-    @classmethod
-    def fmap(cls, f: Hom("A", "B")) -> Hom(cls("A"), cls("B")):
+    @ClassMethod
+    def fmap(cls: Type, f: Hom("A", "B")) -> Hom(cls("A"), cls("B")):
         """
         Map a function on lists.
         """
@@ -51,7 +51,7 @@ class List(Monoid, metaclass=Monad):
         mapf.__name__ = f"map {f.__name__}"
         return mapf
 
-    @classmethod
+    @ClassMethod
     def join(cls, xx: cls(cls("A"))) -> cls("A"):
         """
         Flatten a list of lists.
@@ -59,7 +59,7 @@ class List(Monoid, metaclass=Monad):
         A = xx._tail_[0]._tail_[0]
         return cls(A)(sum((x for x in xx), []))
 
-    @classmethod
+    @ClassMethod
     def unit(cls, a):
         """
         Singleton list.
