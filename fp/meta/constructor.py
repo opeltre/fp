@@ -14,39 +14,39 @@ import fp.utils as utils
 import fp.utils
 
 
-class _Mode(Enum):
-    """Four possible ways a Constructor's __new___ method may be called.
+class _Construct(Enum):
+    """Four possible ways a Constructor's `__new__` method may be called.
 
-    * the 'canonical' way will directly call `T.new(*As)`,
-    * type variables are produced with `T.var().new(*As)`,
-    * inheriting from `TA : T` will call `T._subclass_(name, bases, dct)`
-    * `Struct` definitions hold a dict too and have to be dealt with separately.
+    * `NEW` : the 'canonical' way which directly calls`T.new(*As)`,
+    * `VARIABLE`: type variables produced with `T.var().new(*As)`,
+    * `SUBCLASS`: inheriting from `TA: T` calls `T._subclass_(name, bases, dct)`,
+    * `STRUCT`: definitions hold a dict which has to be processed separately.
     """
 
-    new = "new"
-    variable = "variable"
-    subclass = "subclass"
-    struct = "struct"
+    NEW = "new"
+    VARIABLE = "variable"
+    SUBCLASS = "subclass"
+    STRUCT = "struct"
 
 
-def _calling_mode(*As, **kwargs) -> _Mode:
+def _get_construct_mode(*As, **kwargs) -> _Construct:
     """Check if arguments are unhashable class/struct definitions."""
     # subclass definition calls: T(name, bases, dct)
     if len(As) >= 3 and type(As[2]) is dict:
-        return _Mode("subclass")
+        return _Construct.SUBCLASS
 
     # struct definition : Struct(keys, values, name, bases, dct)
     is_struct = len(As) >= 5 and type(As[4]) is dict
     is_struct |= "dct" in kwargs
     if is_struct:
-        return _Mode("struct")
+        return _Construct.STRUCT
 
     # variable constructor : T.new("A", ...)
     if any(isinstance(A, (str, Var, type(...))) for A in As):
-        return _Mode("variable")
+        return _Construct.VARIABLE
 
     # type constructor : T.new(*As)
-    return _Mode("new")
+    return _Construct.NEW
 
 
 class Constructor(Kind):
@@ -161,12 +161,12 @@ class Constructor(Kind):
         new_ = functools.cache(new)
 
         def cached_new(cls, *xs, **ys):
-            mode = _calling_mode(*xs, **ys)
-            if mode == _Mode("new") or mode == _Mode("variable"):
+            mode = _get_construct_mode(*xs, **ys)
+            if mode == _Construct.NEW or mode == _Construct.VARIABLE:
                 # T(*As)
                 xs = cls._pre_new_(*xs)
                 return new_(cls, *xs, **ys)
-            elif mode == _Mode("subclass") or mode == _Mode("struct"):
+            elif mode == _Construct.SUBCLASS or mode == _Construct.STRUCT:
                 # class MyT(T(*As), metaclass=T):
                 return new(cls, *xs, **ys)
 
@@ -175,8 +175,8 @@ class Constructor(Kind):
     @staticmethod
     def _new_(T: Constructor, *As: Any) -> Type:
         """Defines `T.__new__` as a wrapper around `T.new`."""
-        mode = _calling_mode(*As)
-        if mode == _Mode("subclass"):
+        mode = _get_construct_mode(*As)
+        if mode == _Construct.SUBCLASS:
             try:
                 utils.log(f"Subclass {As[0]} -> {T}", v=2)
                 if hasattr(T, "_subclass_") and mode.name == "subclass":
@@ -194,7 +194,7 @@ class Constructor(Kind):
                     "it must return a type."
                 )
 
-        if mode == _Mode("variable"):
+        if mode == _Construct.VARIABLE:
             try:
                 utils.log(f"Parameterised type: {T}({As})", v=2)
                 if T is not Var:
@@ -211,11 +211,11 @@ class Constructor(Kind):
                     f"Could not create parameterised type {T}({As})"
                 )
 
-        if mode == _Mode("new"):
+        if mode == _Construct.NEW:
             utils.log(f"Concrete type: {T}({As})", v=2)
             TA = T.new(*As)
 
-        if mode == _Mode("struct"):
+        if mode == _Construct.STRUCT:
             utils.log(f"Struct type: {As[:2]}", v=2)
             TA = T.new(*As)
 
