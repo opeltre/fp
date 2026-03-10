@@ -1,5 +1,6 @@
 poetry.lock
 .coverage
+.python-version
 __pycache__
 **/__pycache__
 fp.egg-info

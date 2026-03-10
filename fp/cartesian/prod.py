@@ -1,9 +1,10 @@
-from fp.meta import Type, NFunctor, Functor
+from fp.meta import Type, Functor
 from typing import Callable
 import fp.utils as utils
 
 
 class Prod(Type, metaclass=Functor):
+    """Cartesian product of types."""
 
     src = Type
     tgt = Type

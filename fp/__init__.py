@@ -9,6 +9,9 @@ from fp.base import *
 
 __all__ = cartesian.__all__ + base.__all__
 
-utils.document(base)
-utils.document(cartesian)
-utils.document(instances)
+try:
+    utils.document(base)
+    utils.document(cartesian)
+    utils.document(instances)
+except:
+    utils.warn("Could not edit docstrings")

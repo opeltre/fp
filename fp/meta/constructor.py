@@ -8,50 +8,62 @@ from colorama import Fore
 
 from .kind import Kind
 from .type import Type
-from .method import Method
+from .type_class_method import TypeClassMethod
 
 import fp.utils as utils
 import fp.utils
 
 
-class _Mode(Enum):
-    new = "new"
-    variable = "variable"
-    struct = "struct"
-    subclass = "subclass"
+class _Construct(Enum):
+    """Four possible ways a Constructor's `__new__` method may be called.
+
+    * `NEW` : the 'canonical' way which directly calls`T.new(*As)`,
+    * `VARIABLE`: type variables produced with `T.var().new(*As)`,
+    * `SUBCLASS`: inheriting from `TA: T` calls `T._subclass_(name, bases, dct)`,
+    * `STRUCT`: definitions hold a dict which has to be processed separately.
+    """
+
+    NEW = "new"
+    VARIABLE = "variable"
+    SUBCLASS = "subclass"
+    STRUCT = "struct"
 
 
-def _calling_mode(*As, **kwargs) -> _Mode:
+def _get_construct_mode(*As, **kwargs) -> _Construct:
     """Check if arguments are unhashable class/struct definitions."""
     # subclass definition calls: T(name, bases, dct)
     if len(As) >= 3 and type(As[2]) is dict:
-        return _Mode("subclass")
+        return _Construct.SUBCLASS
 
     # struct definition : Struct(keys, values, name, bases, dct)
     is_struct = len(As) >= 5 and type(As[4]) is dict
     is_struct |= "dct" in kwargs
     if is_struct:
-        return _Mode("struct")
+        return _Construct.STRUCT
 
     # variable constructor : T.new("A", ...)
     if any(isinstance(A, (str, Var, type(...))) for A in As):
-        return _Mode("variable")
+        return _Construct.VARIABLE
 
     # type constructor : T.new(*As)
-    return _Mode("new")
+    return _Construct.NEW
 
 
 class Constructor(Kind):
     """
-    Type constructors.
+    Type constructors, the source of all type polymorphism.
 
-    Instances define a classmethod `T.new(*As)`
-    returning the type value `T(*As) = T A1 ... An`.
+    Instances must define a classmethod `T.new(*As)` which returns a type value::
+
+        T(*As) = T A1 ... An
+
+    Calling a constructor with strings instead of Python types will create a new 
+    type variable that is amenable to pattern matching.
     """
 
     arity = ...
 
-    class _defaults_:
+    class _defaults_: 
 
         kind = "(*, ...) -> *"
 
@@ -79,7 +91,9 @@ class Constructor(Kind):
                 return Type.__new__(cls, name, (base,), {})
             except Exception as e:
                 print(e)
-                raise RuntimeError(f"Method {cls.__name__}.new was not overriden.")
+                raise RuntimeError(
+                    f"TypeClassMethod {cls.__name__}.new was not overriden."
+                )
 
         @classmethod
         def _subclass_(cls, name: str, bases: tuple, dct: dict):
@@ -100,19 +114,30 @@ class Constructor(Kind):
             """
             ...
 
-        def __init__(TA, *As): ...
+        def __init__(TA, *As): 
+            TA.__name__ = "T A"
 
     @property
     def kind(T):
         return "(*, ...) -> *"
 
-    @Method
-    def new(T: Constructor):
+    @TypeClassMethod
+    def new(T: Constructor) -> Type.Hom:
+        """Gets the signature of `T.new`."""
         return Type.Hom("...", Type)
 
-    def __new__(cls, name, bases, dct):
+    def __new__(cls, name: str, bases: tuple[type, ...], dct: dict) -> type:
         """
-        Define a new type constructor by wrapping `T.new`.
+        The regular type creation pathway for Python metaclasses. 
+
+        A constructor `T` will internally call its classmethod `T.new(A1, ..., An)`
+        when called with type arguments `A1, ..., An`. Constructors should therefore
+        only override `.new`.
+
+        Some alternative cases have to be dealt with separately, e.g. when defining
+        a sublass of `T *As` or when calling `T` with string or type variable arguments.
+        In the former case, `T._subclass_(name, bases, dct)` is called on the child 
+        class definition.
         """
         T = super().__new__(cls, name, (*bases, cls._defaults_), dct)
         # wrap T.__new__
@@ -151,12 +176,12 @@ class Constructor(Kind):
         new_ = functools.cache(new)
 
         def cached_new(cls, *xs, **ys):
-            mode = _calling_mode(*xs, **ys)
-            if mode == _Mode("new") or mode == _Mode("variable"):
+            mode = _get_construct_mode(*xs, **ys)
+            if mode == _Construct.NEW or mode == _Construct.VARIABLE:
                 # T(*As)
                 xs = cls._pre_new_(*xs)
                 return new_(cls, *xs, **ys)
-            elif mode == _Mode("subclass") or mode == _Mode("struct"):
+            elif mode == _Construct.SUBCLASS or mode == _Construct.STRUCT:
                 # class MyT(T(*As), metaclass=T):
                 return new(cls, *xs, **ys)
 
@@ -165,8 +190,8 @@ class Constructor(Kind):
     @staticmethod
     def _new_(T: Constructor, *As: Any) -> Type:
         """Defines `T.__new__` as a wrapper around `T.new`."""
-        mode = _calling_mode(*As)
-        if mode == _Mode("subclass"):
+        mode = _get_construct_mode(*As)
+        if mode == _Construct.SUBCLASS:
             try:
                 utils.log(f"Subclass {As[0]} -> {T}", v=2)
                 if hasattr(T, "_subclass_") and mode.name == "subclass":
@@ -184,7 +209,7 @@ class Constructor(Kind):
                     "it must return a type."
                 )
 
-        if mode == _Mode("variable"):
+        if mode == _Construct.VARIABLE:
             try:
                 utils.log(f"Parameterised type: {T}({As})", v=2)
                 if T is not Var:
@@ -201,11 +226,11 @@ class Constructor(Kind):
                     f"Could not create parameterised type {T}({As})"
                 )
 
-        if mode == _Mode("new"):
+        if mode == _Construct.NEW:
             utils.log(f"Concrete type: {T}({As})", v=2)
             TA = T.new(*As)
 
-        if mode == _Mode("struct"):
+        if mode == _Construct.STRUCT:
             utils.log(f"Struct type: {As[:2]}", v=2)
             TA = T.new(*As)
 
@@ -244,6 +269,16 @@ class Constructor(Kind):
 
 
 class Var(Type, metaclass=Constructor):
+    """Constructor of type variables.
+
+    The `Var` constructor is a special one within fp, which takes a string 
+    as inputs and return a new dummy type of the associated name. These 
+    variable types are then recognized by other regular type constructors 
+    to create symbolic expressions in a perl-like fashion.
+
+    Type instances of `Var` can be pattern-matched, using their `.match()` 
+    and `.substitute()` methods.
+    """
 
     _accessors_ = None
 
@@ -320,14 +355,16 @@ class Var(Type, metaclass=Constructor):
         if A._tail_ is None:
             name = A.__name__.split(":")[0]
             SA = matches[name]
-            if not A._accessors_ and isinstance(SA, Type):
+            if not len(A._accessors_) and isinstance(SA, Type):
                 return SA
-            if A._accessors_ and isinstance(SA, Type):
+            if len(A._accessors_) and isinstance(SA, Type):
                 for attr in A._accessors_:
                     SA = getattr(SA, attr)
                 return SA
             elif isinstance(SA, tuple):
                 return tuple(A.substitute({name: Si}) for Si in SA)
+            else:
+                raise ValueError(f"Could not substitute value {SA} : {type(SA)}")
         head = A._head_ if not isinstance(A._head_, Var) else matches[A._head_.__name__]
         tail = []
         for Ai in A._tail_:

@@ -1,5 +1,5 @@
 from __future__ import annotations
-from fp.meta import Type, NFunctor, Monad
+from fp.meta import Type, Monad
 import fp.utils as utils
 from .prod import Prod
 from .hom import Hom

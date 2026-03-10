@@ -1,7 +1,5 @@
 import inspect
 
-import fp.meta
-import fp.instances
 from .log import log
 
 
