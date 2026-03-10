@@ -363,5 +363,6 @@ class Hom(Arrow, metaclass=HomFunctor):
             # (A1, ..., An) -> B
             src, arity = Type.Prod(*A), len(A)
         else:
+            print(A, type(A))
             raise utils.TypeError("source", A, Type | Iterable[Type])
         return src, tgt, arity

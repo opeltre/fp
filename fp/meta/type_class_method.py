@@ -59,3 +59,16 @@ class TypeClassMethod:
                 if k == p:
                     out.append((k, m))
         return out
+
+    def __str__(self):
+        try: 
+            T = lambda s: ("T " + str(s))
+            return self.signature(T)
+        except: 
+            return "<signature>"
+
+    def __repr__(self): 
+        try:
+            return self.signature.__name__ + str(self)
+        except: 
+            return "<TypeClassMethod>"

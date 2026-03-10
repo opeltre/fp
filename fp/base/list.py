@@ -51,7 +51,7 @@ class List(Monoid, metaclass=Monad):
         mapf.__name__ = f"map {f.__name__}"
         return mapf
 
-    @ClassMethod
+    @classmethod
     def join(cls, xx: cls(cls("A"))) -> cls("A"):
         """
         Flatten a list of lists.

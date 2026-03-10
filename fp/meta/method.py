@@ -93,5 +93,8 @@ class ClassMethod(Method):
         homtype = self.signature(objtype)
         if isinstance(homtype, tuple):
             # most TypeClassMethod signatures return tuple
-            homtype = Type.Hom(*homtype)
+            try: 
+                homtype = Type.Hom(*homtype)
+            except: 
+                print("ClassMethodError:", self.__name__, obj, homtype)
         return homtype(method_cls)

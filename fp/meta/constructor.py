@@ -51,15 +51,19 @@ def _get_construct_mode(*As, **kwargs) -> _Construct:
 
 class Constructor(Kind):
     """
-    Type constructors.
+    Type constructors, the source of all type polymorphism.
 
-    Instances define a classmethod `T.new(*As)`
-    returning the type value `T(*As) = T A1 ... An`.
+    Instances must define a classmethod `T.new(*As)` which returns a type value::
+
+        T(*As) = T A1 ... An
+
+    Calling a constructor with strings instead of Python types will create a new 
+    type variable that is amenable to pattern matching.
     """
 
     arity = ...
 
-    class _defaults_:
+    class _defaults_: 
 
         kind = "(*, ...) -> *"
 
@@ -110,19 +114,30 @@ class Constructor(Kind):
             """
             ...
 
-        def __init__(TA, *As): ...
+        def __init__(TA, *As): 
+            TA.__name__ = "T A"
 
     @property
     def kind(T):
         return "(*, ...) -> *"
 
     @TypeClassMethod
-    def new(T: Constructor):
+    def new(T: Constructor) -> Type.Hom:
+        """Gets the signature of `T.new`."""
         return Type.Hom("...", Type)
 
-    def __new__(cls, name, bases, dct):
+    def __new__(cls, name: str, bases: tuple[type, ...], dct: dict) -> type:
         """
-        Define a new type constructor by wrapping `T.new`.
+        The regular type creation pathway for Python metaclasses. 
+
+        A constructor `T` will internally call its classmethod `T.new(A1, ..., An)`
+        when called with type arguments `A1, ..., An`. Constructors should therefore
+        only override `.new`.
+
+        Some alternative cases have to be dealt with separately, e.g. when defining
+        a sublass of `T *As` or when calling `T` with string or type variable arguments.
+        In the former case, `T._subclass_(name, bases, dct)` is called on the child 
+        class definition.
         """
         T = super().__new__(cls, name, (*bases, cls._defaults_), dct)
         # wrap T.__new__
@@ -254,6 +269,16 @@ class Constructor(Kind):
 
 
 class Var(Type, metaclass=Constructor):
+    """Constructor of type variables.
+
+    The `Var` constructor is a special one within fp, which takes a string 
+    as inputs and return a new dummy type of the associated name. These 
+    variable types are then recognized by other regular type constructors 
+    to create symbolic expressions in a perl-like fashion.
+
+    Type instances of `Var` can be pattern-matched, using their `.match()` 
+    and `.substitute()` methods.
+    """
 
     _accessors_ = None
 
